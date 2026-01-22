@@ -18,6 +18,7 @@ This file provides context for Gemini when working with this repository.
 - `github.com/hashicorp/go-retryablehttp` (HTTP Transport)
 - `github.com/rshade/finfocus-spec` (Plugin SDK)
 - `github.com/rs/zerolog` (Logging)
+- N/A (Stateless) (001-go-module-init)
 
 ## Development Guidelines
 
@@ -33,3 +34,6 @@ This file provides context for Gemini when working with this repository.
 ### Logging
 - **Stdout**: Reserved for `PORT=XXXX` only.
 - **Stderr**: All other logs.
+
+## Recent Changes
+- 001-go-module-init: Added Go 1.25.5
