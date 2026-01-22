@@ -150,11 +150,25 @@ Examples of foundational tasks (adjust based on your project):
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] TXXX [P] Documentation updates in docs/
+### Constitution Compliance Tasks
+
+- [ ] TXXX [P] Run `make lint` and fix all linting issues
+- [ ] TXXX [P] Run `go test -race` to verify thread safety
+- [ ] TXXX [P] Verify test coverage ≥80% for business logic (`go test -cover`)
+- [ ] TXXX [P] Add godoc comments to all exported functions/types
+- [ ] TXXX [P] Update README.md with new features/usage examples
+- [ ] TXXX [P] Update CLAUDE.md if workflow patterns changed
+- [ ] TXXX Add structured logging (zerolog) for all error paths
+- [ ] TXXX Verify error messages are actionable and include context
+- [ ] TXXX Performance benchmarking (if performance targets specified)
+- [ ] TXXX Add retry logic with exponential backoff (if external API calls)
+- [ ] TXXX Configure timeouts for HTTP clients (if applicable)
+- [ ] TXXX Verify architectural constraints not violated (no auth APIs, no persistent storage, etc.)
+
+### Additional Polish
+
 - [ ] TXXX Code cleanup and refactoring
-- [ ] TXXX Performance optimization across all stories
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
-- [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
 
 ---

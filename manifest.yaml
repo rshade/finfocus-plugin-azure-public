@@ -1,0 +1,28 @@
+metadata:
+    name: azure-public
+    version: 0.1.0
+    description: FinFocus plugin for azure-public
+    author: Richard Shade
+    homepage: ""
+    repository: ""
+    license: Apache-2.0
+    keywords:
+        - finfocus
+        - cost
+        - plugin
+        - azure
+    createdat: null
+    updatedat: null
+specification:
+    specversion: "1.0"
+    supportedproviders:
+        - azure
+    supportedresources: {}
+    capabilities:
+        - projected_cost
+        - actual_cost
+    servicedefinition: null
+    observabilitysupport: null
+security: null
+installation: null
+configuration: null

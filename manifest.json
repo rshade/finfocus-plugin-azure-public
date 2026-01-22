@@ -1,0 +1,25 @@
+{
+  "metadata":  {
+    "name":  "azure-public",
+    "version":  "0.1.0",
+    "description":  "FinFocus plugin for azure-public",
+    "author":  "Richard Shade",
+    "license":  "Apache-2.0",
+    "keywords":  [
+      "finfocus",
+      "cost",
+      "plugin",
+      "azure"
+    ]
+  },
+  "specification":  {
+    "specVersion":  "1.0",
+    "supportedProviders":  [
+      "azure"
+    ],
+    "capabilities":  [
+      "projected_cost",
+      "actual_cost"
+    ]
+  }
+}

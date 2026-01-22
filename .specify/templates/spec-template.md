@@ -113,3 +113,42 @@
 - **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
 - **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
 - **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
+
+## Constitution Compliance *(mandatory)*
+
+### Quality Standards
+
+- [ ] Feature requirements include test coverage expectations (≥80% for business logic)
+- [ ] Error handling strategy is defined (no silent failures)
+- [ ] Code complexity is considered (functions <15 cyclomatic complexity)
+
+### Testing Requirements
+
+- [ ] Test scenarios defined for all user stories (Given/When/Then format)
+- [ ] Integration test needs identified (external API interactions)
+- [ ] Performance test criteria specified (if applicable)
+
+### User Experience
+
+- [ ] Error messages are user-friendly and actionable
+- [ ] Response time expectations defined (e.g., cache hits <10ms, API calls <2s p95)
+- [ ] Observability requirements specified (logging, metrics)
+
+### Documentation
+
+- [ ] README.md updates identified (if user-facing changes)
+- [ ] API documentation needs outlined (godoc comments, contracts)
+- [ ] Examples/quickstart guide planned (if new capability)
+
+### Performance & Reliability
+
+- [ ] Performance targets specified (response times, throughput)
+- [ ] Reliability requirements defined (retry logic, error handling)
+- [ ] Resource constraints considered (memory, connections, cache TTL)
+
+### Architectural Constraints Check
+
+- [ ] DOES NOT require authenticated Azure APIs
+- [ ] DOES NOT introduce persistent storage
+- [ ] DOES NOT mutate infrastructure
+- [ ] DOES NOT embed bulk pricing data

@@ -31,7 +31,14 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Verify compliance with `.specify/memory/constitution.md`:
+
+- [ ] **Code Quality**: Plan includes linting checks, error handling strategy, and complexity justification (if needed)
+- [ ] **Testing**: Plan includes TDD workflow (tests before implementation), ≥80% coverage target, race detector for concurrent code
+- [ ] **User Experience**: Plan addresses plugin lifecycle (port announcement, health checks, graceful shutdown), observability (structured logging), and error handling
+- [ ] **Documentation**: Plan includes godoc comments for exported functions, README updates, and CLAUDE.md updates if workflow changes
+- [ ] **Performance**: Plan includes performance targets (response times, concurrency), reliability guarantees (retry logic, timeout configuration), and resource constraints (connection pooling, cache TTL)
+- [ ] **Architectural Constraints**: Plan DOES NOT violate "Hard No's" (no authenticated Azure APIs, no persistent storage, no infrastructure mutation, no bulk data embedding)
 
 ## Project Structure
 
