@@ -1,5 +1,5 @@
 # Binaries
-finfocus-plugin-azure-public
+/finfocus-plugin-azure-public
 *.exe
 *.exe~
 *.dll
@@ -22,4 +22,11 @@ Thumbs.db
 
 # Dependencies
 vendor/
+node_modules/
 PR_MESSAGE.md
+
+# Logs
+*.log
+
+# Environment Variables
+.env*

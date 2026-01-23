@@ -2,18 +2,37 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/hashicorp/go-retryablehttp"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-	"github.com/rshade/finfocus-plugin-azure-public/internal/pricing"
-	"github.com/rshade/finfocus-spec/sdk/go/pluginsdk"
+		"github.com/hashicorp/go-retryablehttp"
+
+		"github.com/rs/zerolog"
+
+		"github.com/rs/zerolog/log"
+
+		"github.com/rshade/finfocus-plugin-azure-public/internal/pricing"
+
+		"github.com/rshade/finfocus-spec/sdk/go/pluginsdk"
+
+	)
+
+var (
+	version = "dev"
 )
 
 func main() {
+	showVersion := flag.Bool("version", false, "Show version and exit")
+	flag.Parse()
+
+	if *showVersion {
+		fmt.Println(version)
+		os.Exit(0)
+	}
+
 	// Initialize dependencies to prevent pruning
 	var _ *retryablehttp.Client
 	var _ zerolog.Logger
@@ -22,9 +41,10 @@ func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
+	log.Info().Str("version", version).Msg("Starting finfocus-plugin-azure-public")
+
 	// Create the plugin implementation
 	plugin := pricing.NewCalculator()
-
 	// Set up context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

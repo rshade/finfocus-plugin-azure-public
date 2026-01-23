@@ -1,12 +1,13 @@
 # CLAUDE.md - Project Context
 
 ## Commands
-- **Build**: `go build ./...`
-- **Test**: `go test ./...`
-- **Lint**: `golangci-lint run`
-- **Verify Deps**: `go mod verify`
-- **Update Deps**: `go get -u ./... && go mod tidy`
-- **Run Plugin**: `go run cmd/plugin/main.go`
+- **Build**: `make build`
+- **Test**: `make test`
+- **Lint**: `make lint`
+- **Clean**: `make clean`
+- **Setup**: `make ensure`
+- **Help**: `make help`
+- **Run Plugin**: `go run cmd/finfocus-plugin-azure-public/main.go`
 
 ## Development
 - **Go Version**: 1.25.5
@@ -16,7 +17,7 @@
   - `zerolog`: Logging
   - `grpc`: RPC Framework
 - **Architecture**:
-  - `cmd/plugin`: Entry point
+  - `cmd/finfocus-plugin-azure-public`: Entry point
   - `internal/pricing`: Core logic
   - **No Auth**: Do not use Azure SDK auth libraries
   - **No DB**: Stateless operation only

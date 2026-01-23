@@ -1,85 +1,57 @@
-# Makefile for azure-public plugin
+# Makefile for finfocus-plugin-azure-public
 
-.PHONY: build test clean lint help install
+# Binary name
+BINARY_NAME := finfocus-plugin-azure-public
 
-# Variables
-PLUGIN_NAME = azure-public
-BINARY_NAME = finfocus-plugin-$(PLUGIN_NAME)
-BUILD_DIR = bin
-CMD_DIR = cmd/plugin
+# Version calculation
+GIT_TAG := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+GIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+VERSION := $(shell echo $(GIT_TAG) | sed 's/^v//')
 
-# Default target
-help:
-	@echo "Available commands:"
-	@echo "  build     - Build the plugin binary"
-	@echo "  test      - Run tests"
-	@echo "  clean     - Clean build artifacts"
-	@echo "  lint      - Run linters"
-	@echo "  install   - Install plugin to local registry"
-	@echo "  help      - Show this help"
+# Logic for next version (simple patch increment for dev)
+MAJOR := $(shell echo $(VERSION) | cut -d. -f1)
+MINOR := $(shell echo $(VERSION) | cut -d. -f2)
+PATCH := $(shell echo $(VERSION) | cut -d. -f3 | cut -d- -f1)
+NEXT_PATCH := $(shell echo $$(($(PATCH) + 1)))
+DEV_VERSION := $(MAJOR).$(MINOR).$(NEXT_PATCH)-dev
 
-# Build the plugin binary
+# Linker flags to inject version
+LDFLAGS := -X main.version=$(DEV_VERSION)
+
+.PHONY: all
+all: help
+
+.PHONY: build
 build:
-	@echo "Building $(PLUGIN_NAME) plugin..."
-	@mkdir -p $(BUILD_DIR)
-	@go build -o $(BUILD_DIR)/$(BINARY_NAME) ./$(CMD_DIR)
-	@echo "✅ Plugin built: $(BUILD_DIR)/$(BINARY_NAME)"
+	@echo "Building $(BINARY_NAME) version $(DEV_VERSION)..."
+	go build -ldflags "$(LDFLAGS)" -o $(BINARY_NAME) ./cmd/finfocus-plugin-azure-public
 
-# Run tests
+.PHONY: test
 test:
 	@echo "Running tests..."
-	@go test -v ./...
+	go test -v -race ./...
 
-# Run tests with coverage
-test-coverage:
-	@echo "Running tests with coverage..."
-	@go test -coverprofile=coverage.out ./...
-	@go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report: coverage.html"
-
-# Clean build artifacts
-clean:
-	@echo "Cleaning build artifacts..."
-	@rm -rf $(BUILD_DIR)
-	@rm -f coverage.out coverage.html
-	@echo "✅ Clean complete"
-
-# Run linters
+.PHONY: lint
 lint:
-	@echo "Running linters..."
-	@golangci-lint run --allow-parallel-runners
-	@echo "✅ Linting complete"
+	@echo "Running lint..."
+	golangci-lint run --timeout=10m ./...
 
-# Install plugin to local registry
-install: build
-	@echo "Installing plugin to local registry..."
-	@mkdir -p ~/.finfocus/plugins/$(PLUGIN_NAME)/1.0.0
-	@cp $(BUILD_DIR)/$(BINARY_NAME) ~/.finfocus/plugins/$(PLUGIN_NAME)/1.0.0/
-	@cp manifest.yaml ~/.finfocus/plugins/$(PLUGIN_NAME)/1.0.0/plugin.manifest.json
-	@echo "✅ Plugin installed to ~/.finfocus/plugins/$(PLUGIN_NAME)/1.0.0/"
+.PHONY: clean
+clean:
+	@echo "Cleaning..."
+	rm -f $(BINARY_NAME)
 
-# Development build with debug info
-build-debug:
-	@echo "Building $(PLUGIN_NAME) plugin with debug info..."
-	@mkdir -p $(BUILD_DIR)
-	@go build -gcflags="all=-N -l" -o $(BUILD_DIR)/$(BINARY_NAME) ./$(CMD_DIR)
-	@echo "✅ Debug build complete: $(BUILD_DIR)/$(BINARY_NAME)"
+.PHONY: ensure
+ensure:
+	@echo "Installing development tools..."
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
-# Format code
-fmt:
-	@echo "Formatting code..."
-	@go fmt ./...
-	@echo "✅ Code formatting complete"
-
-# Update dependencies
-deps:
-	@echo "Updating dependencies..."
-	@go mod tidy
-	@go mod download
-	@echo "✅ Dependencies updated"
-
-# Check for security vulnerabilities
-security:
-	@echo "Checking for security vulnerabilities..."
-	@govulncheck ./...
-	@echo "✅ Security check complete"
+.PHONY: help
+help:
+	@echo "Available targets:"
+	@echo "  build   - Compile the binary with version information"
+	@echo "  test    - Run unit tests with race detection"
+	@echo "  lint    - Run code quality checks (golangci-lint)"
+	@echo "  clean   - Remove build artifacts"
+	@echo "  ensure  - Install development dependencies"
+	@echo "  help    - Show this help message"
