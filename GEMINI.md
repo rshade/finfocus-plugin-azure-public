@@ -19,6 +19,7 @@ This file provides context for Gemini when working with this repository.
 - `github.com/rshade/finfocus-spec` (Plugin SDK)
 - `github.com/rs/zerolog` (Logging)
 - N/A (Stateless) (001-go-module-init)
+- Go 1.25.5 + `golangci-lint` (development tool), `git` (versioning) (001-makefile-setup)
 
 ## Development Guidelines
 
@@ -36,4 +37,5 @@ This file provides context for Gemini when working with this repository.
 - **Stderr**: All other logs.
 
 ## Recent Changes
+- 001-makefile-setup: Added Go 1.25.5 + `golangci-lint` (development tool), `git` (versioning)
 - 001-go-module-init: Added Go 1.25.5
