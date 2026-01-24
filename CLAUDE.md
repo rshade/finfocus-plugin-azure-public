@@ -32,3 +32,10 @@
 - **New Feature**: Run `.specify/scripts/bash/create-new-feature.sh`
 - **Update Plan**: Run `.specify/scripts/bash/setup-plan.sh`
 - **Check Status**: Check `ROADMAP.md`
+
+## Active Technologies
+- Go 1.25.5 (002-grpc-server-port)
+- N/A (stateless plugin) (002-grpc-server-port)
+
+## Recent Changes
+- 002-grpc-server-port: Added Go 1.25.5
