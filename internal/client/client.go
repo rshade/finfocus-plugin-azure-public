@@ -5,6 +5,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 )
 
@@ -13,7 +14,7 @@ type Client struct {
 	// Add your cloud provider client configuration here
 	// Examples:
 	// - AWS SDK client
-	// - Azure SDK client  
+	// - Azure SDK client
 	// - GCP SDK client
 	// - Custom API client
 }
@@ -28,7 +29,7 @@ type Config struct {
 }
 
 // NewClient creates a new cloud provider client.
-func NewClient(config Config) (*Client, error) {
+func NewClient(_ Config) (*Client, error) {
 	// [TEMPLATE] Implementation Required: Client Initialization
 	// Initialize your cloud provider's SDK client using the provided config.
 	//
@@ -36,12 +37,12 @@ func NewClient(config Config) (*Client, error) {
 	// return &Client{
 	//     api: someprovider.NewClient(config.APIKey),
 	// }, nil
-	
+
 	return &Client{}, nil
 }
 
 // GetResourceCost retrieves actual cost data for a specific resource.
-func (c *Client) GetResourceCost(ctx context.Context, resourceID string, startTime, endTime int64) (float64, error) {
+func (c *Client) GetResourceCost(_ context.Context, resourceID string, _, _ int64) (float64, error) {
 	// [TEMPLATE] Implementation Required: Actual Cost Retrieval
 	// This method should call the appropriate billing/cost management API
 	// to get the actual cost for the given resource and time range.
@@ -50,24 +51,24 @@ func (c *Client) GetResourceCost(ctx context.Context, resourceID string, startTi
 	// - AWS Cost Explorer API
 	// - Azure Cost Management API
 	// - GCP Cloud Billing API
-	
+
 	return 0.0, fmt.Errorf("not implemented: GetResourceCost for resource %s", resourceID)
 }
 
 // ValidateCredentials checks if the client credentials are valid.
-func (c *Client) ValidateCredentials(ctx context.Context) error {
+func (c *Client) ValidateCredentials(_ context.Context) error {
 	// [TEMPLATE] Implementation Required: Credential Validation
 	// Make a lightweight API call to verify that the credentials are valid
 	// and have the necessary permissions.
-	
-	return fmt.Errorf("not implemented: ValidateCredentials")
+
+	return errors.New("not implemented: ValidateCredentials")
 }
 
 // GetSupportedRegions returns the list of supported regions.
-func (c *Client) GetSupportedRegions(ctx context.Context) ([]string, error) {
+func (c *Client) GetSupportedRegions(_ context.Context) ([]string, error) {
 	// [TEMPLATE] Implementation Required: Region Discovery
 	// Return the list of regions supported by your cloud provider.
 	// This can be hardcoded or fetched dynamically.
-	
+
 	return []string{"us-east-1", "us-west-2"}, nil
 }

@@ -163,11 +163,15 @@ The following features violate architectural constraints and are not planned:
 - **Budget & Alerting**: Requires persistent storage (FinFocus Core responsibility)
 - **Historical Cost Analysis**: Requires Azure Cost Management API authentication (delegate to separate plugin)
 
-### Completed Milestones
+### Milestone Progress
 
-- ✅ **v0.1.0** - Scaffold & Transport (6 issues)
-- ✅ **v0.2.0** - Azure Client (5 issues)
-- ✅ **v0.3.0** - Caching Layer (4 issues)
-- ✅ **v0.4.0** - Field Mapping & Estimation (5 issues)
+| Milestone                             | Status         | Progress   |
+| ------------------------------------- | -------------- | ---------- |
+| v0.1.0 - Scaffold & Transport         | 🔵 In Progress | 2/6 (33%)  |
+| v0.2.0 - Azure Client                 | ⚪ Not Started  | 0/5 (0%)   |
+| v0.3.0 - Caching Layer                | ⚪ Not Started  | 0/4 (0%)   |
+| v0.4.0 - Field Mapping & Estimation   | ⚪ Not Started  | 0/5 (0%)   |
 
-**Total Core Roadmap**: 20 issues across 4 phases
+**Completed Issues**: #1, #2
+
+**Total Core Roadmap**: 20 issues across 4 phases (2 completed)
