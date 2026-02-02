@@ -62,7 +62,10 @@ FINFOCUS_LOG_LEVEL=debug ./bin/finfocus-plugin-azure-public
 
 ```bash
 # Start plugin and capture port
-PORT=$(./bin/finfocus-plugin-azure-public 2>/dev/null | grep -oP 'PORT=\K\d+')
+# GNU grep (Linux):
+# PORT=$(./bin/finfocus-plugin-azure-public 2>/dev/null | grep -oP 'PORT=\K\d+')
+# Portable (Linux/macOS):
+PORT=$(./bin/finfocus-plugin-azure-public 2>/dev/null | sed -n 's/^PORT=//p')
 echo "Plugin listening on port: $PORT"
 ```
 

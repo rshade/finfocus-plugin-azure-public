@@ -34,7 +34,7 @@ Verify compliance with `.specify/memory/constitution.md`:
 - [x] **Testing**: Plan includes TDD workflow (tests before implementation), ≥80% coverage target for main package logic, race detector for signal handling
 - [x] **User Experience**: Plan addresses plugin lifecycle (port announcement via SDK, graceful shutdown on SIGTERM/SIGINT), observability (structured JSON logging to stderr), error handling (clear error messages to stderr)
 - [x] **Documentation**: Plan includes godoc comments for exported functions (none in main package), README updates (not required per spec), CLAUDE.md (no workflow changes)
-- [x] **Performance**: Plan includes performance targets (startup <1s, shutdown <5s), reliability guarantees (signal handling), resource constraints (ephemeral port, minimal memory)
+- [x] **Performance**: Plan includes performance targets (startup <500ms, shutdown <5s), reliability guarantees (signal handling), resource constraints (ephemeral port, minimal memory)
 - [x] **Architectural Constraints**: Plan DOES NOT violate "Hard No's":
   - ✅ No authenticated Azure APIs (main.go only initializes server)
   - ✅ No persistent storage (stateless operation)

@@ -5,13 +5,16 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/rs/zerolog"
-	"github.com/rshade/finfocus-plugin-azure-public/internal/pricing"
 	"github.com/rshade/finfocus-spec/sdk/go/pluginsdk"
+
+	"github.com/rshade/finfocus-plugin-azure-public/internal/pricing"
 )
 
 // version is the plugin version, set at build time via ldflags.
@@ -44,12 +47,25 @@ func run() error {
 	// Log startup
 	logger.Info().Msg("plugin started")
 
-	// Determine port with SDK (FINFOCUS_PLUGIN_PORT > ephemeral)
-	port := pluginsdk.GetPort()
-	if port > 0 {
+	// Validate and determine port
+	// Explicit validation ensures invalid (non-numeric) values fail with clear error
+	// rather than silently falling back to ephemeral port
+	var port int
+	if portStr := os.Getenv("FINFOCUS_PLUGIN_PORT"); portStr != "" {
+		var err error
+		port, err = strconv.Atoi(portStr)
+		if err != nil {
+			logger.Error().Str("value", portStr).Msg("FINFOCUS_PLUGIN_PORT must be numeric")
+			return fmt.Errorf("invalid FINFOCUS_PLUGIN_PORT: %q is not numeric", portStr)
+		}
 		logger.Debug().Int("port", port).Msg("using configured port")
 	} else {
-		logger.Debug().Msg("using ephemeral port")
+		port = pluginsdk.GetPort() // Check fallback env var or return 0 for ephemeral
+		if port > 0 {
+			logger.Debug().Int("port", port).Msg("using configured port from fallback env")
+		} else {
+			logger.Debug().Msg("using ephemeral port")
+		}
 	}
 
 	// Create plugin instance

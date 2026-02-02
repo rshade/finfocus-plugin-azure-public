@@ -145,11 +145,17 @@
 - [x] T035 [P] Verify test coverage ≥80% for main package (N/A: integration tests use separate process)
 - [x] T036 [P] Add godoc comments to run() function in cmd/finfocus-plugin-azure-public/main.go
 - [x] T037 Verify error messages are actionable and include context
+- [x] T043 [P] Update README.md with port discovery documentation (environment variables, usage examples)
 
 ### Edge Case Verification
 
 - [x] T038 Test port already in use scenario (expect error to stderr, non-zero exit)
 - [x] T039 Test rapid startup/shutdown cycles (100 iterations without port conflicts)
+
+### Performance Timing Validation
+
+- [x] T044 [P] Test startup time <500ms (measure from process start to PORT= output, 20 iterations)
+- [x] T045 [P] Test shutdown time <5s on SIGTERM (measure from signal to process exit, 20 iterations)
 
 ### Final Validation
 

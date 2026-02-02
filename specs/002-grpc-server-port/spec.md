@@ -102,10 +102,10 @@ As a debugger or operator, I want all plugin logs in structured JSON format on s
 
 ### Measurable Outcomes
 
-- **SC-001**: Plugin outputs the PORT= line within 1 second of binary execution under normal conditions
+- **SC-001**: Plugin outputs the PORT= line within 500ms of binary execution under normal conditions
 - **SC-002**: Zero log messages appear on stdout during normal operation or shutdown
 - **SC-003**: Plugin responds to shutdown signals (SIGTERM/SIGINT) within 5 seconds under normal load
-- **SC-004**: 100% of startup attempts with valid configuration successfully announce their port
+- **SC-004**: 100% of startup attempts (≥20 consecutive) with valid configuration successfully announce their port
 - **SC-005**: Plugin can be started and stopped 100 times consecutively without port conflicts or zombie processes
 - **SC-006**: All log messages are valid JSON parseable by standard tools
 
@@ -120,7 +120,7 @@ As a debugger or operator, I want all plugin logs in structured JSON format on s
 ### Testing Requirements
 
 - [x] Test scenarios defined for all user stories (Given/When/Then format)
-- [x] Integration test needs identified (binary execution, signal handling)
+- [x] Integration test needs to be identified (binary execution, signal handling)
 - [x] Performance test criteria specified (startup time, shutdown responsiveness)
 
 ### User Experience

@@ -70,5 +70,5 @@ func (c *Client) GetSupportedRegions(_ context.Context) ([]string, error) {
 	// Return the list of regions supported by your cloud provider.
 	// This can be hardcoded or fetched dynamically.
 
-	return []string{"us-east-1", "us-west-2"}, nil
+	return []string{"eastus", "westus2"}, nil
 }

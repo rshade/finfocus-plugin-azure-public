@@ -36,7 +36,7 @@ formatters:
       # with the given prefixes are grouped after 3rd-party packages.
       # Default: []
       local-prefixes:
-        - github.com/my/project
+        - github.com/rshade/finfocus-plugin-azure-public
 
     golines:
       # Target maximum line length.
@@ -218,7 +218,7 @@ linters:
             - "!**/main.go"
           deny:
             - pkg: log$
-              desc: Use log/slog instead, see https://go.dev/blog/slog
+              desc: Use github.com/rs/zerolog instead (project standard)
 
     embeddedstructfieldcheck:
       # Checks that sync.Mutex and sync.RWMutex are not used as embedded fields.

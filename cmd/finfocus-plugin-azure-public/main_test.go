@@ -134,27 +134,56 @@ func TestStdoutContainsOnlyPortLine(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
-	var stdoutBuf bytes.Buffer
-	cmd.Stdout = &stdoutBuf
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		t.Fatalf("failed to get stdout pipe: %v", err)
+	}
 
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start plugin: %v", err)
 	}
 
-	// Wait a bit for the plugin to start and output
-	time.Sleep(1 * time.Second)
+	// Collect all stdout lines until PORT= is seen or timeout
+	type scanResult struct {
+		lines []string
+		err   error
+	}
+	resultChan := make(chan scanResult, 1)
 
-	// Kill the plugin
+	go func() {
+		var lines []string
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			line := scanner.Text()
+			lines = append(lines, line)
+			// Once we see PORT=, the plugin is ready - break to signal test
+			if strings.HasPrefix(line, "PORT=") {
+				break
+			}
+		}
+		resultChan <- scanResult{lines: lines, err: scanner.Err()}
+	}()
+
+	var collectedLines []string
+	select {
+	case result := <-resultChan:
+		if result.err != nil {
+			cmd.Process.Kill()
+			t.Fatalf("error reading stdout: %v", result.err)
+		}
+		collectedLines = result.lines
+	case <-time.After(10 * time.Second):
+		cmd.Process.Kill()
+		t.Fatal("timeout waiting for PORT= output")
+	}
+
+	// Kill the plugin gracefully
 	cmd.Process.Signal(syscall.SIGTERM)
 	cmd.Wait()
 
-	// Check stdout content
-	stdoutContent := strings.TrimSpace(stdoutBuf.String())
-	lines := strings.Split(stdoutContent, "\n")
-
 	// Filter empty lines
 	var nonEmptyLines []string
-	for _, line := range lines {
+	for _, line := range collectedLines {
 		if strings.TrimSpace(line) != "" {
 			nonEmptyLines = append(nonEmptyLines, line)
 		}
@@ -166,7 +195,7 @@ func TestStdoutContainsOnlyPortLine(t *testing.T) {
 
 	if len(nonEmptyLines) > 1 {
 		t.Errorf("stdout contains more than one line, got %d lines:\n%s",
-			len(nonEmptyLines), stdoutContent)
+			len(nonEmptyLines), strings.Join(nonEmptyLines, "\n"))
 	}
 
 	// Verify the single line is PORT= format
@@ -291,6 +320,52 @@ func TestEphemeralPortWhenNotConfigured(t *testing.T) {
 	// Kill the plugin
 	cmd.Process.Signal(syscall.SIGTERM)
 	cmd.Wait()
+}
+
+// TestInvalidPortNonNumeric verifies the plugin fails with a clear error message
+// when FINFOCUS_PLUGIN_PORT is set to a non-numeric value.
+func TestInvalidPortNonNumeric(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	binaryPath := buildTestBinary(t)
+
+	cmd := exec.Command(binaryPath)
+	cmd.Env = append(os.Environ(), "FINFOCUS_PLUGIN_PORT=invalid")
+	var stdoutBuf, stderrBuf bytes.Buffer
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
+
+	err := cmd.Run()
+
+	// Verify exit code is non-zero
+	if err == nil {
+		t.Fatal("expected non-zero exit code for invalid port, but got success")
+	}
+
+	var exitErr *exec.ExitError
+	if !errors.As(err, &exitErr) {
+		t.Fatalf("unexpected error type: %v", err)
+	}
+
+	if exitErr.ExitCode() == 0 {
+		t.Error("expected non-zero exit code, got 0")
+	}
+
+	// Verify stderr contains the expected error message
+	stderrContent := stderrBuf.String()
+	if !strings.Contains(stderrContent, "FINFOCUS_PLUGIN_PORT must be numeric") {
+		t.Errorf("stderr does not contain expected error message\nstderr: %s", stderrContent)
+	}
+
+	// Verify no PORT= line appears on stdout
+	stdoutContent := stdoutBuf.String()
+	if strings.Contains(stdoutContent, "PORT=") {
+		t.Errorf("stdout should not contain PORT= line for invalid port\nstdout: %s", stdoutContent)
+	}
+
+	t.Logf("Plugin correctly rejected non-numeric port with exit code %d", exitErr.ExitCode())
 }
 
 // =============================================================================
