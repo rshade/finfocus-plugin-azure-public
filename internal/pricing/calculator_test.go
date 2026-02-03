@@ -11,6 +11,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rshade/finfocus-spec/sdk/go/pluginsdk"
 	finfocusv1 "github.com/rshade/finfocus-spec/sdk/go/proto/finfocus/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestCalculatorName(t *testing.T) {
@@ -103,11 +105,8 @@ func TestEstimateCostLogIncludesTraceID(t *testing.T) {
 	// Create context with trace ID
 	ctx := pluginsdk.ContextWithTraceID(context.Background(), "estimate-trace-456")
 
-	// Call EstimateCost (which should log with trace ID)
-	_, err := calc.EstimateCost(ctx, &finfocusv1.EstimateCostRequest{})
-	if err != nil {
-		t.Fatalf("EstimateCost failed: %v", err)
-	}
+	// Call EstimateCost (which logs with trace ID before returning Unimplemented)
+	_, _ = calc.EstimateCost(ctx, &finfocusv1.EstimateCostRequest{})
 
 	// Parse log output
 	logLines := strings.Split(strings.TrimSpace(buf.String()), "\n")
@@ -248,3 +247,307 @@ func TestActualCost(t *testing.T) {
 // TODO: Add Azure-specific pricing tests when Azure pricing lookup is implemented.
 // The following test was removed because it tested AWS EC2 instances (incorrect for Azure plugin)
 // and referenced a non-existent calculateEC2InstanceCost method.
+
+// TestGetPluginInfoReturnsSpecVersion verifies spec_version field is populated.
+func TestGetPluginInfoReturnsSpecVersion(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	resp, err := calc.GetPluginInfo(context.Background(), &finfocusv1.GetPluginInfoRequest{})
+	if err != nil {
+		t.Fatalf("GetPluginInfo failed: %v", err)
+	}
+
+	if resp.GetSpecVersion() == "" {
+		t.Error("expected spec_version to be populated, got empty string")
+	}
+}
+
+// TestGetPluginInfoReturnsProviders verifies providers field is populated.
+func TestGetPluginInfoReturnsProviders(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	resp, err := calc.GetPluginInfo(context.Background(), &finfocusv1.GetPluginInfoRequest{})
+	if err != nil {
+		t.Fatalf("GetPluginInfo failed: %v", err)
+	}
+
+	providers := resp.GetProviders()
+	if len(providers) == 0 {
+		t.Error("expected at least one provider, got none")
+	}
+
+	// Verify azure is in the providers list
+	azureFound := false
+	for _, p := range providers {
+		if p == "azure" {
+			azureFound = true
+			break
+		}
+	}
+	if !azureFound {
+		t.Errorf("expected 'azure' in providers list, got: %v", providers)
+	}
+}
+
+// TestSupportsReturnsFalse verifies Supports() returns supported=false.
+func TestSupportsReturnsFalse(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	req := &finfocusv1.SupportsRequest{
+		Resource: &finfocusv1.ResourceDescriptor{
+			Provider:     "azure",
+			ResourceType: "compute/VirtualMachine",
+		},
+	}
+	resp, err := calc.Supports(context.Background(), req)
+	if err != nil {
+		t.Fatalf("Supports failed: %v", err)
+	}
+
+	if resp.GetSupported() {
+		t.Error("expected supported=false, got true")
+	}
+
+	if resp.GetReason() == "" {
+		t.Error("expected reason to be populated, got empty string")
+	}
+}
+
+// TestSupportsWithNilRequest verifies Supports() handles nil request gracefully.
+func TestSupportsWithNilRequest(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	resp, err := calc.Supports(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("Supports with nil request failed: %v", err)
+	}
+
+	if resp.GetSupported() {
+		t.Error("expected supported=false for nil request, got true")
+	}
+}
+
+// TestSupportsLogsTraceID verifies that Supports RPC logs include trace ID.
+func TestSupportsLogsTraceID(t *testing.T) {
+	t.Parallel()
+
+	var buf bytes.Buffer
+	logger := zerolog.New(&buf).With().Str("plugin_name", "azure-public").Logger()
+
+	calc := NewCalculator(logger)
+
+	ctx := pluginsdk.ContextWithTraceID(context.Background(), "supports-trace-abc")
+	_, err := calc.Supports(ctx, &finfocusv1.SupportsRequest{})
+	if err != nil {
+		t.Fatalf("Supports failed: %v", err)
+	}
+
+	logLines := strings.Split(strings.TrimSpace(buf.String()), "\n")
+	traceFound := false
+	for _, line := range logLines {
+		if line == "" {
+			continue
+		}
+		var logEntry map[string]any
+		if err := json.Unmarshal([]byte(line), &logEntry); err != nil {
+			continue
+		}
+		if logEntry["trace_id"] == "supports-trace-abc" {
+			traceFound = true
+			break
+		}
+	}
+
+	if !traceFound {
+		t.Errorf("expected trace_id in Supports log output, got: %s", buf.String())
+	}
+}
+
+// TestEstimateCostReturnsUnimplemented verifies EstimateCost returns Unimplemented status.
+func TestEstimateCostReturnsUnimplemented(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	_, err := calc.EstimateCost(context.Background(), &finfocusv1.EstimateCostRequest{})
+	if err == nil {
+		t.Fatal("expected Unimplemented error, got nil")
+	}
+
+	// Verify it's an Unimplemented gRPC status
+	st, ok := status.FromError(err)
+	if !ok {
+		t.Fatalf("expected gRPC status error, got: %v", err)
+	}
+
+	if st.Code() != codes.Unimplemented {
+		t.Errorf("expected Unimplemented code, got: %v", st.Code())
+	}
+}
+
+// TestGetActualCostReturnsUnimplemented verifies GetActualCost returns Unimplemented status.
+func TestGetActualCostReturnsUnimplemented(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	_, err := calc.GetActualCost(context.Background(), &finfocusv1.GetActualCostRequest{})
+	if err == nil {
+		t.Fatal("expected Unimplemented error, got nil")
+	}
+
+	st, ok := status.FromError(err)
+	if !ok {
+		t.Fatalf("expected gRPC status error, got: %v", err)
+	}
+
+	if st.Code() != codes.Unimplemented {
+		t.Errorf("expected Unimplemented code, got: %v", st.Code())
+	}
+}
+
+// TestGetProjectedCostReturnsUnimplemented verifies GetProjectedCost returns Unimplemented status.
+func TestGetProjectedCostReturnsUnimplemented(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	_, err := calc.GetProjectedCost(context.Background(), &finfocusv1.GetProjectedCostRequest{})
+	if err == nil {
+		t.Fatal("expected Unimplemented error, got nil")
+	}
+
+	st, ok := status.FromError(err)
+	if !ok {
+		t.Fatalf("expected gRPC status error, got: %v", err)
+	}
+
+	if st.Code() != codes.Unimplemented {
+		t.Errorf("expected Unimplemented code, got: %v", st.Code())
+	}
+}
+
+// TestGetPricingSpecReturnsUnimplemented verifies GetPricingSpec returns Unimplemented status.
+func TestGetPricingSpecReturnsUnimplemented(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	_, err := calc.GetPricingSpec(context.Background(), &finfocusv1.GetPricingSpecRequest{})
+	if err == nil {
+		t.Fatal("expected Unimplemented error, got nil")
+	}
+
+	st, ok := status.FromError(err)
+	if !ok {
+		t.Fatalf("expected gRPC status error, got: %v", err)
+	}
+
+	if st.Code() != codes.Unimplemented {
+		t.Errorf("expected Unimplemented code, got: %v", st.Code())
+	}
+}
+
+// TestGetRecommendationsReturnsUnimplemented verifies GetRecommendations returns Unimplemented status.
+func TestGetRecommendationsReturnsUnimplemented(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	_, err := calc.GetRecommendations(context.Background(), &finfocusv1.GetRecommendationsRequest{})
+	if err == nil {
+		t.Fatal("expected Unimplemented error, got nil")
+	}
+
+	st, ok := status.FromError(err)
+	if !ok {
+		t.Fatalf("expected gRPC status error, got: %v", err)
+	}
+
+	if st.Code() != codes.Unimplemented {
+		t.Errorf("expected Unimplemented code, got: %v", st.Code())
+	}
+}
+
+// TestDismissRecommendationReturnsUnimplemented verifies DismissRecommendation returns Unimplemented status.
+func TestDismissRecommendationReturnsUnimplemented(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	_, err := calc.DismissRecommendation(context.Background(), &finfocusv1.DismissRecommendationRequest{})
+	if err == nil {
+		t.Fatal("expected Unimplemented error, got nil")
+	}
+
+	st, ok := status.FromError(err)
+	if !ok {
+		t.Fatalf("expected gRPC status error, got: %v", err)
+	}
+
+	if st.Code() != codes.Unimplemented {
+		t.Errorf("expected Unimplemented code, got: %v", st.Code())
+	}
+}
+
+// TestGetBudgetsReturnsUnimplemented verifies GetBudgets returns Unimplemented status.
+func TestGetBudgetsReturnsUnimplemented(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	_, err := calc.GetBudgets(context.Background(), &finfocusv1.GetBudgetsRequest{})
+	if err == nil {
+		t.Fatal("expected Unimplemented error, got nil")
+	}
+
+	st, ok := status.FromError(err)
+	if !ok {
+		t.Fatalf("expected gRPC status error, got: %v", err)
+	}
+
+	if st.Code() != codes.Unimplemented {
+		t.Errorf("expected Unimplemented code, got: %v", st.Code())
+	}
+}
+
+// TestDryRunReturnsUnimplemented verifies DryRun returns Unimplemented status.
+func TestDryRunReturnsUnimplemented(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	_, err := calc.DryRun(context.Background(), &finfocusv1.DryRunRequest{})
+	if err == nil {
+		t.Fatal("expected Unimplemented error, got nil")
+	}
+
+	st, ok := status.FromError(err)
+	if !ok {
+		t.Fatalf("expected gRPC status error, got: %v", err)
+	}
+
+	if st.Code() != codes.Unimplemented {
+		t.Errorf("expected Unimplemented code, got: %v", st.Code())
+	}
+}
