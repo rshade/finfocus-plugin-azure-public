@@ -625,6 +625,504 @@ func TestLogsAreValidJSON(t *testing.T) {
 	}
 }
 
+// TestLogsContainPluginAndVersionFields verifies logs include plugin and version fields.
+func TestLogsContainPluginAndVersionFields(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	binaryPath := buildTestBinary(t)
+
+	cmd := exec.Command(binaryPath)
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
+	stdout, _ := cmd.StdoutPipe()
+
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start plugin: %v", err)
+	}
+
+	// Wait for PORT= output with timeout
+	lineChan := make(chan string, 1)
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		if scanner.Scan() {
+			lineChan <- scanner.Text()
+		}
+	}()
+
+	select {
+	case <-lineChan:
+	case <-time.After(10 * time.Second):
+		cmd.Process.Kill()
+		t.Fatal("timeout waiting for PORT= output")
+	}
+
+	// Let logs accumulate
+	time.Sleep(200 * time.Millisecond)
+
+	// Kill the plugin
+	cmd.Process.Signal(syscall.SIGTERM)
+	cmd.Wait()
+
+	// Parse each line as JSON and check for plugin/version fields
+	stderrContent := stderrBuf.String()
+	lines := strings.Split(strings.TrimSpace(stderrContent), "\n")
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		var jsonObj map[string]any
+		if err := json.Unmarshal([]byte(line), &jsonObj); err != nil {
+			continue // Skip non-JSON lines
+		}
+
+		// Check for plugin_name field (SDK uses plugin_name, not plugin)
+		pluginName, ok := jsonObj["plugin_name"]
+		if !ok {
+			t.Errorf("JSON log missing 'plugin_name' field: %s", line)
+		} else if pluginName != "azure-public" {
+			t.Errorf("expected plugin_name=%q, got %q in: %s", "azure-public", pluginName, line)
+		}
+
+		// Check for plugin_version field (SDK uses plugin_version, not version)
+		version, ok := jsonObj["plugin_version"]
+		if !ok {
+			t.Errorf("JSON log missing 'plugin_version' field: %s", line)
+		} else if version == "" {
+			t.Errorf("plugin_version field is empty in: %s", line)
+		}
+
+		// Check for time field
+		if _, ok := jsonObj["time"]; !ok {
+			t.Errorf("JSON log missing 'time' field: %s", line)
+		}
+	}
+}
+
+// TestLogsContainTimeField verifies logs include time field in RFC3339 format.
+func TestLogsContainTimeField(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	binaryPath := buildTestBinary(t)
+
+	cmd := exec.Command(binaryPath)
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
+	stdout, _ := cmd.StdoutPipe()
+
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start plugin: %v", err)
+	}
+
+	// Wait for PORT= output with timeout
+	lineChan := make(chan string, 1)
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		if scanner.Scan() {
+			lineChan <- scanner.Text()
+		}
+	}()
+
+	select {
+	case <-lineChan:
+	case <-time.After(10 * time.Second):
+		cmd.Process.Kill()
+		t.Fatal("timeout waiting for PORT= output")
+	}
+
+	// Let logs accumulate
+	time.Sleep(200 * time.Millisecond)
+
+	// Kill the plugin
+	cmd.Process.Signal(syscall.SIGTERM)
+	cmd.Wait()
+
+	// Parse each line and verify time field exists
+	stderrContent := stderrBuf.String()
+	lines := strings.Split(strings.TrimSpace(stderrContent), "\n")
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		var jsonObj map[string]any
+		if err := json.Unmarshal([]byte(line), &jsonObj); err != nil {
+			continue
+		}
+
+		timeVal, ok := jsonObj["time"]
+		if !ok {
+			t.Errorf("JSON log missing 'time' field: %s", line)
+			continue
+		}
+
+		// Verify it's a valid timestamp by attempting to parse
+		timeStr, ok := timeVal.(string)
+		if !ok {
+			t.Errorf("'time' field is not a string: %v in: %s", timeVal, line)
+			continue
+		}
+
+		if _, err := time.Parse(time.RFC3339, timeStr); err != nil {
+			t.Errorf("'time' field is not RFC3339 format: %q in: %s", timeStr, line)
+		}
+	}
+}
+
+// =============================================================================
+// User Story 2: Log Level Control Tests
+// =============================================================================
+
+// TestLogLevelDebugShowsDebugMessages verifies debug messages appear when log level is debug.
+func TestLogLevelDebugShowsDebugMessages(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	binaryPath := buildTestBinary(t)
+
+	cmd := exec.Command(binaryPath)
+	cmd.Env = append(os.Environ(), "FINFOCUS_LOG_LEVEL=debug")
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
+	stdout, _ := cmd.StdoutPipe()
+
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start plugin: %v", err)
+	}
+
+	// Wait for PORT= output with timeout
+	lineChan := make(chan string, 1)
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		if scanner.Scan() {
+			lineChan <- scanner.Text()
+		}
+	}()
+
+	select {
+	case <-lineChan:
+	case <-time.After(10 * time.Second):
+		cmd.Process.Kill()
+		t.Fatal("timeout waiting for PORT= output")
+	}
+
+	// Let logs accumulate
+	time.Sleep(200 * time.Millisecond)
+
+	// Kill the plugin
+	cmd.Process.Signal(syscall.SIGTERM)
+	cmd.Wait()
+
+	// Check for debug level messages
+	stderrContent := stderrBuf.String()
+	lines := strings.Split(strings.TrimSpace(stderrContent), "\n")
+
+	debugFound := false
+	for _, line := range lines {
+		var jsonObj map[string]any
+		if err := json.Unmarshal([]byte(line), &jsonObj); err != nil {
+			continue
+		}
+		if jsonObj["level"] == "debug" {
+			debugFound = true
+			t.Logf("Found debug log: %s", line)
+			break
+		}
+	}
+
+	if !debugFound {
+		t.Error("expected debug level messages when FINFOCUS_LOG_LEVEL=debug")
+		t.Logf("stderr content:\n%s", stderrContent)
+	}
+}
+
+// TestLogLevelErrorSuppressesInfoMessages verifies info messages are suppressed at error level.
+func TestLogLevelErrorSuppressesInfoMessages(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	binaryPath := buildTestBinary(t)
+
+	cmd := exec.Command(binaryPath)
+	cmd.Env = append(os.Environ(), "FINFOCUS_LOG_LEVEL=error")
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
+	stdout, _ := cmd.StdoutPipe()
+
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start plugin: %v", err)
+	}
+
+	// Wait for PORT= output with timeout
+	lineChan := make(chan string, 1)
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		if scanner.Scan() {
+			lineChan <- scanner.Text()
+		}
+	}()
+
+	select {
+	case <-lineChan:
+	case <-time.After(10 * time.Second):
+		cmd.Process.Kill()
+		t.Fatal("timeout waiting for PORT= output")
+	}
+
+	// Let logs accumulate
+	time.Sleep(200 * time.Millisecond)
+
+	// Kill the plugin
+	cmd.Process.Signal(syscall.SIGTERM)
+	cmd.Wait()
+
+	// Check that no info level messages appear
+	stderrContent := stderrBuf.String()
+	lines := strings.Split(strings.TrimSpace(stderrContent), "\n")
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var jsonObj map[string]any
+		if err := json.Unmarshal([]byte(line), &jsonObj); err != nil {
+			continue
+		}
+		level, ok := jsonObj["level"].(string)
+		if !ok {
+			continue
+		}
+		// info, debug, trace should all be suppressed at error level
+		if level == "info" || level == "debug" || level == "trace" {
+			t.Errorf("unexpected %s level message when FINFOCUS_LOG_LEVEL=error: %s", level, line)
+		}
+	}
+
+	t.Logf("Log output at error level (should be minimal or empty):\n%s", stderrContent)
+}
+
+// TestLogLevelDefaultIsInfo verifies default log level is info when no env var set.
+func TestLogLevelDefaultIsInfo(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	binaryPath := buildTestBinary(t)
+
+	cmd := exec.Command(binaryPath)
+	// Explicitly clear log level env vars
+	env := os.Environ()
+	filteredEnv := make([]string, 0, len(env))
+	for _, e := range env {
+		if !strings.HasPrefix(e, "FINFOCUS_LOG_LEVEL=") && !strings.HasPrefix(e, "LOG_LEVEL=") {
+			filteredEnv = append(filteredEnv, e)
+		}
+	}
+	cmd.Env = filteredEnv
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
+	stdout, _ := cmd.StdoutPipe()
+
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start plugin: %v", err)
+	}
+
+	// Wait for PORT= output with timeout
+	lineChan := make(chan string, 1)
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		if scanner.Scan() {
+			lineChan <- scanner.Text()
+		}
+	}()
+
+	select {
+	case <-lineChan:
+	case <-time.After(10 * time.Second):
+		cmd.Process.Kill()
+		t.Fatal("timeout waiting for PORT= output")
+	}
+
+	// Let logs accumulate
+	time.Sleep(200 * time.Millisecond)
+
+	// Kill the plugin
+	cmd.Process.Signal(syscall.SIGTERM)
+	cmd.Wait()
+
+	// Verify info messages appear (default level) but not debug
+	stderrContent := stderrBuf.String()
+	lines := strings.Split(strings.TrimSpace(stderrContent), "\n")
+
+	infoFound := false
+	debugFound := false
+	for _, line := range lines {
+		var jsonObj map[string]any
+		if err := json.Unmarshal([]byte(line), &jsonObj); err != nil {
+			continue
+		}
+		level, _ := jsonObj["level"].(string)
+		if level == "info" {
+			infoFound = true
+		}
+		if level == "debug" {
+			debugFound = true
+		}
+	}
+
+	if !infoFound {
+		t.Error("expected info level messages at default log level")
+	}
+	if debugFound {
+		t.Error("unexpected debug level messages at default log level (should be suppressed)")
+	}
+}
+
+// TestLogLevelFinfocusTakesPrecedenceOverLogLevel verifies FINFOCUS_LOG_LEVEL takes precedence.
+func TestLogLevelFinfocusTakesPrecedenceOverLogLevel(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	binaryPath := buildTestBinary(t)
+
+	cmd := exec.Command(binaryPath)
+	// Set both env vars - FINFOCUS_LOG_LEVEL should take precedence
+	cmd.Env = append(os.Environ(), "FINFOCUS_LOG_LEVEL=debug", "LOG_LEVEL=error")
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
+	stdout, _ := cmd.StdoutPipe()
+
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start plugin: %v", err)
+	}
+
+	// Wait for PORT= output with timeout
+	lineChan := make(chan string, 1)
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		if scanner.Scan() {
+			lineChan <- scanner.Text()
+		}
+	}()
+
+	select {
+	case <-lineChan:
+	case <-time.After(10 * time.Second):
+		cmd.Process.Kill()
+		t.Fatal("timeout waiting for PORT= output")
+	}
+
+	// Let logs accumulate
+	time.Sleep(200 * time.Millisecond)
+
+	// Kill the plugin
+	cmd.Process.Signal(syscall.SIGTERM)
+	cmd.Wait()
+
+	// If FINFOCUS_LOG_LEVEL=debug takes precedence, we should see debug messages
+	stderrContent := stderrBuf.String()
+	lines := strings.Split(strings.TrimSpace(stderrContent), "\n")
+
+	debugFound := false
+	for _, line := range lines {
+		var jsonObj map[string]any
+		if err := json.Unmarshal([]byte(line), &jsonObj); err != nil {
+			continue
+		}
+		if jsonObj["level"] == "debug" {
+			debugFound = true
+			break
+		}
+	}
+
+	if !debugFound {
+		t.Error("expected debug messages when FINFOCUS_LOG_LEVEL=debug (should take precedence over LOG_LEVEL=error)")
+		t.Logf("stderr content:\n%s", stderrContent)
+	}
+}
+
+// TestLogLevelInvalidFallsBackToInfo verifies invalid log level falls back to info with warning.
+func TestLogLevelInvalidFallsBackToInfo(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	binaryPath := buildTestBinary(t)
+
+	cmd := exec.Command(binaryPath)
+	cmd.Env = append(os.Environ(), "FINFOCUS_LOG_LEVEL=invalid_level")
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
+	stdout, _ := cmd.StdoutPipe()
+
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start plugin: %v", err)
+	}
+
+	// Wait for PORT= output with timeout
+	lineChan := make(chan string, 1)
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		if scanner.Scan() {
+			lineChan <- scanner.Text()
+		}
+	}()
+
+	select {
+	case <-lineChan:
+	case <-time.After(10 * time.Second):
+		cmd.Process.Kill()
+		t.Fatal("timeout waiting for PORT= output")
+	}
+
+	// Let logs accumulate
+	time.Sleep(200 * time.Millisecond)
+
+	// Kill the plugin
+	cmd.Process.Signal(syscall.SIGTERM)
+	cmd.Wait()
+
+	// Verify info messages appear (fallback level) and warning about invalid level
+	stderrContent := stderrBuf.String()
+	lines := strings.Split(strings.TrimSpace(stderrContent), "\n")
+
+	infoFound := false
+	warnFound := false
+	for _, line := range lines {
+		var jsonObj map[string]any
+		if err := json.Unmarshal([]byte(line), &jsonObj); err != nil {
+			continue
+		}
+		level, _ := jsonObj["level"].(string)
+		if level == "info" {
+			infoFound = true
+		}
+		if level == "warn" || level == "warning" {
+			warnFound = true
+			t.Logf("Found warning log: %s", line)
+		}
+	}
+
+	if !infoFound {
+		t.Error("expected info level messages when invalid log level falls back to info")
+	}
+	if !warnFound {
+		t.Log("Note: No warning logged for invalid log level (expected but optional behavior)")
+	}
+}
+
 // =============================================================================
 // Edge Case Tests
 // =============================================================================

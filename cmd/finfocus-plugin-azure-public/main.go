@@ -35,9 +35,16 @@ func main() {
 func run() error {
 	// Parse log level from environment using SDK (FINFOCUS_LOG_LEVEL > LOG_LEVEL > info)
 	level := zerolog.InfoLevel
-	if lvl := pluginsdk.GetLogLevel(); lvl != "" {
-		if parsed, err := zerolog.ParseLevel(lvl); err == nil {
+	lvl := pluginsdk.GetLogLevel()
+	if lvl != "" {
+		parsed, err := zerolog.ParseLevel(lvl)
+		if err == nil {
 			level = parsed
+		} else {
+			// Log warning for invalid level (will be logged at info level since logger not yet created)
+			// We create a temporary logger to emit the warning
+			tempLogger := pluginsdk.NewPluginLogger("azure-public", version, zerolog.InfoLevel, nil)
+			tempLogger.Warn().Str("value", lvl).Err(err).Msg("invalid log level, falling back to info")
 		}
 	}
 
@@ -56,7 +63,7 @@ func run() error {
 		port, err = strconv.Atoi(portStr)
 		if err != nil {
 			logger.Error().Str("value", portStr).Msg("FINFOCUS_PLUGIN_PORT must be numeric")
-			return fmt.Errorf("invalid FINFOCUS_PLUGIN_PORT: %q is not numeric", portStr)
+			return fmt.Errorf("invalid FINFOCUS_PLUGIN_PORT: %q is not numeric: %w", portStr, err)
 		}
 		logger.Debug().Int("port", port).Msg("using configured port")
 	} else {
@@ -68,8 +75,8 @@ func run() error {
 		}
 	}
 
-	// Create plugin instance
-	azurePlugin := pricing.NewCalculator()
+	// Create plugin instance with logger
+	azurePlugin := pricing.NewCalculator(logger)
 
 	// Setup context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
