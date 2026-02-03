@@ -37,6 +37,7 @@
 - **Language**: Go 1.25.5 (002-grpc-server-port)
 - **Storage**: N/A - stateless plugin (002-grpc-server-port)
 - Go 1.25.5 + zerolog v1.34.0, finfocus-spec v0.5.4 (pluginsdk) (003-zerolog-logging)
+- Go 1.25.5 + finfocus-spec v0.5.4 (pluginsdk), zerolog v1.34.0, google.golang.org/grpc (004-costsource-stubs)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
