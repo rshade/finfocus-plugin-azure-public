@@ -1,5 +1,7 @@
 # finfocus-plugin-azure-public
 
+[![Test](https://github.com/rshade/finfocus-plugin-azure-public/actions/workflows/test.yml/badge.svg)](https://github.com/rshade/finfocus-plugin-azure-public/actions/workflows/test.yml)
+
 A Live/Runtime gRPC plugin for FinFocus that estimates Azure infrastructure
 costs by querying the Azure Retail Prices API.
 

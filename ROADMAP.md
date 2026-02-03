@@ -20,8 +20,8 @@ To provide accurate, real-time Azure cost estimates for FinFocus by querying the
 - [x] [#2](https://github.com/rshade/finfocus-plugin-azure-public/issues/2) Setup Makefile with build, test, lint targets
 - [ ] [#3](https://github.com/rshade/finfocus-plugin-azure-public/issues/3) Configure CI pipeline (GitHub Actions)
 - [x] [#4](https://github.com/rshade/finfocus-plugin-azure-public/issues/4) Implement gRPC server with port discovery
-- [ ] [#5](https://github.com/rshade/finfocus-plugin-azure-public/issues/5) Implement CostSourceService method stubs
-- [ ] [#6](https://github.com/rshade/finfocus-plugin-azure-public/issues/6) Implement zerolog structured logging
+- [x] [#5](https://github.com/rshade/finfocus-plugin-azure-public/issues/5) Implement CostSourceService method stubs
+- [x] [#6](https://github.com/rshade/finfocus-plugin-azure-public/issues/6) Implement zerolog structured logging
 
 **Verification:**
 
@@ -183,11 +183,11 @@ The following features violate architectural constraints and are not planned:
 
 | Milestone                             | Status         | Progress   |
 | ------------------------------------- | -------------- | ---------- |
-| v0.1.0 - Scaffold & Transport         | 🔵 In Progress | 3/6 (50%)  |
+| v0.1.0 - Scaffold & Transport         | 🔵 In Progress | 5/6 (83%)  |
 | v0.2.0 - Azure Client                 | ⚪ Not Started  | 0/5 (0%)   |
 | v0.3.0 - Caching Layer                | ⚪ Not Started  | 0/4 (0%)   |
 | v0.4.0 - Field Mapping & Estimation   | ⚪ Not Started  | 0/5 (0%)   |
 
-**Completed Issues**: #1, #2, #4
+**Completed Issues**: #1, #2, #4, #5, #6
 
-**Total Core Roadmap**: 20 issues across 4 phases (3 completed)
+**Total Core Roadmap**: 20 issues across 4 phases (5 completed)
