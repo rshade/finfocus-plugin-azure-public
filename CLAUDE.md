@@ -36,6 +36,19 @@
 ## Active Technologies
 - **Language**: Go 1.25.5 (002-grpc-server-port)
 - **Storage**: N/A - stateless plugin (002-grpc-server-port)
+- Go 1.25.5 + zerolog v1.34.0, finfocus-spec v0.5.4 (pluginsdk) (003-zerolog-logging)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
+
+## Zerolog
+
+ The constant already exists in finfocus-spec at sdk/go/pluginsdk/logging.go:24-25:
+
+  // TraceIDMetadataKey is the gRPC metadata header for trace ID propagation.
+  const TraceIDMetadataKey = "x-finfocus-trace-id"
+
+  Along with:
+  - TracingUnaryServerInterceptor() - server-side interceptor
+  - TraceIDFromContext(ctx) - context extraction
+  - ContextWithTraceID(ctx, traceID) - context storage
