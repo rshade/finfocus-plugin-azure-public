@@ -38,6 +38,8 @@
 - **Storage**: N/A - stateless plugin (002-grpc-server-port)
 - Go 1.25.5 + zerolog v1.34.0, finfocus-spec v0.5.4 (pluginsdk) (003-zerolog-logging)
 - Go 1.25.5 + finfocus-spec v0.5.4 (pluginsdk), zerolog v1.34.0, google.golang.org/grpc (004-costsource-stubs)
+- Go 1.25.5 (from go.mod) + golangci-lint (linting), actions/checkout@v6, actions/setup-go@v6 (005-ci-pipeline)
+- N/A (CI workflow - no persistent storage) (005-ci-pipeline)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
