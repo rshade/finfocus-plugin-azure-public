@@ -40,9 +40,40 @@
 - Go 1.25.5 + finfocus-spec v0.5.4 (pluginsdk), zerolog v1.34.0, google.golang.org/grpc (004-costsource-stubs)
 - Go 1.25.5 (from go.mod) + golangci-lint (linting), actions/checkout@v6, actions/setup-go@v6 (005-ci-pipeline)
 - N/A (CI workflow - no persistent storage) (005-ci-pipeline)
+- Go 1.25.5 + `github.com/hashicorp/go-retryablehttp` (HTTP client with retry), `github.com/rs/zerolog` (structured logging) (006-http-client-retry)
+- N/A - stateless plugin (in-memory only) (006-http-client-retry)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
+- 006-http-client-retry: Added Azure Retail Prices API client with retry logic
+
+## Azure Client (`internal/azureclient`)
+
+HTTP client for Azure Retail Prices API (`https://prices.azure.com/api/retail/prices`):
+
+```go
+// Create client with defaults
+config := azureclient.DefaultConfig()
+config.Logger = logger // zerolog.Logger
+client, err := azureclient.NewClient(config)
+
+// Query pricing
+query := azureclient.PriceQuery{
+    ArmRegionName: "eastus",
+    ArmSkuName:    "Standard_B1s",
+    CurrencyCode:  "USD",
+}
+prices, err := client.GetPrices(ctx, query)
+```
+
+**Retry Policy**:
+- Retries on HTTP 429 (rate limit), 503 (service unavailable), network errors
+- Does NOT retry on 4xx (except 429) or 5xx (except 503)
+- Exponential backoff: 1s min, 30s max
+- Respects `Retry-After` header
+- Max 3 retries (4 total attempts)
+
+**Integration Tests**: `go test -tags=integration ./examples/...`
 
 ## Zerolog
 
