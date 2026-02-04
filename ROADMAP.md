@@ -38,7 +38,7 @@ To provide accurate, real-time Azure cost estimates for FinFocus by querying the
 
 **Issues:**
 
-- [#7](https://github.com/rshade/finfocus-plugin-azure-public/issues/7) Implement HTTP client with retry logic for Azure Retail Prices API
+- [x] [#7](https://github.com/rshade/finfocus-plugin-azure-public/issues/7) Implement HTTP client with retry logic for Azure Retail Prices API
 - [#8](https://github.com/rshade/finfocus-plugin-azure-public/issues/8) Define Azure Retail Prices API data models
 - [#9](https://github.com/rshade/finfocus-plugin-azure-public/issues/9) Implement OData filter query builder
 - [#10](https://github.com/rshade/finfocus-plugin-azure-public/issues/10) Implement pagination handler for Azure API responses
@@ -184,10 +184,10 @@ The following features violate architectural constraints and are not planned:
 | Milestone                             | Status      | Progress    |
 | ------------------------------------- | ----------- | ----------- |
 | v0.1.0 - Scaffold & Transport         | ✅ Complete  | 6/6 (100%)  |
-| v0.2.0 - Azure Client                 | ⚪ Not Started | 0/5 (0%)    |
+| v0.2.0 - Azure Client                 | 🔵 Active    | 1/5 (20%)   |
 | v0.3.0 - Caching Layer                | ⚪ Not Started | 0/4 (0%)    |
 | v0.4.0 - Field Mapping & Estimation   | ⚪ Not Started | 0/5 (0%)    |
 
-**Completed Issues**: #1, #2, #3, #4, #5, #6
+**Completed Issues**: #1, #2, #3, #4, #5, #6, #7
 
 **Total Core Roadmap**: 20 issues across 4 phases (6 completed)

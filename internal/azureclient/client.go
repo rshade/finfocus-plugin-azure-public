@@ -158,7 +158,7 @@ func (c *Client) fetchPage(ctx context.Context, requestURL string) ([]PriceItem,
 	}
 
 	// Parse response
-	var priceResp priceResponse
+	var priceResp PriceResponse
 	if decodeErr := json.NewDecoder(resp.Body).Decode(&priceResp); decodeErr != nil {
 		return nil, "", fmt.Errorf("%w: %w", ErrInvalidResponse, decodeErr)
 	}

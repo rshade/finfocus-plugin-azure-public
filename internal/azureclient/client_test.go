@@ -72,7 +72,7 @@ func TestNewClient_InvalidConfig(t *testing.T) {
 
 func TestClient_GetPrices_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		resp := priceResponse{
+		resp := PriceResponse{
 			BillingCurrency: "USD",
 			Items: []PriceItem{
 				{
@@ -118,12 +118,12 @@ func TestClient_GetPrices_Pagination(t *testing.T) {
 	callCount := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
-		var resp priceResponse
+		var resp PriceResponse
 
 		if callCount == 1 {
 			// httptest server URL is available via server.URL in the outer scope
 			// For the handler, we construct the next page link using http scheme
-			resp = priceResponse{
+			resp = PriceResponse{
 				BillingCurrency: "USD",
 				Items: []PriceItem{
 					{ArmSkuName: "SKU1", RetailPrice: 0.01},
@@ -132,7 +132,7 @@ func TestClient_GetPrices_Pagination(t *testing.T) {
 				Count:        1,
 			}
 		} else {
-			resp = priceResponse{
+			resp = PriceResponse{
 				BillingCurrency: "USD",
 				Items: []PriceItem{
 					{ArmSkuName: "SKU2", RetailPrice: 0.02},
@@ -177,7 +177,7 @@ func TestClient_GetPrices_Retry429(t *testing.T) {
 			w.WriteHeader(http.StatusTooManyRequests)
 			return
 		}
-		resp := priceResponse{Items: []PriceItem{{ArmSkuName: "Test"}}, Count: 1}
+		resp := PriceResponse{Items: []PriceItem{{ArmSkuName: "Test"}}, Count: 1}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			t.Logf("error encoding response: %v", err)
@@ -215,7 +215,7 @@ func TestClient_GetPrices_Retry503(t *testing.T) {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			return
 		}
-		resp := priceResponse{Items: []PriceItem{{ArmSkuName: "Test"}}, Count: 1}
+		resp := PriceResponse{Items: []PriceItem{{ArmSkuName: "Test"}}, Count: 1}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			t.Logf("error encoding response: %v", err)
@@ -323,7 +323,7 @@ func TestClient_GetPrices_UserAgent(t *testing.T) {
 	var receivedUA string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		receivedUA = r.Header.Get("User-Agent")
-		resp := priceResponse{Items: []PriceItem{}, Count: 0}
+		resp := PriceResponse{Items: []PriceItem{}, Count: 0}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			t.Logf("error encoding response: %v", err)
@@ -357,7 +357,7 @@ func TestClient_GetPrices_Logging(t *testing.T) {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			return
 		}
-		resp := priceResponse{Items: []PriceItem{}, Count: 0}
+		resp := PriceResponse{Items: []PriceItem{}, Count: 0}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			t.Logf("error encoding response: %v", err)
@@ -562,7 +562,7 @@ func TestClient_Close(t *testing.T) {
 func TestClient_GetPrices_Concurrent(t *testing.T) {
 	// Test that concurrent requests work correctly
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		resp := priceResponse{
+		resp := PriceResponse{
 			Items: []PriceItem{{ArmSkuName: "Test", RetailPrice: 0.01}},
 			Count: 1,
 		}
