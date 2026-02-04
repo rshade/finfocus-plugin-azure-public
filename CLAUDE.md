@@ -42,6 +42,7 @@
 - N/A (CI workflow - no persistent storage) (005-ci-pipeline)
 - Go 1.25.5 + `github.com/hashicorp/go-retryablehttp` (HTTP client with retry), `github.com/rs/zerolog` (structured logging) (006-http-client-retry)
 - N/A - stateless plugin (in-memory only) (006-http-client-retry)
+- Go 1.25.5 + `encoding/json` (stdlib), `github.com/rs/zerolog` (logging) (007-azure-price-models)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
