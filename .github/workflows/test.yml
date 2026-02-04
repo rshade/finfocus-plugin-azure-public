@@ -35,3 +35,19 @@ jobs:
 
       - name: Build binary
         run: make build
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+          cache: true
+
+      - name: Run integration tests
+        run: go test -v -tags=integration -timeout=2m ./examples/...
