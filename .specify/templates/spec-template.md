@@ -138,6 +138,7 @@
 
 - [ ] README.md updates identified (if user-facing changes)
 - [ ] API documentation needs outlined (godoc comments, contracts)
+- [ ] Docstring coverage ≥80% maintained (all exported symbols documented)
 - [ ] Examples/quickstart guide planned (if new capability)
 
 ### Performance & Reliability

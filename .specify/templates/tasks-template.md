@@ -155,7 +155,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX [P] Run `make lint` and fix all linting issues
 - [ ] TXXX [P] Run `go test -race` to verify thread safety
 - [ ] TXXX [P] Verify test coverage ≥80% for business logic (`go test -cover`)
-- [ ] TXXX [P] Add godoc comments to all exported functions/types
+- [ ] TXXX [P] Add godoc comments to all exported functions/types (docstring coverage MUST be ≥80%)
 - [ ] TXXX [P] Update README.md with new features/usage examples
 - [ ] TXXX [P] Update CLAUDE.md if workflow patterns changed
 - [ ] TXXX Add structured logging (zerolog) for all error paths

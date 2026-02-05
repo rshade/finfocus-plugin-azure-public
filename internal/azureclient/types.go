@@ -132,7 +132,7 @@ type PriceItem struct {
 
 	// Location is the human-readable Azure datacenter location (e.g., "US East").
 	// This is the display name shown in the Azure portal.
-	Location string `json:"location,omitempty"`
+	Location string `json:"location"`
 
 	// MeterID is the unique identifier for the billing meter (UUID format).
 	// This is used in Azure cost management and billing.
