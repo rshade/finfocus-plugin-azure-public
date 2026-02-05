@@ -1,18 +1,18 @@
 <!--
 Sync Impact Report:
-Version: 1.0.0 → 1.0.0 (Initial constitution creation)
-Modified Principles: N/A (new constitution)
+Version: 1.0.0 → 1.1.0 (MINOR - added measurable docstring coverage threshold)
+Modified Principles:
+  - I. Code Quality Standards: Added docstring coverage ≥80% enforcement requirement
+  - IV. Documentation Standards: Added measurable docstring coverage threshold (≥80%)
+    with enforcement via quality gates
 Added Sections:
-  - Code Quality Standards
-  - Testing Standards
-  - User Experience Consistency
-  - Documentation Standards
-  - Performance & Reliability Requirements
-  - Governance
+  - Docstring Coverage Enforcement subsection under IV. Documentation Standards
+  - Quality gate #6: Docstring coverage check
+Removed Sections: None
 Templates Status:
-  ✅ plan-template.md - Constitution Check section aligns with new principles
-  ✅ spec-template.md - Requirements sections align with code quality & testing principles
-  ✅ tasks-template.md - Task categorization supports all principle-driven work
+  ✅ plan-template.md - Updated Constitution Check to include docstring coverage
+  ✅ spec-template.md - Updated Documentation compliance checklist
+  ✅ tasks-template.md - Updated Constitution Compliance Tasks with docstring coverage
 Follow-up TODOs: None
 -->
 
@@ -27,6 +27,7 @@ Follow-up TODOs: None
 - All Go code MUST pass `golangci-lint` with project configuration (`.golangci-lint.yml` MUST NOT be modified without explicit justification)
 - Code MUST follow standard Go idioms and formatting (`gofmt`, `goimports`)
 - Exported functions, types, and packages MUST have godoc comments
+- Docstring coverage MUST be ≥80% across all packages (see Section IV for enforcement details)
 - Cyclomatic complexity MUST NOT exceed 15 per function (enforced by linter)
 - Code duplication MUST be eliminated through appropriate abstraction (not premature abstraction)
 - Error handling MUST be explicit - no silent failures, all errors logged or returned
@@ -119,7 +120,17 @@ Follow-up TODOs: None
   - Possible error responses
   - Performance characteristics (e.g., "may block up to 2s on cold cache")
 
-**Rationale:** High-quality documentation reduces onboarding time from hours to minutes. Clear API documentation prevents misuse and support requests.
+**Docstring Coverage Enforcement:**
+
+- Docstring coverage MUST be ≥80% across all Go packages
+- Coverage is measured as: (exported symbols with godoc comments) / (total exported symbols) × 100
+- Exported symbols include: packages (package comment), types, functions, methods, constants, and variables
+- Every package MUST have a package-level doc comment describing its purpose
+- Coverage MUST be verified before merging to main (see Quality Gates)
+- New code MUST NOT decrease overall docstring coverage below the 80% threshold
+- Packages with <80% coverage MUST be remediated before new features are added to them
+
+**Rationale:** High-quality documentation reduces onboarding time from hours to minutes. Clear API documentation prevents misuse and support requests. Measurable coverage thresholds prevent documentation debt from accumulating.
 
 ### V. Performance & Reliability Requirements
 
@@ -185,11 +196,11 @@ Before merging to main:
 3. `make lint` passes (can take >5 minutes; use extended timeout)
 4. Integration tests pass against live Azure Retail Prices API (if applicable)
 5. Documentation updated (README, godoc, CHANGELOG if needed)
+6. Docstring coverage ≥80% verified (all packages MUST have package-level doc comments; all exported symbols MUST be documented)
 
 ### Commit Standards
 
 - Commits MUST follow Conventional Commits format (feat:, fix:, docs:, refactor:, test:, chore:)
-- MUST NOT include "🤖 Generated with [Claude Code]" or "Co-Authored-By: Claude" in commit messages
 - Commit messages MUST be descriptive (explain "why" not just "what")
 
 ## Governance
@@ -223,4 +234,4 @@ Before merging to main:
   - `.specify/templates/tasks-template.md` (Task categorization)
   - `CLAUDE.md` (development guidance)
 
-**Version**: 1.0.0 | **Ratified**: 2026-01-21 | **Last Amended**: 2026-01-21
+**Version**: 1.1.0 | **Ratified**: 2026-01-21 | **Last Amended**: 2026-02-05
