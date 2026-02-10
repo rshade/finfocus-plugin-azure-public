@@ -43,6 +43,7 @@
 - Go 1.25.5 + `github.com/hashicorp/go-retryablehttp` (HTTP client with retry), `github.com/rs/zerolog` (structured logging) (006-http-client-retry)
 - N/A - stateless plugin (in-memory only) (006-http-client-retry)
 - Go 1.25.5 + `encoding/json` (stdlib), `github.com/rs/zerolog` (logging) (007-azure-price-models)
+- Go 1.25.5 + `github.com/hashicorp/go-retryablehttp` (HTTP retry), (008-azure-error-handling)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
@@ -73,6 +74,16 @@ prices, err := client.GetPrices(ctx, query)
 - Exponential backoff: 1s min, 30s max
 - Respects `Retry-After` header
 - Max 3 retries (4 total attempts)
+
+**Error Handling**:
+
+- All errors from `GetPrices()` include query context: `query [region=X sku=Y service=Z] page N: ...`
+- Empty results return `ErrNotFound` with query context
+- HTTP 404 returns `ErrNotFound` sentinel
+- Use `errors.Is(err, azureclient.ErrNotFound)` etc. for programmatic classification
+- Sentinel errors: `ErrNotFound`, `ErrRateLimited`, `ErrServiceUnavailable`, `ErrRequestFailed`, `ErrInvalidResponse`, `ErrPaginationLimitExceeded`
+- gRPC mapping: `pricing.MapToGRPCStatus(err)` converts any azureclient error to `*status.Status`
+- Structured logging: errors logged with `region`, `sku`, `service`, `url`, `error_category` fields at differentiated severity levels (debug/warn/error)
 
 **Integration Tests**: `go test -tags=integration ./examples/...`
 

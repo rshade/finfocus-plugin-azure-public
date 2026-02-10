@@ -1,6 +1,13 @@
 package azureclient
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
+
+// MaxPaginationPages is a safety limit to prevent infinite pagination loops.
+// Used by both client.go (pagination logic) and the ErrPaginationLimitExceeded message.
+const MaxPaginationPages = 1000
 
 // Sentinel errors returned by the client.
 var (
@@ -25,4 +32,11 @@ var (
 	// retry attempts are exhausted. The wrapped error contains details about
 	// the failure (e.g., network error, retry exhaustion).
 	ErrRequestFailed = errors.New("request failed")
+
+	// ErrNotFound is returned when the API returns HTTP 404 or when a pricing
+	// query returns zero results (empty result set).
+	ErrNotFound = errors.New("not found")
+
+	// ErrPaginationLimitExceeded is returned when pagination exceeds the safety limit.
+	ErrPaginationLimitExceeded = fmt.Errorf("pagination limit exceeded (%d pages)", MaxPaginationPages)
 )
