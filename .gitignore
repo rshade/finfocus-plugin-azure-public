@@ -19,6 +19,7 @@
 # OS
 .DS_Store
 Thumbs.db
+*.tmp
 
 # Dependencies
 vendor/
