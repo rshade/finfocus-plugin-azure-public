@@ -44,6 +44,8 @@
 - N/A - stateless plugin (in-memory only) (006-http-client-retry)
 - Go 1.25.5 + `encoding/json` (stdlib), `github.com/rs/zerolog` (logging) (007-azure-price-models)
 - Go 1.25.5 + `github.com/hashicorp/go-retryablehttp` (HTTP retry), (008-azure-error-handling)
+- Go 1.25.5 + None new — pure Go stdlib (`fmt`, `strings`, `sort`) (009-odata-filter-builder)
+- N/A — pure data transformation (string builder), no I/O (009-odata-filter-builder)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
@@ -66,6 +68,31 @@ query := azureclient.PriceQuery{
     CurrencyCode:  "USD",
 }
 prices, err := client.GetPrices(ctx, query)
+```
+
+**FilterBuilder (OData `$filter`)**:
+
+```go
+// Basic AND filter (default priceType=Consumption is always included)
+filter := azureclient.NewFilterBuilder().
+    Region("eastus").
+    Service("Virtual Machines").
+    SKU("Standard_B1s").
+    Build()
+// armRegionName eq 'eastus' and armSkuName eq 'Standard_B1s'
+//   and priceType eq 'Consumption' and serviceName eq 'Virtual Machines'
+
+// OR grouping + generic fields + explicit type override
+filter = azureclient.NewFilterBuilder().
+    Or(
+        azureclient.Region("eastus"),
+        azureclient.Region("westus2"),
+    ).
+    Field("meterName", "B1s").
+    Type("Reservation").
+    Build()
+// (armRegionName eq 'eastus' or armRegionName eq 'westus2')
+//   and meterName eq 'B1s' and priceType eq 'Reservation'
 ```
 
 **Retry Policy**:

@@ -396,31 +396,13 @@ func extractResponseSnippet(err error) string {
 	return snippet
 }
 
-// escapeODataString escapes a string for use in an OData filter.
-// Single quotes are escaped by doubling them (OData standard).
-func escapeODataString(s string) string {
-	return strings.ReplaceAll(s, "'", "''")
-}
-
 // buildFilterQuery builds an OData filter query from a PriceQuery.
 func buildFilterQuery(query PriceQuery) string {
-	var filters []string
-
-	if query.ArmRegionName != "" {
-		filters = append(filters, fmt.Sprintf("armRegionName eq '%s'", escapeODataString(query.ArmRegionName)))
-	}
-	if query.ArmSkuName != "" {
-		filters = append(filters, fmt.Sprintf("armSkuName eq '%s'", escapeODataString(query.ArmSkuName)))
-	}
-	if query.ServiceName != "" {
-		filters = append(filters, fmt.Sprintf("serviceName eq '%s'", escapeODataString(query.ServiceName)))
-	}
-	if query.ProductName != "" {
-		filters = append(filters, fmt.Sprintf("productName eq '%s'", escapeODataString(query.ProductName)))
-	}
-	if query.CurrencyCode != "" {
-		filters = append(filters, fmt.Sprintf("currencyCode eq '%s'", escapeODataString(query.CurrencyCode)))
-	}
-
-	return strings.Join(filters, " and ")
+	return NewFilterBuilder().
+		Region(query.ArmRegionName).
+		SKU(query.ArmSkuName).
+		Service(query.ServiceName).
+		ProductName(query.ProductName).
+		CurrencyCode(query.CurrencyCode).
+		Build()
 }
