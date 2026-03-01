@@ -394,8 +394,9 @@ func TestBuildFilterQuery_Empty(t *testing.T) {
 	query := PriceQuery{}
 	filter := buildFilterQuery(query)
 
-	if filter != "" {
-		t.Errorf("expected empty filter, got %s", filter)
+	expected := "priceType eq 'Consumption'"
+	if filter != expected {
+		t.Errorf("expected %s, got %s", expected, filter)
 	}
 }
 
@@ -403,7 +404,7 @@ func TestBuildFilterQuery_SingleField(t *testing.T) {
 	query := PriceQuery{ArmRegionName: "eastus"}
 	filter := buildFilterQuery(query)
 
-	expected := "armRegionName eq 'eastus'"
+	expected := "armRegionName eq 'eastus' and priceType eq 'Consumption'"
 	if filter != expected {
 		t.Errorf("expected %s, got %s", expected, filter)
 	}
@@ -421,6 +422,9 @@ func TestBuildFilterQuery_MultipleFields(t *testing.T) {
 	}
 	if !strings.Contains(filter, "armSkuName eq 'Standard_B1s'") {
 		t.Error("expected armSkuName filter")
+	}
+	if !strings.Contains(filter, "priceType eq 'Consumption'") {
+		t.Error("expected default priceType filter")
 	}
 	if !strings.Contains(filter, " and ") {
 		t.Error("expected 'and' between filters")
@@ -440,6 +444,7 @@ func TestBuildFilterQuery_AllFields(t *testing.T) {
 	expectedParts := []string{
 		"armRegionName eq 'eastus'",
 		"armSkuName eq 'Standard_B1s'",
+		"priceType eq 'Consumption'",
 		"serviceName eq 'Virtual Machines'",
 		"productName eq 'Virtual Machines BS Series'",
 		"currencyCode eq 'USD'",
@@ -458,7 +463,7 @@ func TestBuildFilterQuery_ODataEscape(t *testing.T) {
 	filter := buildFilterQuery(query)
 
 	// Single quotes should be doubled in OData
-	expected := "armRegionName eq 'east''us'"
+	expected := "armRegionName eq 'east''us' and priceType eq 'Consumption'"
 	if filter != expected {
 		t.Errorf("expected %s, got %s", expected, filter)
 	}
@@ -468,7 +473,7 @@ func TestBuildFilterQuery_ODataEscapeMultipleQuotes(t *testing.T) {
 	query := PriceQuery{ServiceName: "test'service'name"}
 	filter := buildFilterQuery(query)
 
-	expected := "serviceName eq 'test''service''name'"
+	expected := "priceType eq 'Consumption' and serviceName eq 'test''service''name'"
 	if filter != expected {
 		t.Errorf("expected %s, got %s", expected, filter)
 	}
@@ -480,7 +485,7 @@ func TestBuildFilterQuery_ODataInjectionPrevention(t *testing.T) {
 	filter := buildFilterQuery(query)
 
 	// The injection should be neutralized by escaping
-	expected := "armRegionName eq 'east'' or ''a'' eq ''a'"
+	expected := "armRegionName eq 'east'' or ''a'' eq ''a' and priceType eq 'Consumption'"
 	if filter != expected {
 		t.Errorf("expected injection to be neutralized: got %s", filter)
 	}
