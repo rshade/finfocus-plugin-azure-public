@@ -10,9 +10,10 @@
 - **Run Plugin**: `go run cmd/finfocus-plugin-azure-public/main.go`
 
 ## Development
-- **Go Version**: 1.25.5
+- **Go Version**: 1.25.7
 - **Dependencies**:
   - `finfocus-spec`: Plugin SDK
+  - `golang-lru/v2`: In-memory LRU+TTL cache
   - `go-retryablehttp`: HTTP Client
   - `zerolog`: Logging
   - `grpc`: RPC Framework
@@ -36,8 +37,8 @@
 ## Active Technologies
 - **Language**: Go 1.25.5 (002-grpc-server-port)
 - **Storage**: N/A - stateless plugin (002-grpc-server-port)
-- Go 1.25.5 + zerolog v1.34.0, finfocus-spec v0.5.4 (pluginsdk) (003-zerolog-logging)
-- Go 1.25.5 + finfocus-spec v0.5.4 (pluginsdk), zerolog v1.34.0, google.golang.org/grpc (004-costsource-stubs)
+- Go 1.25.7 + zerolog v1.34.0, finfocus-spec v0.5.7 (pluginsdk) (003-zerolog-logging)
+- Go 1.25.7 + finfocus-spec v0.5.7 (pluginsdk), zerolog v1.34.0, google.golang.org/grpc (004-costsource-stubs)
 - Go 1.25.5 (from go.mod) + golangci-lint (linting), actions/checkout@v6, actions/setup-go@v6 (005-ci-pipeline)
 - N/A (CI workflow - no persistent storage) (005-ci-pipeline)
 - Go 1.25.5 + `github.com/hashicorp/go-retryablehttp` (HTTP client with retry), `github.com/rs/zerolog` (structured logging) (006-http-client-retry)
@@ -46,6 +47,7 @@
 - Go 1.25.5 + `github.com/hashicorp/go-retryablehttp` (HTTP retry), (008-azure-error-handling)
 - Go 1.25.5 + None new — pure Go stdlib (`fmt`, `strings`, `sort`) (009-odata-filter-builder)
 - N/A — pure data transformation (string builder), no I/O (009-odata-filter-builder)
+- In-memory only (stateless constraint) (012-memory-cache)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
@@ -113,6 +115,35 @@ filter = azureclient.NewFilterBuilder().
 - Structured logging: errors logged with `region`, `sku`, `service`, `url`, `error_category` fields at differentiated severity levels (debug/warn/error)
 
 **Integration Tests**: `go test -tags=integration ./examples/...`
+
+## Cached Azure Client (`internal/azureclient/cache.go`)
+
+`CachedClient` wraps `azureclient.Client` with a thread-safe in-memory cache:
+
+```go
+cacheConfig := azureclient.DefaultCacheConfig()
+cacheConfig.MaxSize = 1000
+cacheConfig.TTL = 24 * time.Hour
+cacheConfig.ExpiresAtTTL = 4 * time.Hour
+cacheConfig.Logger = logger
+
+cachedClient, err := azureclient.NewCachedClient(client, cacheConfig)
+if err != nil {
+    return err
+}
+defer cachedClient.Close()
+
+result, err := cachedClient.GetPrices(ctx, query)
+// result.Items: Azure price rows
+// result.ExpiresAt: caller-facing cache hint for projected/actual cost responses
+```
+
+Cache behavior:
+- Key normalization: `CacheKey(query)` => `region|sku|product|service|currency` (lowercase, trimmed)
+- L1 cache: in-process LRU+TTL (default 1000 entries, 24h TTL)
+- L2 hint: `CachedResult.ExpiresAt` (default 4h) propagated to gRPC projected/actual cost responses
+- Errors are never cached
+- Stats: `cachedClient.Stats().Hits.Load()` / `cachedClient.Stats().Misses.Load()`
 
 ## Zerolog
 
