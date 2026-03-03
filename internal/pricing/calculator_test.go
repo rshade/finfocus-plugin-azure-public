@@ -4,15 +4,22 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rshade/finfocus-spec/sdk/go/pluginsdk"
 	finfocusv1 "github.com/rshade/finfocus-spec/sdk/go/proto/finfocus/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
+
+	"github.com/rshade/finfocus-plugin-azure-public/internal/azureclient"
 )
 
 func TestCalculatorName(t *testing.T) {
@@ -550,4 +557,226 @@ func TestDryRunReturnsUnimplemented(t *testing.T) {
 	if st.Code() != codes.Unimplemented {
 		t.Errorf("expected Unimplemented code, got: %v", st.Code())
 	}
+}
+
+func TestGetProjectedCostSetsExpiresAtFromCache(t *testing.T) {
+	t.Parallel()
+
+	var calls atomic.Int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		resp := azureclient.PriceResponse{
+			Items: []azureclient.PriceItem{
+				{
+					ArmRegionName: "eastus",
+					ArmSkuName:    "Standard_B1s",
+					ServiceName:   "Virtual Machines",
+					CurrencyCode:  "USD",
+					RetailPrice:   0.0104,
+				},
+			},
+			Count: 1,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Fatalf("encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	calc := NewCalculator(zerolog.Nop(), cachedClient)
+
+	req := &finfocusv1.GetProjectedCostRequest{
+		Resource: &finfocusv1.ResourceDescriptor{
+			Provider:     "azure",
+			ResourceType: "azure:compute/virtualMachine:VirtualMachine",
+			Region:       "eastus",
+			Sku:          "Standard_B1s",
+		},
+	}
+
+	first, err := calc.GetProjectedCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("GetProjectedCost() first call failed: %v", err)
+	}
+	if first.GetExpiresAt() == nil {
+		t.Fatal("expected first response to include expires_at")
+	}
+
+	second, err := calc.GetProjectedCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("GetProjectedCost() second call failed: %v", err)
+	}
+	if second.GetExpiresAt() == nil {
+		t.Fatal("expected second response to include expires_at")
+	}
+
+	if got := calls.Load(); got != 1 {
+		t.Fatalf("expected cache hit on second call (1 upstream request), got %d calls", got)
+	}
+
+	if !first.GetExpiresAt().AsTime().Equal(second.GetExpiresAt().AsTime()) {
+		t.Fatalf(
+			"expected cache hit to preserve original expires_at, first=%s second=%s",
+			first.GetExpiresAt().AsTime(),
+			second.GetExpiresAt().AsTime(),
+		)
+	}
+}
+
+func TestGetActualCostSetsExpiresAtFromCache(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		resp := azureclient.PriceResponse{
+			Items: []azureclient.PriceItem{
+				{
+					ArmRegionName: "eastus",
+					ArmSkuName:    "Standard_B1s",
+					ServiceName:   "Virtual Machines",
+					CurrencyCode:  "USD",
+					RetailPrice:   0.0104,
+				},
+			},
+			Count: 1,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Fatalf("encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	calc := NewCalculator(zerolog.Nop(), cachedClient)
+
+	req := &finfocusv1.GetActualCostRequest{
+		ResourceId: "vm-1",
+		Tags: map[string]string{
+			"region":   "eastus",
+			"sku":      "Standard_B1s",
+			"service":  "Virtual Machines",
+			"currency": "USD",
+		},
+	}
+
+	resp, err := calc.GetActualCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("GetActualCost() failed: %v", err)
+	}
+	if len(resp.GetResults()) != 1 {
+		t.Fatalf("expected 1 actual cost result, got %d", len(resp.GetResults()))
+	}
+	if resp.GetResults()[0].GetExpiresAt() == nil {
+		t.Fatal("expected actual cost result to include expires_at")
+	}
+}
+
+func TestEstimateCostUsesCachedClient(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		resp := azureclient.PriceResponse{
+			Items: []azureclient.PriceItem{
+				{
+					ArmRegionName: "eastus",
+					ArmSkuName:    "Standard_B1s",
+					ServiceName:   "Virtual Machines",
+					CurrencyCode:  "USD",
+					RetailPrice:   0.0200,
+				},
+			},
+			Count: 1,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Fatalf("encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	calc := NewCalculator(zerolog.Nop(), cachedClient)
+
+	attrs, err := structpb.NewStruct(map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_B1s",
+	})
+	if err != nil {
+		t.Fatalf("NewStruct() failed: %v", err)
+	}
+
+	resp, err := calc.EstimateCost(context.Background(), &finfocusv1.EstimateCostRequest{
+		ResourceType: "azure:compute/virtualMachine:VirtualMachine",
+		Attributes:   attrs,
+	})
+	if err != nil {
+		t.Fatalf("EstimateCost() failed: %v", err)
+	}
+
+	if resp.GetCurrency() != "USD" {
+		t.Fatalf("expected USD currency, got %q", resp.GetCurrency())
+	}
+	if resp.GetCostMonthly() <= 0 {
+		t.Fatalf("expected positive monthly cost, got %f", resp.GetCostMonthly())
+	}
+}
+
+func TestUnitPriceAndCurrencyFallbacks(t *testing.T) {
+	t.Parallel()
+
+	price, currency, err := unitPriceAndCurrency([]azureclient.PriceItem{
+		{
+			UnitPrice: 0.031,
+		},
+	})
+	if err != nil {
+		t.Fatalf("unitPriceAndCurrency() failed: %v", err)
+	}
+	if price != 0.031 {
+		t.Fatalf("expected fallback to UnitPrice, got %f", price)
+	}
+	if currency != "USD" {
+		t.Fatalf("expected default USD currency, got %q", currency)
+	}
+}
+
+func newCalculatorTestCachedClient(t *testing.T, baseURL string) *azureclient.CachedClient {
+	t.Helper()
+
+	clientConfig := azureclient.DefaultConfig()
+	clientConfig.BaseURL = baseURL
+	clientConfig.RetryMax = 0
+	clientConfig.RetryWaitMin = time.Millisecond
+	clientConfig.RetryWaitMax = 5 * time.Millisecond
+	clientConfig.Timeout = 3 * time.Second
+	clientConfig.Logger = zerolog.Nop()
+
+	client, err := azureclient.NewClient(clientConfig)
+	if err != nil {
+		t.Fatalf("NewClient() failed: %v", err)
+	}
+
+	cacheConfig := azureclient.DefaultCacheConfig()
+	cacheConfig.MaxSize = 100
+	cacheConfig.TTL = time.Hour
+	cacheConfig.ExpiresAtTTL = 4 * time.Hour
+	cacheConfig.Logger = zerolog.Nop()
+
+	cachedClient, err := azureclient.NewCachedClient(client, cacheConfig)
+	if err != nil {
+		t.Fatalf("NewCachedClient() failed: %v", err)
+	}
+
+	return cachedClient
 }

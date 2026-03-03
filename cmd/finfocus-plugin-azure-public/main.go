@@ -14,6 +14,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rshade/finfocus-spec/sdk/go/pluginsdk"
 
+	"github.com/rshade/finfocus-plugin-azure-public/internal/azureclient"
 	"github.com/rshade/finfocus-plugin-azure-public/internal/pricing"
 )
 
@@ -75,8 +76,29 @@ func run() error {
 		}
 	}
 
-	// Create plugin instance with logger
-	azurePlugin := pricing.NewCalculator(logger)
+	// Build Azure pricing client.
+	clientConfig := azureclient.DefaultConfig()
+	clientConfig.Logger = logger
+
+	client, err := azureclient.NewClient(clientConfig)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to create azure pricing client")
+		return err
+	}
+
+	// Build cache wrapper around Azure pricing client.
+	cacheConfig := azureclient.DefaultCacheConfig()
+	cacheConfig.Logger = logger
+	cachedClient, err := azureclient.NewCachedClient(client, cacheConfig)
+	if err != nil {
+		client.Close()
+		logger.Error().Err(err).Msg("failed to create cached azure pricing client")
+		return err
+	}
+	defer cachedClient.Close()
+
+	// Create plugin instance with logger and cache-aware client.
+	azurePlugin := pricing.NewCalculator(logger, cachedClient)
 
 	// Setup context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
@@ -106,7 +128,8 @@ func run() error {
 		},
 	}
 
-	if err := pluginsdk.Serve(ctx, config); err != nil {
+	err = pluginsdk.Serve(ctx, config)
+	if err != nil {
 		logger.Error().Err(err).Msg("server error")
 		return err
 	}

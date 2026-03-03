@@ -1,3 +1,4 @@
+//nolint:cyclop // Integration tests in this package intentionally favor explicit assertions.
 package main
 
 import (
