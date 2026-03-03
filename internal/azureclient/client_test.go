@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -165,6 +166,464 @@ func TestClient_GetPrices_Pagination(t *testing.T) {
 	}
 	if callCount != 2 {
 		t.Errorf("expected 2 API calls for pagination, got %d", callCount)
+	}
+}
+
+func makePriceItems(start, count int) []PriceItem {
+	items := make([]PriceItem, 0, count)
+	for i := 0; i < count; i++ {
+		idx := start + i
+		items = append(items, PriceItem{
+			ArmSkuName:   fmt.Sprintf("SKU-%03d", idx),
+			RetailPrice:  float64(idx) / 1000,
+			CurrencyCode: "USD",
+		})
+	}
+	return items
+}
+
+func TestClient_GetPrices_ThreePageQueryReturnsAll250Items(t *testing.T) {
+	pages := [][]PriceItem{
+		makePriceItems(1, 100),
+		makePriceItems(101, 100),
+		makePriceItems(201, 50),
+	}
+
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		pageIndex := callCount - 1
+		if pageIndex >= len(pages) {
+			w.WriteHeader(http.StatusInternalServerError)
+			t.Logf("unexpected request for page %d", callCount)
+			return
+		}
+
+		resp := PriceResponse{
+			BillingCurrency: "USD",
+			Items:           pages[pageIndex],
+			Count:           len(pages[pageIndex]),
+		}
+		if callCount < len(pages) {
+			resp.NextPageLink = fmt.Sprintf("http://%s/page%d", r.Host, callCount+1)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Logf("error encoding response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	config := DefaultConfig()
+	config.BaseURL = server.URL
+	client, err := NewClient(config)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	prices, err := client.GetPrices(context.Background(), PriceQuery{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(prices) != 250 {
+		t.Fatalf("expected 250 prices, got %d", len(prices))
+	}
+	if callCount != 3 {
+		t.Fatalf("expected 3 page requests, got %d", callCount)
+	}
+	if prices[0].ArmSkuName != "SKU-001" {
+		t.Errorf("expected first item SKU-001, got %s", prices[0].ArmSkuName)
+	}
+	if prices[len(prices)-1].ArmSkuName != "SKU-250" {
+		t.Errorf("expected last item SKU-250, got %s", prices[len(prices)-1].ArmSkuName)
+	}
+}
+
+func TestClient_GetPrices_SinglePageQueryDoesNotRequestAdditionalPages(t *testing.T) {
+	callCount := 0
+	items := makePriceItems(1, 50)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		callCount++
+		resp := PriceResponse{
+			BillingCurrency: "USD",
+			Items:           items,
+			Count:           len(items),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Logf("error encoding response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	config := DefaultConfig()
+	config.BaseURL = server.URL
+	client, err := NewClient(config)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	prices, err := client.GetPrices(context.Background(), PriceQuery{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(prices) != 50 {
+		t.Fatalf("expected 50 prices, got %d", len(prices))
+	}
+	if callCount != 1 {
+		t.Fatalf("expected exactly 1 API call, got %d", callCount)
+	}
+}
+
+func TestClient_GetPrices_EmptyPageWithNextLinkFollowsPagination(t *testing.T) {
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		resp := PriceResponse{BillingCurrency: "USD"}
+
+		if callCount == 1 {
+			resp.Items = []PriceItem{}
+			resp.Count = 0
+			resp.NextPageLink = fmt.Sprintf("http://%s/page2", r.Host)
+		} else {
+			resp.Items = []PriceItem{
+				{ArmSkuName: "SKU-201", RetailPrice: 0.201, CurrencyCode: "USD"},
+				{ArmSkuName: "SKU-202", RetailPrice: 0.202, CurrencyCode: "USD"},
+			}
+			resp.Count = 2
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Logf("error encoding response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	config := DefaultConfig()
+	config.BaseURL = server.URL
+	client, err := NewClient(config)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	prices, err := client.GetPrices(context.Background(), PriceQuery{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(prices) != 2 {
+		t.Fatalf("expected 2 prices from second page, got %d", len(prices))
+	}
+	if callCount != 2 {
+		t.Fatalf("expected 2 API calls, got %d", callCount)
+	}
+}
+
+func TestClient_GetPrices_ContextCancellationMidPagination(t *testing.T) {
+	firstPageDone := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		switch callCount {
+		case 1:
+			resp := PriceResponse{
+				BillingCurrency: "USD",
+				Items:           []PriceItem{{ArmSkuName: "SKU-001", RetailPrice: 0.001, CurrencyCode: "USD"}},
+				Count:           1,
+				NextPageLink:    fmt.Sprintf("http://%s/page2", r.Host),
+			}
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(resp); err != nil {
+				t.Logf("error encoding response: %v", err)
+			}
+			close(firstPageDone)
+		case 2:
+			<-ctx.Done()
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}))
+	defer server.Close()
+
+	config := DefaultConfig()
+	config.BaseURL = server.URL
+	config.RetryMax = 0
+	config.RetryWaitMin = 1 * time.Millisecond
+	client, err := NewClient(config)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	errCh := make(chan error, 1)
+	go func() {
+		_, getErr := client.GetPrices(ctx, PriceQuery{})
+		errCh <- getErr
+	}()
+
+	select {
+	case <-firstPageDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for first page")
+	}
+	cancel()
+
+	select {
+	case err := <-errCh:
+		if err == nil {
+			t.Fatal("expected context cancellation error")
+		}
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("expected context.Canceled, got %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for GetPrices to return")
+	}
+}
+
+func TestClient_GetPrices_ExceedingTenPagesReturnsPaginationLimitExceeded(t *testing.T) {
+	const requestedPages = MaxPaginationPages + 1
+	callCount := 0
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		resp := PriceResponse{
+			BillingCurrency: "USD",
+			Items: []PriceItem{
+				{
+					ArmSkuName:   fmt.Sprintf("SKU-%03d", callCount),
+					RetailPrice:  float64(callCount) / 1000,
+					CurrencyCode: "USD",
+				},
+			},
+			Count: 1,
+		}
+		if callCount < requestedPages {
+			resp.NextPageLink = fmt.Sprintf("http://%s/page%d", r.Host, callCount+1)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Logf("error encoding response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	config := DefaultConfig()
+	config.BaseURL = server.URL
+	client, err := NewClient(config)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	_, err = client.GetPrices(context.Background(), PriceQuery{
+		ArmRegionName: "eastus",
+		ArmSkuName:    "Standard_B1s",
+	})
+
+	if err == nil {
+		t.Fatal("expected pagination limit exceeded error")
+	}
+	if !errors.Is(err, ErrPaginationLimitExceeded) {
+		t.Fatalf("expected ErrPaginationLimitExceeded, got %v", err)
+	}
+	if callCount != MaxPaginationPages {
+		t.Fatalf("expected %d page requests before limit error, got %d", MaxPaginationPages, callCount)
+	}
+}
+
+func TestClient_GetPrices_ExactlyTenPagesSucceeds(t *testing.T) {
+	callCount := 0
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		resp := PriceResponse{
+			BillingCurrency: "USD",
+			Items: []PriceItem{
+				{
+					ArmSkuName:   fmt.Sprintf("SKU-%03d", callCount),
+					RetailPrice:  float64(callCount) / 1000,
+					CurrencyCode: "USD",
+				},
+			},
+			Count: 1,
+		}
+		if callCount < MaxPaginationPages {
+			resp.NextPageLink = fmt.Sprintf("http://%s/page%d", r.Host, callCount+1)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Logf("error encoding response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	config := DefaultConfig()
+	config.BaseURL = server.URL
+	client, err := NewClient(config)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	prices, err := client.GetPrices(context.Background(), PriceQuery{})
+	if err != nil {
+		t.Fatalf("expected success for exactly %d pages, got %v", MaxPaginationPages, err)
+	}
+	if len(prices) != MaxPaginationPages {
+		t.Fatalf("expected %d prices, got %d", MaxPaginationPages, len(prices))
+	}
+	if callCount != MaxPaginationPages {
+		t.Fatalf("expected %d page requests, got %d", MaxPaginationPages, callCount)
+	}
+}
+
+func TestClient_GetPrices_MultiPageQueryLogsPaginationProgress(t *testing.T) {
+	callCount := 0
+	pageSizes := []int{100, 100, 50}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		if callCount > len(pageSizes) {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		resp := PriceResponse{
+			BillingCurrency: "USD",
+			Items:           makePriceItems((callCount-1)*100+1, pageSizes[callCount-1]),
+			Count:           pageSizes[callCount-1],
+		}
+		if callCount < len(pageSizes) {
+			resp.NextPageLink = fmt.Sprintf("http://%s/page%d", r.Host, callCount+1)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Logf("error encoding response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	var logBuf strings.Builder
+	logger := zerolog.New(&logBuf)
+
+	config := DefaultConfig()
+	config.BaseURL = server.URL
+	config.Logger = logger
+	client, err := NewClient(config)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	prices, err := client.GetPrices(context.Background(), PriceQuery{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(prices) != 250 {
+		t.Fatalf("expected 250 prices, got %d", len(prices))
+	}
+
+	var progressEntries []map[string]interface{}
+	for _, line := range strings.Split(strings.TrimSpace(logBuf.String()), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		var entry map[string]interface{}
+		if err := json.Unmarshal([]byte(line), &entry); err != nil {
+			continue
+		}
+		if msg, ok := entry["message"].(string); ok && msg == "pagination progress" {
+			progressEntries = append(progressEntries, entry)
+		}
+	}
+
+	if len(progressEntries) != 2 {
+		t.Fatalf("expected 2 pagination progress logs, got %d (logs: %s)", len(progressEntries), logBuf.String())
+	}
+
+	expected := []struct {
+		page       int
+		itemsThis  int
+		totalItems int
+	}{
+		{page: 1, itemsThis: 100, totalItems: 200},
+		{page: 2, itemsThis: 50, totalItems: 250},
+	}
+
+	for i, want := range expected {
+		entry := progressEntries[i]
+
+		level, ok := entry["level"].(string)
+		if !ok || level != "debug" {
+			t.Fatalf("expected debug log level, got %v", entry["level"])
+		}
+
+		pageVal, ok := entry["page"].(float64)
+		if !ok || int(pageVal) != want.page {
+			t.Fatalf("expected page=%d, got %v", want.page, entry["page"])
+		}
+
+		itemsVal, ok := entry["items_this_page"].(float64)
+		if !ok || int(itemsVal) != want.itemsThis {
+			t.Fatalf("expected items_this_page=%d, got %v", want.itemsThis, entry["items_this_page"])
+		}
+
+		totalVal, ok := entry["total_items"].(float64)
+		if !ok || int(totalVal) != want.totalItems {
+			t.Fatalf("expected total_items=%d, got %v", want.totalItems, entry["total_items"])
+		}
+	}
+}
+
+func TestClient_GetPrices_SinglePageQueryEmitsNoPaginationProgressLogs(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		resp := PriceResponse{
+			BillingCurrency: "USD",
+			Items:           makePriceItems(1, 50),
+			Count:           50,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Logf("error encoding response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	var logBuf strings.Builder
+	logger := zerolog.New(&logBuf)
+
+	config := DefaultConfig()
+	config.BaseURL = server.URL
+	config.Logger = logger
+	client, err := NewClient(config)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	prices, err := client.GetPrices(context.Background(), PriceQuery{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(prices) != 50 {
+		t.Fatalf("expected 50 prices, got %d", len(prices))
+	}
+
+	for _, line := range strings.Split(strings.TrimSpace(logBuf.String()), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		var entry map[string]interface{}
+		if err := json.Unmarshal([]byte(line), &entry); err != nil {
+			continue
+		}
+		if msg, ok := entry["message"].(string); ok && msg == "pagination progress" {
+			t.Fatalf("did not expect pagination progress log on single-page query, got log: %v", entry)
+		}
 	}
 }
 
