@@ -46,6 +46,7 @@
 - Go 1.25.5 + `github.com/hashicorp/go-retryablehttp` (HTTP retry), (008-azure-error-handling)
 - Go 1.25.5 + None new — pure Go stdlib (`fmt`, `strings`, `sort`) (009-odata-filter-builder)
 - N/A — pure data transformation (string builder), no I/O (009-odata-filter-builder)
+- N/A — stateless, in-memory only (010-pagination-handler)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5

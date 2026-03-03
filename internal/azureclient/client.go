@@ -107,7 +107,7 @@ func (c *Client) Close() {
 
 // GetPrices queries the Azure Retail Prices API with the given filter.
 // It automatically handles pagination and returns all matching price items.
-// A safety limit of 1000 pages is enforced to prevent infinite loops.
+// A safety limit of 10 pages is enforced to prevent infinite loops.
 // All errors include query context (region, SKU, service) for debugging.
 func (c *Client) GetPrices(ctx context.Context, query PriceQuery) ([]PriceItem, error) {
 	var allItems []PriceItem
@@ -127,6 +127,13 @@ func (c *Client) GetPrices(ctx context.Context, query PriceQuery) ([]PriceItem, 
 			return nil, fmt.Errorf("%s page %d: %w", qctx, page, err)
 		}
 		allItems = append(allItems, items...)
+		if page > 0 {
+			c.logger.Debug().
+				Int("page", page).
+				Int("items_this_page", len(items)).
+				Int("total_items", len(allItems)).
+				Msg("pagination progress")
+		}
 		requestURL = nextURL
 	}
 
