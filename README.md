@@ -141,6 +141,17 @@ kill -SIGTERM $PID  # Graceful shutdown, exit code 0
 | `make ensure`  | Install development dependencies     |
 | `make help`    | Show available targets               |
 
+## Supported Azure Resource Types
+
+| Resource Type | Azure Service Name | Example SKU |
+|---|---|---|
+| `compute/VirtualMachine` | Virtual Machines | `Standard_B1s` |
+| `storage/ManagedDisk` | Managed Disks | `Premium_LRS` |
+| `storage/BlobStorage` | Storage | `Standard_LRS` |
+
+Resource type matching is case-insensitive. Additional resource types will be
+added in future releases.
+
 ## Development
 
 See [CLAUDE.md](CLAUDE.md) for development commands and guidelines.

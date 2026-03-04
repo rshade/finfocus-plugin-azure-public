@@ -302,8 +302,8 @@ func TestGetPluginInfoReturnsProviders(t *testing.T) {
 	}
 }
 
-// TestSupportsReturnsFalse verifies Supports() returns supported=false.
-func TestSupportsReturnsFalse(t *testing.T) {
+// TestSupports_ValidVM_ReturnsTrue verifies Supports() returns true for a valid VM descriptor.
+func TestSupports_ValidVM_ReturnsTrue(t *testing.T) {
 	t.Parallel()
 
 	logger := zerolog.Nop()
@@ -313,6 +313,58 @@ func TestSupportsReturnsFalse(t *testing.T) {
 		Resource: &finfocusv1.ResourceDescriptor{
 			Provider:     "azure",
 			ResourceType: "compute/VirtualMachine",
+			Sku:          "Standard_B1s",
+			Region:       "eastus",
+		},
+	}
+	resp, err := calc.Supports(context.Background(), req)
+	if err != nil {
+		t.Fatalf("Supports failed: %v", err)
+	}
+
+	if !resp.GetSupported() {
+		t.Errorf("expected supported=true, got false (reason: %s)", resp.GetReason())
+	}
+}
+
+// TestSupports_ManagedDisk_ReturnsTrue verifies Supports() returns true for a ManagedDisk descriptor.
+func TestSupports_ManagedDisk_ReturnsTrue(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	req := &finfocusv1.SupportsRequest{
+		Resource: &finfocusv1.ResourceDescriptor{
+			Provider:     "azure",
+			ResourceType: "storage/ManagedDisk",
+			Sku:          "Premium_LRS",
+			Region:       "westus2",
+		},
+	}
+	resp, err := calc.Supports(context.Background(), req)
+	if err != nil {
+		t.Fatalf("Supports failed: %v", err)
+	}
+
+	if !resp.GetSupported() {
+		t.Errorf("expected supported=true, got false (reason: %s)", resp.GetReason())
+	}
+}
+
+// TestSupports_IncompleteDescriptor_ReturnsFalse verifies Supports() returns false
+// with a reason when the descriptor is missing required fields.
+func TestSupports_IncompleteDescriptor_ReturnsFalse(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	req := &finfocusv1.SupportsRequest{
+		Resource: &finfocusv1.ResourceDescriptor{
+			Provider:     "azure",
+			ResourceType: "compute/VirtualMachine",
+			// Missing SKU and Region
 		},
 	}
 	resp, err := calc.Supports(context.Background(), req)
@@ -321,11 +373,41 @@ func TestSupportsReturnsFalse(t *testing.T) {
 	}
 
 	if resp.GetSupported() {
-		t.Error("expected supported=false, got true")
+		t.Error("expected supported=false for incomplete descriptor, got true")
 	}
 
 	if resp.GetReason() == "" {
 		t.Error("expected reason to be populated, got empty string")
+	}
+}
+
+// TestSupports_UnsupportedType_ReturnsFalse verifies Supports() returns false
+// with a reason that includes the unsupported type name.
+func TestSupports_UnsupportedType_ReturnsFalse(t *testing.T) {
+	t.Parallel()
+
+	logger := zerolog.Nop()
+	calc := NewCalculator(logger)
+
+	req := &finfocusv1.SupportsRequest{
+		Resource: &finfocusv1.ResourceDescriptor{
+			Provider:     "azure",
+			ResourceType: "network/LoadBalancer",
+			Sku:          "Standard",
+			Region:       "eastus",
+		},
+	}
+	resp, err := calc.Supports(context.Background(), req)
+	if err != nil {
+		t.Fatalf("Supports failed: %v", err)
+	}
+
+	if resp.GetSupported() {
+		t.Error("expected supported=false for unsupported type, got true")
+	}
+
+	if !strings.Contains(resp.GetReason(), "network/LoadBalancer") {
+		t.Errorf("expected reason to contain type name, got: %s", resp.GetReason())
 	}
 }
 
@@ -343,6 +425,10 @@ func TestSupportsWithNilRequest(t *testing.T) {
 
 	if resp.GetSupported() {
 		t.Error("expected supported=false for nil request, got true")
+	}
+
+	if resp.GetReason() == "" {
+		t.Error("expected reason to be populated for nil request, got empty string")
 	}
 }
 

@@ -68,6 +68,16 @@ func TestMapToGRPCStatus(t *testing.T) {
 			expectedCode: codes.Internal,
 		},
 		{
+			name:         "ErrUnsupportedResourceType maps to Unimplemented",
+			err:          ErrUnsupportedResourceType,
+			expectedCode: codes.Unimplemented,
+		},
+		{
+			name:         "ErrMissingRequiredFields maps to InvalidArgument",
+			err:          ErrMissingRequiredFields,
+			expectedCode: codes.InvalidArgument,
+		},
+		{
 			name:         "unknown error maps to Internal",
 			err:          errors.New("unknown"),
 			expectedCode: codes.Internal,
@@ -92,6 +102,28 @@ func TestMapToGRPCStatus_WrappedErrors(t *testing.T) {
 	}
 	if s.Message() != wrappedNotFound.Error() {
 		t.Errorf("expected message %q, got %q", wrappedNotFound.Error(), s.Message())
+	}
+}
+
+func TestMapToGRPCStatus_WrappedUnsupportedResourceType(t *testing.T) {
+	wrapped := fmt.Errorf("unsupported provider: aws: %w", ErrUnsupportedResourceType)
+	s := MapToGRPCStatus(wrapped)
+	if s.Code() != codes.Unimplemented {
+		t.Errorf("expected Unimplemented for wrapped ErrUnsupportedResourceType, got %v", s.Code())
+	}
+	if s.Message() != wrapped.Error() {
+		t.Errorf("expected message %q, got %q", wrapped.Error(), s.Message())
+	}
+}
+
+func TestMapToGRPCStatus_WrappedMissingRequiredFields(t *testing.T) {
+	wrapped := fmt.Errorf("%w: region, sku", ErrMissingRequiredFields)
+	s := MapToGRPCStatus(wrapped)
+	if s.Code() != codes.InvalidArgument {
+		t.Errorf("expected InvalidArgument for wrapped ErrMissingRequiredFields, got %v", s.Code())
+	}
+	if s.Message() != wrapped.Error() {
+		t.Errorf("expected message %q, got %q", wrapped.Error(), s.Message())
 	}
 }
 
