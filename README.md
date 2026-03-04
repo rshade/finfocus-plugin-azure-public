@@ -45,10 +45,15 @@ Run the binary directly. It starts a gRPC server and outputs the port to stdout:
 
 ## Environment Variables
 
-| Variable               | Description                                   | Default   |
-|------------------------|-----------------------------------------------|-----------|
-| `FINFOCUS_PLUGIN_PORT` | Fixed port number for the gRPC server         | Ephemeral |
-| `FINFOCUS_LOG_LEVEL`   | Log level: trace, debug, info, warn, error    | info      |
+<!-- markdownlint-disable MD013 -->
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `FINFOCUS_PLUGIN_PORT` | Ephemeral | Fixed port number for the gRPC server |
+| `FINFOCUS_LOG_LEVEL` | info | Log level: trace, debug, info, warn, error |
+| `FINFOCUS_CACHE_TTL` | 24h | Cache TTL (e.g., "10s", "1h", "0s" to disable) |
+
+<!-- markdownlint-enable MD013 -->
 
 ### Examples
 
