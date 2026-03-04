@@ -7,7 +7,7 @@ import (
 
 // MaxPaginationPages is a safety limit to prevent infinite pagination loops.
 // Used by both client.go (pagination logic) and the ErrPaginationLimitExceeded message.
-const MaxPaginationPages = 1000
+const MaxPaginationPages = 10
 
 // Sentinel errors returned by the client.
 var (
