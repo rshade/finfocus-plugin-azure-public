@@ -55,6 +55,7 @@
 - N/A — pure data transformation, no I/O (016-descriptor-filter-mapping)
 - Go 1.25.5 + None (Go stdlib `math` only) (019-cost-utilities)
 - N/A — pure stateless functions (019-cost-utilities)
+- N/A — in-memory LRU+TTL cache only (stateless constraint) (020-vm-cost-estimation)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
@@ -172,6 +173,39 @@ query, err := pricing.MapDescriptorToQuery(desc)
 - `ErrMissingRequiredFields` -> gRPC `InvalidArgument`
 
 **Integration**: `Calculator.Supports()` uses `MapDescriptorToQuery` to validate resources
+
+## EstimateCost RPC (`internal/pricing/calculator.go`)
+
+Estimate monthly VM pricing from Azure Retail Prices API with cache support:
+
+```go
+attrs, err := structpb.NewStruct(map[string]any{
+    "location": "eastus",
+    "vmSize":   "Standard_B1s",
+})
+if err != nil {
+    return err
+}
+
+resp, err := calc.EstimateCost(ctx, &finfocusv1.EstimateCostRequest{
+    ResourceType: "azure:compute/virtualMachine:VirtualMachine",
+    Attributes:   attrs,
+})
+if err != nil {
+    return err // gRPC code includes InvalidArgument, NotFound, etc.
+}
+
+// Key response fields
+resp.GetCurrency()        // e.g., "USD"
+resp.GetCostMonthly()     // hourly price * 730
+resp.GetPricingCategory() // FOCUS_PRICING_CATEGORY_STANDARD
+```
+
+Behavior notes:
+- Empty `resource_type` is accepted for backward compatibility
+- Unsupported non-empty `resource_type` returns `codes.Unimplemented`
+- Missing `location/region` or `vmSize/sku` returns `codes.InvalidArgument`
+- Cache hits are served from `CachedClient` with no outbound API request
 
 ## Environment Variables
 
