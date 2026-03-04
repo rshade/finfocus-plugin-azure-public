@@ -46,10 +46,31 @@
 - Go 1.25.5 + `github.com/hashicorp/go-retryablehttp` (HTTP retry), (008-azure-error-handling)
 - Go 1.25.5 + None new — pure Go stdlib (`fmt`, `strings`, `sort`) (009-odata-filter-builder)
 - N/A — pure data transformation (string builder), no I/O (009-odata-filter-builder)
+- Go 1.25.5 + None (Go stdlib `math` only) (019-cost-utilities)
+- N/A — pure stateless functions (019-cost-utilities)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
 - 006-http-client-retry: Added Azure Retail Prices API client with retry logic
+- 019-cost-utilities: Added cost conversion utilities in `internal/estimation`
+
+## Cost Estimation (`internal/estimation`)
+
+Pure utility functions for converting between hourly, monthly, and yearly
+pricing rates. No external dependencies (Go stdlib `math` only).
+
+```go
+import "github.com/rshade/finfocus-plugin-azure-public/internal/estimation"
+
+// Constants
+estimation.HoursPerMonth // 730 (365 * 24 / 12)
+estimation.HoursPerYear  // 8760 (365 * 24)
+
+// Conversions (all results rounded to 2 decimal places)
+estimation.HourlyToMonthly(0.10)  // 73.00
+estimation.HourlyToYearly(0.10)   // 876.00
+estimation.MonthlyToHourly(5.00)  // 0.01
+```
 
 ## Azure Client (`internal/azureclient`)
 
