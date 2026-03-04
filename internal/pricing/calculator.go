@@ -90,32 +90,105 @@ func (c *Calculator) Supports(
 	}, nil
 }
 
-// EstimateCost is a stub that returns Unimplemented status.
-// Azure pricing lookup is not yet implemented.
+// EstimateCost estimates monthly VM cost from Azure Retail Prices data.
+// The request must contain region/location and sku/vmSize attributes.
+// Returns InvalidArgument for missing required fields, Unimplemented for
+// unsupported resource types, and mapped gRPC status codes for Azure API
+// failures.
 func (c *Calculator) EstimateCost(
 	ctx context.Context,
 	req *finfocusv1.EstimateCostRequest,
 ) (*finfocusv1.EstimateCostResponse, error) {
 	log := logging.RequestLogger(ctx, c.logger)
-	log.Info().Msg("handling EstimateCost request")
 
-	query, ok := estimateQueryFromRequest(req)
-	if !ok || c.cachedClient == nil {
-		return nil, status.Error(codes.Unimplemented, "not yet implemented")
+	resourceType := strings.TrimSpace(req.GetResourceType())
+	region, sku := estimateRequestRegionAndSKU(req)
+
+	log.Info().
+		Str("region", region).
+		Str("sku", sku).
+		Str("resource_type", resourceType).
+		Msg("handling EstimateCost request")
+
+	if resourceType != "" && !strings.Contains(strings.ToLower(resourceType), "compute/virtualmachine") {
+		err := status.Errorf(codes.Unimplemented, "unsupported resource type: %s", resourceType)
+		log.Warn().
+			Str("region", region).
+			Str("sku", sku).
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(err).
+			Msg("EstimateCost validation failed")
+		return nil, err
+	}
+
+	query, err := estimateQueryFromRequest(req)
+	if err != nil {
+		err = status.Error(codes.InvalidArgument, err.Error())
+		log.Warn().
+			Str("region", region).
+			Str("sku", sku).
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(err).
+			Msg("EstimateCost validation failed")
+		return nil, err
+	}
+
+	if c.cachedClient == nil {
+		unimplementedErr := status.Error(codes.Unimplemented, "not yet implemented")
+		log.Warn().
+			Str("region", query.ArmRegionName).
+			Str("sku", query.ArmSkuName).
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(unimplementedErr).
+			Msg("EstimateCost unavailable")
+		return nil, unimplementedErr
 	}
 
 	result, err := c.cachedClient.GetPrices(ctx, query)
 	if err != nil {
-		return nil, MapToGRPCStatus(err).Err()
+		err = MapToGRPCStatus(err).Err()
+		log.Error().
+			Str("region", query.ArmRegionName).
+			Str("sku", query.ArmSkuName).
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(err).
+			Msg("EstimateCost pricing lookup failed")
+		return nil, err
 	}
 
 	unitPrice, currency, err := unitPriceAndCurrency(result.Items)
 	if err != nil {
-		return nil, MapToGRPCStatus(err).Err()
+		err = MapToGRPCStatus(err).Err()
+		log.Error().
+			Str("region", query.ArmRegionName).
+			Str("sku", query.ArmSkuName).
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(err).
+			Msg("EstimateCost response mapping failed")
+		return nil, err
 	}
+
+	costMonthly := unitPrice * pluginsdk.HoursPerMonth
+
+	log.Info().
+		Str("region", query.ArmRegionName).
+		Str("sku", query.ArmSkuName).
+		Str("resource_type", resourceType).
+		Float64("cost_monthly", costMonthly).
+		Str("currency", currency).
+		Str("result_status", "success").
+		Msg("EstimateCost completed")
 
 	return pluginsdk.NewEstimateCostResponse(
 		pluginsdk.WithEstimateCost(currency, unitPrice*pluginsdk.HoursPerMonth),
+		pluginsdk.WithPricingCategory(
+			finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD,
+		),
 	), nil
 }
 
@@ -256,12 +329,17 @@ func (c *Calculator) DryRun(
 	return nil, status.Error(codes.Unimplemented, "not yet implemented")
 }
 
-func estimateQueryFromRequest(req *finfocusv1.EstimateCostRequest) (azureclient.PriceQuery, bool) {
-	if req == nil || req.GetAttributes() == nil {
-		return azureclient.PriceQuery{}, false
+// estimateQueryFromRequest extracts an Azure pricing query from EstimateCost
+// request attributes. Supported keys include location/region and
+// vmSize/sku/armSkuName with defaults for serviceName and currencyCode.
+// Returns an error in the format "missing required field(s): ..." when
+// required fields are missing.
+func estimateQueryFromRequest(req *finfocusv1.EstimateCostRequest) (azureclient.PriceQuery, error) {
+	attributes := map[string]any{}
+	if req != nil && req.GetAttributes() != nil {
+		attributes = req.GetAttributes().AsMap()
 	}
 
-	attributes := req.GetAttributes().AsMap()
 	query := azureclient.PriceQuery{
 		ArmRegionName: firstNonEmptyMapValue(attributes, "location", "region"),
 		ArmSkuName:    firstNonEmptyMapValue(attributes, "vmSize", "sku", "armSkuName"),
@@ -275,11 +353,32 @@ func estimateQueryFromRequest(req *finfocusv1.EstimateCostRequest) (azureclient.
 	if query.ServiceName == "" {
 		query.ServiceName = defaultServiceName
 	}
-	if query.ArmRegionName == "" || query.ArmSkuName == "" {
-		return azureclient.PriceQuery{}, false
+	var missingFields []string
+	if query.ArmRegionName == "" {
+		missingFields = append(missingFields, "region")
+	}
+	if query.ArmSkuName == "" {
+		missingFields = append(missingFields, "sku")
+	}
+	if len(missingFields) > 0 {
+		return azureclient.PriceQuery{}, fmt.Errorf(
+			"missing required field(s): %s",
+			strings.Join(missingFields, ", "),
+		)
 	}
 
-	return query, true
+	return query, nil
+}
+
+func estimateRequestRegionAndSKU(req *finfocusv1.EstimateCostRequest) (string, string) {
+	if req == nil || req.GetAttributes() == nil {
+		return "", ""
+	}
+
+	attributes := req.GetAttributes().AsMap()
+	region := firstNonEmptyMapValue(attributes, "location", "region")
+	sku := firstNonEmptyMapValue(attributes, "vmSize", "sku", "armSkuName")
+	return region, sku
 }
 
 func actualQueryFromRequest(req *finfocusv1.GetActualCostRequest) (azureclient.PriceQuery, bool) {

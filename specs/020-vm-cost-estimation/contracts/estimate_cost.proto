@@ -1,0 +1,51 @@
+// Contract reference for EstimateCost RPC.
+// This file documents the wire format; the actual proto is owned by finfocus-spec.
+// Do NOT compile this file — it is for documentation only.
+
+syntax = "proto3";
+
+package finfocus.v1;
+
+import "google/protobuf/struct.proto";
+
+// EstimateCost is part of CostSourceService.
+// See: finfocus-spec/proto/finfocus/v1/costsource.proto
+service CostSourceService {
+  // EstimateCost returns estimated monthly cost for a resource.
+  rpc EstimateCost(EstimateCostRequest) returns (EstimateCostResponse);
+}
+
+message EstimateCostRequest {
+  // Resource type identifier.
+  // For Azure VMs: "azure:compute/virtualMachine:VirtualMachine"
+  // Empty string is accepted for backward compatibility.
+  string resource_type = 1;
+
+  // Resource attributes as key-value pairs.
+  // Required keys: "location" (or "region"), "vmSize" (or "sku", "armSkuName")
+  // Optional keys: "currencyCode" (default "USD"), "serviceName" (default "Virtual Machines")
+  google.protobuf.Struct attributes = 2;
+}
+
+// FocusPricingCategory categorizes the pricing model.
+enum FocusPricingCategory {
+  FOCUS_PRICING_CATEGORY_UNSPECIFIED = 0;
+  FOCUS_PRICING_CATEGORY_STANDARD = 1;   // On-demand / pay-as-you-go
+  FOCUS_PRICING_CATEGORY_COMMITTED = 2;  // Reserved instances / savings plans
+  FOCUS_PRICING_CATEGORY_DYNAMIC = 3;    // Spot / preemptible
+}
+
+message EstimateCostResponse {
+  // ISO 4217 currency code (e.g., "USD").
+  string currency = 1;
+
+  // Estimated monthly cost (hourly_price * 730 hours).
+  // Non-negative. Zero is valid for free-tier resources.
+  double cost_monthly = 2;
+
+  // Pricing model category. Set to STANDARD for Consumption pricing.
+  FocusPricingCategory pricing_category = 3;
+
+  // Spot interruption risk score (0.0-1.0). Set to 0.0 for on-demand VMs.
+  double spot_interruption_risk_score = 4;
+}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -475,7 +476,11 @@ func TestEstimateCostReturnsUnimplemented(t *testing.T) {
 	logger := zerolog.Nop()
 	calc := NewCalculator(logger)
 
-	_, err := calc.EstimateCost(context.Background(), &finfocusv1.EstimateCostRequest{})
+	req := newEstimateCostRequest(t, "azure:compute/virtualMachine:VirtualMachine", map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_B1s",
+	})
+	_, err := calc.EstimateCost(context.Background(), req)
 	if err == nil {
 		t.Fatal("expected Unimplemented error, got nil")
 	}
@@ -488,6 +493,363 @@ func TestEstimateCostReturnsUnimplemented(t *testing.T) {
 
 	if st.Code() != codes.Unimplemented {
 		t.Errorf("expected Unimplemented code, got: %v", st.Code())
+	}
+}
+
+func TestEstimateQueryFromRequest_ValidInput_ReturnsQuery(t *testing.T) {
+	t.Parallel()
+
+	req := newEstimateCostRequest(t, "", map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_B1s",
+	})
+
+	query, err := estimateQueryFromRequest(req)
+	if err != nil {
+		t.Fatalf("estimateQueryFromRequest() returned error: %v", err)
+	}
+
+	if query.ArmRegionName != "eastus" {
+		t.Fatalf("expected region eastus, got %q", query.ArmRegionName)
+	}
+	if query.ArmSkuName != "Standard_B1s" {
+		t.Fatalf("expected sku Standard_B1s, got %q", query.ArmSkuName)
+	}
+	if query.ServiceName != defaultServiceName {
+		t.Fatalf("expected default service %q, got %q", defaultServiceName, query.ServiceName)
+	}
+	if query.CurrencyCode != "USD" {
+		t.Fatalf("expected default currency USD, got %q", query.CurrencyCode)
+	}
+}
+
+func TestEstimateQueryFromRequest_MissingRegion_ReturnsError(t *testing.T) {
+	t.Parallel()
+
+	req := newEstimateCostRequest(t, "", map[string]any{
+		"vmSize": "Standard_B1s",
+	})
+
+	_, err := estimateQueryFromRequest(req)
+	if err == nil {
+		t.Fatal("expected missing region error, got nil")
+	}
+	if !strings.Contains(strings.ToLower(err.Error()), "region") {
+		t.Fatalf("expected error to mention region, got %q", err.Error())
+	}
+}
+
+func TestEstimateQueryFromRequest_MissingBoth_ReturnsError(t *testing.T) {
+	t.Parallel()
+
+	req := &finfocusv1.EstimateCostRequest{}
+	_, err := estimateQueryFromRequest(req)
+	if err == nil {
+		t.Fatal("expected missing fields error, got nil")
+	}
+
+	msg := strings.ToLower(err.Error())
+	if !strings.Contains(msg, "region") || !strings.Contains(msg, "sku") {
+		t.Fatalf("expected error to mention both region and sku, got %q", err.Error())
+	}
+}
+
+func TestEstimateCost_ValidRequest_SetsPricingCategoryStandard(t *testing.T) {
+	t.Parallel()
+
+	server := newPriceServer(t, []azureclient.PriceItem{
+		{
+			ArmRegionName: "eastus",
+			ArmSkuName:    "Standard_B1s",
+			ServiceName:   "Virtual Machines",
+			CurrencyCode:  "USD",
+			RetailPrice:   0.0200,
+		},
+	}, nil)
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	calc := NewCalculator(zerolog.Nop(), cachedClient)
+	req := newEstimateCostRequest(t, "azure:compute/virtualMachine:VirtualMachine", map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_B1s",
+	})
+
+	resp, err := calc.EstimateCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("EstimateCost() failed: %v", err)
+	}
+
+	if resp.GetPricingCategory() != finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD {
+		t.Fatalf("expected pricing category STANDARD, got %v", resp.GetPricingCategory())
+	}
+}
+
+func TestEstimateCost_ValidRequest_ReturnsCostMonthlyEqualToHourlyTimes730(t *testing.T) {
+	t.Parallel()
+
+	server := newPriceServer(t, []azureclient.PriceItem{
+		{
+			ArmRegionName: "eastus",
+			ArmSkuName:    "Standard_B1s",
+			ServiceName:   "Virtual Machines",
+			CurrencyCode:  "USD",
+			RetailPrice:   0.0200,
+		},
+	}, nil)
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	calc := NewCalculator(zerolog.Nop(), cachedClient)
+	req := newEstimateCostRequest(t, "azure:compute/virtualMachine:VirtualMachine", map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_B1s",
+	})
+
+	resp, err := calc.EstimateCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("EstimateCost() failed: %v", err)
+	}
+
+	want := 0.0200 * 730.0
+	if math.Abs(resp.GetCostMonthly()-want) > 0.000001 {
+		t.Fatalf("expected monthly cost %.6f, got %.6f", want, resp.GetCostMonthly())
+	}
+}
+
+func TestEstimateCost_UnsupportedResourceType_ReturnsUnimplemented(t *testing.T) {
+	t.Parallel()
+
+	calc := NewCalculator(zerolog.Nop())
+	req := newEstimateCostRequest(t, "network/LoadBalancer", map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_B1s",
+	})
+
+	_, err := calc.EstimateCost(context.Background(), req)
+	assertStatusCodeContains(t, err, codes.Unimplemented, "unsupported resource type")
+}
+
+func TestEstimateCost_EmptyResourceType_Succeeds(t *testing.T) {
+	t.Parallel()
+
+	server := newPriceServer(t, []azureclient.PriceItem{
+		{
+			ArmRegionName: "eastus",
+			ArmSkuName:    "Standard_B1s",
+			ServiceName:   "Virtual Machines",
+			CurrencyCode:  "USD",
+			RetailPrice:   0.0200,
+		},
+	}, nil)
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	calc := NewCalculator(zerolog.Nop(), cachedClient)
+	req := newEstimateCostRequest(t, "", map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_B1s",
+	})
+
+	resp, err := calc.EstimateCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("EstimateCost() failed: %v", err)
+	}
+	if resp.GetCostMonthly() <= 0 {
+		t.Fatalf("expected positive monthly cost, got %f", resp.GetCostMonthly())
+	}
+}
+
+func TestEstimateCost_MissingRegion_ReturnsInvalidArgument(t *testing.T) {
+	t.Parallel()
+
+	calc := NewCalculator(zerolog.Nop())
+	req := newEstimateCostRequest(t, "azure:compute/virtualMachine:VirtualMachine", map[string]any{
+		"vmSize": "Standard_B1s",
+	})
+
+	_, err := calc.EstimateCost(context.Background(), req)
+	assertStatusCodeContains(t, err, codes.InvalidArgument, "region")
+}
+
+func TestEstimateCost_MissingSKU_ReturnsInvalidArgument(t *testing.T) {
+	t.Parallel()
+
+	calc := NewCalculator(zerolog.Nop())
+	req := newEstimateCostRequest(t, "azure:compute/virtualMachine:VirtualMachine", map[string]any{
+		"location": "eastus",
+	})
+
+	_, err := calc.EstimateCost(context.Background(), req)
+	assertStatusCodeContains(t, err, codes.InvalidArgument, "sku")
+}
+
+func TestEstimateCost_MissingBothFields_ReturnsInvalidArgument(t *testing.T) {
+	t.Parallel()
+
+	calc := NewCalculator(zerolog.Nop())
+	_, err := calc.EstimateCost(context.Background(), &finfocusv1.EstimateCostRequest{
+		ResourceType: "azure:compute/virtualMachine:VirtualMachine",
+	})
+	assertStatusCodeContains(t, err, codes.InvalidArgument, "region", "sku")
+}
+
+func TestEstimateCost_NotFoundSKU_ReturnsNotFound(t *testing.T) {
+	t.Parallel()
+
+	server := newPriceServer(t, []azureclient.PriceItem{}, nil)
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	calc := NewCalculator(zerolog.Nop(), cachedClient)
+	req := newEstimateCostRequest(t, "azure:compute/virtualMachine:VirtualMachine", map[string]any{
+		"location": "eastus",
+		"vmSize":   "Definitely_Not_A_Real_SKU",
+	})
+
+	_, err := calc.EstimateCost(context.Background(), req)
+	assertStatusCodeContains(t, err, codes.NotFound)
+}
+
+func TestEstimateCost_MultipleItems_UsesFirstItem(t *testing.T) {
+	t.Parallel()
+
+	server := newPriceServer(t, []azureclient.PriceItem{
+		{
+			ArmRegionName: "eastus",
+			ArmSkuName:    "Standard_B1s",
+			ServiceName:   "Virtual Machines",
+			CurrencyCode:  "USD",
+			RetailPrice:   0.0200,
+		},
+		{
+			ArmRegionName: "eastus",
+			ArmSkuName:    "Standard_B1s",
+			ServiceName:   "Virtual Machines",
+			CurrencyCode:  "USD",
+			RetailPrice:   0.9999,
+		},
+		{
+			ArmRegionName: "eastus",
+			ArmSkuName:    "Standard_B1s",
+			ServiceName:   "Virtual Machines",
+			CurrencyCode:  "USD",
+			RetailPrice:   1.2345,
+		},
+	}, nil)
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	calc := NewCalculator(zerolog.Nop(), cachedClient)
+	req := newEstimateCostRequest(t, "azure:compute/virtualMachine:VirtualMachine", map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_B1s",
+	})
+
+	resp, err := calc.EstimateCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("EstimateCost() failed: %v", err)
+	}
+
+	want := 0.0200 * 730.0
+	if math.Abs(resp.GetCostMonthly()-want) > 0.000001 {
+		t.Fatalf("expected first-item monthly cost %.6f, got %.6f", want, resp.GetCostMonthly())
+	}
+}
+
+func TestEstimateCost_RepeatedQuery_UsesCacheOnSecondCall(t *testing.T) {
+	t.Parallel()
+
+	var calls atomic.Int32
+	server := newPriceServer(t, []azureclient.PriceItem{
+		{
+			ArmRegionName: "eastus",
+			ArmSkuName:    "Standard_B1s",
+			ServiceName:   "Virtual Machines",
+			CurrencyCode:  "USD",
+			RetailPrice:   0.0200,
+		},
+	}, &calls)
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	calc := NewCalculator(zerolog.Nop(), cachedClient)
+	req := newEstimateCostRequest(t, "azure:compute/virtualMachine:VirtualMachine", map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_B1s",
+	})
+
+	first, err := calc.EstimateCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("first EstimateCost() call failed: %v", err)
+	}
+	second, err := calc.EstimateCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("second EstimateCost() call failed: %v", err)
+	}
+
+	if got := calls.Load(); got != 1 {
+		t.Fatalf("expected one upstream request, got %d", got)
+	}
+	if math.Abs(first.GetCostMonthly()-second.GetCostMonthly()) > 0.000001 {
+		t.Fatalf(
+			"expected identical monthly cost for cache hit, first=%.6f second=%.6f",
+			first.GetCostMonthly(),
+			second.GetCostMonthly(),
+		)
+	}
+}
+
+func TestEstimateCost_CacheStats_RecordsHitAndMiss(t *testing.T) {
+	t.Parallel()
+
+	server := newPriceServer(t, []azureclient.PriceItem{
+		{
+			ArmRegionName: "eastus",
+			ArmSkuName:    "Standard_B1s",
+			ServiceName:   "Virtual Machines",
+			CurrencyCode:  "USD",
+			RetailPrice:   0.0200,
+		},
+	}, nil)
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	calc := NewCalculator(zerolog.Nop(), cachedClient)
+	req := newEstimateCostRequest(t, "azure:compute/virtualMachine:VirtualMachine", map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_B1s",
+	})
+
+	_, err := calc.EstimateCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("first EstimateCost() call failed: %v", err)
+	}
+	_, err = calc.EstimateCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("second EstimateCost() call failed: %v", err)
+	}
+
+	stats := cachedClient.Stats()
+	if stats.Hits.Load() != 1 {
+		t.Fatalf("expected 1 cache hit, got %d", stats.Hits.Load())
+	}
+	if stats.Misses.Load() != 1 {
+		t.Fatalf("expected 1 cache miss, got %d", stats.Misses.Load())
 	}
 }
 
@@ -815,6 +1177,79 @@ func TestEstimateCostUsesCachedClient(t *testing.T) {
 	}
 	if resp.GetCostMonthly() <= 0 {
 		t.Fatalf("expected positive monthly cost, got %f", resp.GetCostMonthly())
+	}
+}
+
+func newEstimateCostRequest(
+	t *testing.T,
+	resourceType string,
+	attributes map[string]any,
+) *finfocusv1.EstimateCostRequest {
+	t.Helper()
+
+	req := &finfocusv1.EstimateCostRequest{
+		ResourceType: resourceType,
+	}
+	if attributes == nil {
+		return req
+	}
+
+	attrs, err := structpb.NewStruct(attributes)
+	if err != nil {
+		t.Fatalf("NewStruct() failed: %v", err)
+	}
+	req.Attributes = attrs
+	return req
+}
+
+func newPriceServer(
+	t *testing.T,
+	items []azureclient.PriceItem,
+	counter *atomic.Int32,
+) *httptest.Server {
+	t.Helper()
+
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		if counter != nil {
+			counter.Add(1)
+		}
+
+		resp := azureclient.PriceResponse{
+			Items: items,
+			Count: len(items),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Fatalf("encode response: %v", err)
+		}
+	}))
+}
+
+func assertStatusCodeContains(
+	t *testing.T,
+	err error,
+	wantCode codes.Code,
+	substrings ...string,
+) {
+	t.Helper()
+
+	if err == nil {
+		t.Fatalf("expected gRPC error %v, got nil", wantCode)
+	}
+	st, ok := status.FromError(err)
+	if !ok {
+		t.Fatalf("expected gRPC status error, got: %v", err)
+	}
+	if st.Code() != wantCode {
+		t.Fatalf("expected code %v, got %v (message: %q)", wantCode, st.Code(), st.Message())
+	}
+
+	msg := strings.ToLower(st.Message())
+	for _, substr := range substrings {
+		if !strings.Contains(msg, strings.ToLower(substr)) {
+			t.Fatalf("expected error message %q to contain %q", st.Message(), substr)
+		}
 	}
 }
 
