@@ -65,19 +65,28 @@ func (c *Calculator) GetPluginInfo(
 	}, nil
 }
 
-// Supports checks if this plugin supports a given resource type.
-// Currently returns false for all resource types as Azure pricing lookup
-// is not yet implemented.
+// Supports checks if this plugin supports a given resource type by attempting
+// to map the resource descriptor to an Azure pricing query. Returns
+// Supported:true if the mapping succeeds, or Supported:false with a reason
+// describing why the resource cannot be priced.
 func (c *Calculator) Supports(
 	ctx context.Context,
-	_ *finfocusv1.SupportsRequest,
+	req *finfocusv1.SupportsRequest,
 ) (*finfocusv1.SupportsResponse, error) {
 	log := logging.RequestLogger(ctx, c.logger)
 	log.Info().Msg("handling Supports request")
 
+	_, err := MapDescriptorToQuery(req.GetResource())
+	if err != nil {
+		log.Debug().Err(err).Msg("resource not supported")
+		return &finfocusv1.SupportsResponse{
+			Supported: false,
+			Reason:    err.Error(),
+		}, nil
+	}
+
 	return &finfocusv1.SupportsResponse{
-		Supported: false,
-		Reason:    "not yet implemented",
+		Supported: true,
 	}, nil
 }
 

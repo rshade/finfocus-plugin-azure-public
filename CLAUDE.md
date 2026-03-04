@@ -47,16 +47,19 @@
 - Go 1.25.5 + `github.com/hashicorp/go-retryablehttp` (HTTP retry), (008-azure-error-handling)
 - Go 1.25.5 + None new — pure Go stdlib (`fmt`, `strings`, `sort`) (009-odata-filter-builder)
 - N/A — pure data transformation (string builder), no I/O (009-odata-filter-builder)
-- Go 1.25.5 + None (Go stdlib `math` only) (019-cost-utilities)
-- N/A — pure stateless functions (019-cost-utilities)
-- In-memory only (stateless constraint) (012-memory-cache)
 - N/A — stateless, in-memory only (010-pagination-handler)
+- In-memory only (stateless constraint) (012-memory-cache)
 - Go 1.25.7 + `github.com/hashicorp/golang-lru/v2/expirable`, (015-cache-completion)
 - N/A — in-memory only (stateless constraint) (015-cache-completion)
+- Go 1.25.5 + finfocus-spec v0.5.4 (`finfocusv1.ResourceDescriptor`), internal `azureclient` (PriceQuery, FilterBuilder) (016-descriptor-filter-mapping)
+- N/A — pure data transformation, no I/O (016-descriptor-filter-mapping)
+- Go 1.25.5 + None (Go stdlib `math` only) (019-cost-utilities)
+- N/A — pure stateless functions (019-cost-utilities)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
 - 006-http-client-retry: Added Azure Retail Prices API client with retry logic
+- 016-descriptor-filter-mapping: Added ResourceDescriptor to PriceQuery mapper
 - 019-cost-utilities: Added cost conversion utilities in `internal/estimation`
 
 ## Cost Estimation (`internal/estimation`)
@@ -139,6 +142,36 @@ filter = azureclient.NewFilterBuilder().
 - Structured logging: errors logged with `region`, `sku`, `service`, `url`, `error_category` fields at differentiated severity levels (debug/warn/error)
 
 **Integration Tests**: `go test -tags=integration ./examples/...`
+
+## Resource Descriptor Mapper (`internal/pricing/mapper.go`)
+
+Maps `finfocusv1.ResourceDescriptor` to `azureclient.PriceQuery`:
+
+```go
+query, err := pricing.MapDescriptorToQuery(desc)
+// query.ArmRegionName, query.ArmSkuName, query.ServiceName, query.CurrencyCode
+```
+
+**Supported Resource Types**:
+
+| Resource Type | Azure Service Name |
+| --- | --- |
+| `compute/VirtualMachine` | Virtual Machines |
+| `storage/ManagedDisk` | Managed Disks |
+| `storage/BlobStorage` | Storage |
+
+**Behavior**:
+- Case-insensitive provider and resource type matching
+- Tag fallback: `Tags["region"]` and `Tags["sku"]` when primary fields empty
+- Primary fields always take precedence over tags
+- Default currency: USD
+- Multi-field validation: reports all missing fields in single error
+
+**Error Sentinels**:
+- `ErrUnsupportedResourceType` -> gRPC `Unimplemented`
+- `ErrMissingRequiredFields` -> gRPC `InvalidArgument`
+
+**Integration**: `Calculator.Supports()` uses `MapDescriptorToQuery` to validate resources
 
 ## Environment Variables
 

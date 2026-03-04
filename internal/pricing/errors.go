@@ -10,6 +10,16 @@ import (
 	"github.com/rshade/finfocus-plugin-azure-public/internal/azureclient"
 )
 
+// ErrUnsupportedResourceType is returned when the provider is not "azure"
+// or the resource type has no defined mapping to an Azure service name.
+// Maps to gRPC codes.Unimplemented via MapToGRPCStatus.
+var ErrUnsupportedResourceType = errors.New("unsupported resource type")
+
+// ErrMissingRequiredFields is returned when region and/or SKU cannot be
+// resolved from primary descriptor fields or tag fallback.
+// Maps to gRPC codes.InvalidArgument via MapToGRPCStatus.
+var ErrMissingRequiredFields = errors.New("missing required fields")
+
 // MapToGRPCStatus maps an azureclient error to a gRPC status.
 // The error message is preserved in the gRPC status message.
 // Mapping is evaluated via errors.Is in priority order.
@@ -38,6 +48,10 @@ func MapToGRPCStatus(err error) *status.Status {
 		code = codes.Internal
 	case errors.Is(err, azureclient.ErrPaginationLimitExceeded):
 		code = codes.Internal
+	case errors.Is(err, ErrUnsupportedResourceType):
+		code = codes.Unimplemented
+	case errors.Is(err, ErrMissingRequiredFields):
+		code = codes.InvalidArgument
 	}
 
 	return status.New(code, err.Error())
