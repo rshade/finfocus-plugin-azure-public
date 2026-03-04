@@ -49,6 +49,8 @@
 - N/A — pure data transformation (string builder), no I/O (009-odata-filter-builder)
 - In-memory only (stateless constraint) (012-memory-cache)
 - N/A — stateless, in-memory only (010-pagination-handler)
+- Go 1.25.7 + `github.com/hashicorp/golang-lru/v2/expirable`, (015-cache-completion)
+- N/A — in-memory only (stateless constraint) (015-cache-completion)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
