@@ -87,7 +87,17 @@ func NewCachedClient(client *Client, config CacheConfig) (*CachedClient, error) 
 	cc.lastStatsNS.Store(time.Now().UnixNano())
 
 	if !cc.disabled {
-		cc.cache = expirable.NewLRU[string, CachedResult](config.MaxSize, nil, config.TTL)
+		onEvict := func(key string, value CachedResult) {
+			reason := "lru"
+			if time.Since(value.CreatedAt) >= config.TTL {
+				reason = "expired"
+			}
+			cc.logger.Debug().
+				Str("cache_key", key).
+				Str("eviction_reason", reason).
+				Msg("cache entry evicted")
+		}
+		cc.cache = expirable.NewLRU[string, CachedResult](config.MaxSize, onEvict, config.TTL)
 	}
 
 	return cc, nil

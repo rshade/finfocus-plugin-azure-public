@@ -11,31 +11,7 @@ See [CONTEXT.md](./CONTEXT.md) for architectural boundaries.
 
 ---
 
-## Immediate Focus (v0.2.0 - Azure Client)
-
-**Goal:** Implement the HTTP client capable of querying the Azure Retail
-API reliably.
-
-**Milestone:**
-[v0.2.0 - Azure Client](https://github.com/rshade/finfocus-plugin-azure-public/milestone/2)
-
-- [ ] [#9](https://github.com/rshade/finfocus-plugin-azure-public/issues/9)
-  Implement OData filter query builder [M]
-- [ ] [#10](https://github.com/rshade/finfocus-plugin-azure-public/issues/10)
-  Implement pagination handler for Azure API responses [M]
-- [ ] [#11](https://github.com/rshade/finfocus-plugin-azure-public/issues/11)
-  Implement comprehensive error handling for Azure API failures [S]
-
-**Verification:**
-
-- Can query live Azure API for VM pricing
-- Pagination follows NextPageLink correctly
-- 429 errors trigger retry with backoff
-- Integration tests pass with live API
-
----
-
-## Near-Term Vision (v0.3.0 - Caching Layer)
+## Immediate Focus (v0.3.0 - Caching Layer)
 
 **Goal:** Prevent API throttling and improve performance for repetitive
 lookups.
@@ -43,11 +19,9 @@ lookups.
 **Milestone:**
 [v0.3.0 - Caching Layer](https://github.com/rshade/finfocus-plugin-azure-public/milestone/3)
 
-- [ ] [#12](https://github.com/rshade/finfocus-plugin-azure-public/issues/12)
-  Implement thread-safe in-memory cache [M]
 - [ ] [#13](https://github.com/rshade/finfocus-plugin-azure-public/issues/13)
   Implement TTL-based cache eviction logic [S]
-- [ ] [#14](https://github.com/rshade/finfocus-plugin-azure-public/issues/14)
+- [x] [#14](https://github.com/rshade/finfocus-plugin-azure-public/issues/14)
   Implement cache key normalization [S]
 - [ ] [#15](https://github.com/rshade/finfocus-plugin-azure-public/issues/15)
   Add cache observability (hit/miss metrics and logging) [S]
@@ -61,9 +35,7 @@ lookups.
 
 ---
 
-## Future Vision (Long-Term)
-
-### v0.4.0 - Field Mapping & Estimation
+## Near-Term Vision (v0.4.0 - Field Mapping & Estimation)
 
 **Goal:** Connect the FinFocus generic `ResourceDescriptor` to
 Azure-specific queries.
@@ -88,6 +60,10 @@ Azure-specific queries.
 - Managed Disk estimates scale with size
 - Estimates within 5% of Azure Pricing Calculator
 - Integration tests pass against live API
+
+---
+
+## Future Vision (Long-Term)
 
 ### v0.5.0 - Quality & Operations
 
@@ -185,12 +161,25 @@ each feature.
 - [x] [#6](https://github.com/rshade/finfocus-plugin-azure-public/issues/6)
   Implement zerolog structured logging [S]
 
-#### v0.2.0 - Azure Client (partial)
+#### v0.2.0 - Azure Client
 
 - [x] [#7](https://github.com/rshade/finfocus-plugin-azure-public/issues/7)
   Implement HTTP client with retry logic [M]
 - [x] [#8](https://github.com/rshade/finfocus-plugin-azure-public/issues/8)
   Define Azure Retail Prices API data models [S]
+- [x] [#9](https://github.com/rshade/finfocus-plugin-azure-public/issues/9)
+  Implement OData filter query builder [M]
+- [x] [#10](https://github.com/rshade/finfocus-plugin-azure-public/issues/10)
+  Implement pagination handler for Azure API responses [M]
+- [x] [#11](https://github.com/rshade/finfocus-plugin-azure-public/issues/11)
+  Implement comprehensive error handling for Azure API failures [S]
+
+#### v0.3.0 - Caching Layer (partial)
+
+- [x] [#12](https://github.com/rshade/finfocus-plugin-azure-public/issues/12)
+  Implement thread-safe in-memory cache [M]
+- [x] [#14](https://github.com/rshade/finfocus-plugin-azure-public/issues/14)
+  Implement cache key normalization [S]
 
 ---
 
@@ -222,13 +211,13 @@ The following features violate architectural constraints defined in
 | Milestone | Status | Progress |
 | --- | --- | --- |
 | v0.1.0 - Scaffold & Transport | Complete | 6/6 (100%) |
-| v0.2.0 - Azure Client | Active | 2/5 (40%) |
-| v0.3.0 - Caching Layer | Not Started | 0/4 (0%) |
+| v0.2.0 - Azure Client | Complete | 5/5 (100%) |
+| v0.3.0 - Caching Layer | Active | 2/4 (50%) |
 | v0.4.0 - Field Mapping & Estimation | Not Started | 0/5 (0%) |
 
-**Completed Issues**: #1, #2, #3, #4, #5, #6, #7, #8
+**Completed Issues**: #1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #14
 
-**Total Core Roadmap**: 20 issues across 4 phases (8 completed)
+**Total Core Roadmap**: 20 issues across 4 phases (13 completed)
 
 LOE Key: [S] = Small (1-2 days), [M] = Medium (3-5 days),
 [L] = Large (5+ days)

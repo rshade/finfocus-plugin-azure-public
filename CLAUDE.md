@@ -117,6 +117,18 @@ filter = azureclient.NewFilterBuilder().
 
 **Integration Tests**: `go test -tags=integration ./examples/...`
 
+## Environment Variables
+
+<!-- markdownlint-disable MD013 -->
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `FINFOCUS_PLUGIN_PORT` | 0 (ephemeral) | gRPC listen port |
+| `FINFOCUS_LOG_LEVEL` | info | Log level (debug, info, warn, error) |
+| `FINFOCUS_CACHE_TTL` | 24h | Cache TTL duration (e.g., "10s", "1h", "0s" to disable) |
+
+<!-- markdownlint-enable MD013 -->
+
 ## Cached Azure Client (`internal/azureclient/cache.go`)
 
 `CachedClient` wraps `azureclient.Client` with a thread-safe in-memory cache:
@@ -143,6 +155,8 @@ Cache behavior:
 - Key normalization: `CacheKey(query)` => `region|sku|product|service|currency` (lowercase, trimmed)
 - L1 cache: in-process LRU+TTL (default 1000 entries, 24h TTL)
 - L2 hint: `CachedResult.ExpiresAt` (default 4h) propagated to gRPC projected/actual cost responses
+- TTL override: `FINFOCUS_CACHE_TTL` env var parsed in `main.go` (e.g., "10s", "1h", "0s" to disable)
+- Eviction logging: debug-level structured logs with `cache_key` and `eviction_reason` ("lru" or "expired")
 - Errors are never cached
 - Stats: `cachedClient.Stats().Hits.Load()` / `cachedClient.Stats().Misses.Load()`
 

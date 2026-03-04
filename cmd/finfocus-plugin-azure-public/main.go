@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rshade/finfocus-spec/sdk/go/pluginsdk"
@@ -89,6 +90,8 @@ func run() error {
 	// Build cache wrapper around Azure pricing client.
 	cacheConfig := azureclient.DefaultCacheConfig()
 	cacheConfig.Logger = logger
+	cacheConfig.TTL = parseCacheTTL(logger)
+	logger.Info().Str("cache_ttl", cacheConfig.TTL.String()).Msg("effective cache TTL")
 	cachedClient, err := azureclient.NewCachedClient(client, cacheConfig)
 	if err != nil {
 		client.Close()
@@ -135,4 +138,30 @@ func run() error {
 	}
 
 	return nil
+}
+
+// parseCacheTTL reads the FINFOCUS_CACHE_TTL environment variable and returns
+// the configured cache TTL duration. Returns the default TTL (24h) when the
+// variable is unset, empty, negative, or contains an invalid duration string.
+// Returns 0 for "0s", which disables caching.
+func parseCacheTTL(logger zerolog.Logger) time.Duration {
+	defaultTTL := azureclient.DefaultCacheConfig().TTL
+
+	val := os.Getenv("FINFOCUS_CACHE_TTL")
+	if val == "" {
+		return defaultTTL
+	}
+
+	d, err := time.ParseDuration(val)
+	if err != nil {
+		logger.Warn().Str("value", val).Err(err).Msg("invalid FINFOCUS_CACHE_TTL, using default")
+		return defaultTTL
+	}
+
+	if d < 0 {
+		logger.Warn().Str("value", val).Msg("negative FINFOCUS_CACHE_TTL, using default")
+		return defaultTTL
+	}
+
+	return d
 }
