@@ -1,4 +1,3 @@
-//nolint:cyclop // Integration tests in this package intentionally favor explicit assertions.
 package main
 
 import (
@@ -16,6 +15,10 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/rs/zerolog"
+
+	"github.com/rshade/finfocus-plugin-azure-public/internal/azureclient"
 )
 
 //nolint:gochecknoglobals // Test fixtures require package-level state for sync.Once pattern.
@@ -1259,4 +1262,131 @@ func TestRapidStartupShutdown(t *testing.T) {
 	}
 
 	t.Logf("Successfully completed %d rapid startup/shutdown cycles", iterations)
+}
+
+// =============================================================================
+// User Story: Cache TTL Environment Variable Tests (T001-T005)
+// =============================================================================
+
+// TestParseCacheTTL_ValidDurations verifies parseCacheTTL correctly parses
+// valid Go duration strings from the FINFOCUS_CACHE_TTL env var.
+func TestParseCacheTTL_ValidDurations(t *testing.T) {
+	tests := []struct {
+		name     string
+		envValue string
+		want     time.Duration
+	}{
+		{name: "seconds", envValue: "10s", want: 10 * time.Second},
+		{name: "hours", envValue: "1h", want: time.Hour},
+		{name: "milliseconds", envValue: "500ms", want: 500 * time.Millisecond},
+		{name: "minutes", envValue: "30m", want: 30 * time.Minute},
+		{name: "complex", envValue: "1h30m", want: 90 * time.Minute},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("FINFOCUS_CACHE_TTL", tt.envValue)
+			logger := zerolog.Nop()
+			got := parseCacheTTL(logger)
+			if got != tt.want {
+				t.Errorf("parseCacheTTL(%q) = %v, want %v", tt.envValue, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestParseCacheTTL_InvalidFallsBackToDefault verifies invalid values produce
+// a warning and fall back to the default 24h TTL.
+func TestParseCacheTTL_InvalidFallsBackToDefault(t *testing.T) {
+	defaultTTL := azureclient.DefaultCacheConfig().TTL
+
+	tests := []struct {
+		name     string
+		envValue string
+	}{
+		{name: "word", envValue: "banana"},
+		{name: "number_without_unit", envValue: "42"},
+		{name: "empty_string_with_spaces", envValue: "  "},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("FINFOCUS_CACHE_TTL", tt.envValue)
+
+			var buf bytes.Buffer
+			logger := zerolog.New(&buf).Level(zerolog.WarnLevel)
+
+			got := parseCacheTTL(logger)
+			if got != defaultTTL {
+				t.Errorf("parseCacheTTL(%q) = %v, want default %v", tt.envValue, got, defaultTTL)
+			}
+
+			// Verify warning was logged
+			if buf.Len() == 0 {
+				t.Errorf("expected warning log for invalid value %q, got none", tt.envValue)
+			}
+		})
+	}
+}
+
+// TestParseCacheTTL_UnsetUsesDefault verifies that when FINFOCUS_CACHE_TTL
+// is not set, the default 24h TTL is returned.
+func TestParseCacheTTL_UnsetUsesDefault(t *testing.T) {
+	// t.Setenv is not called, so the env var is implicitly unset
+	// (test binary clears inherited env vars for this key)
+	t.Setenv("FINFOCUS_CACHE_TTL", "")
+	os.Unsetenv("FINFOCUS_CACHE_TTL")
+
+	defaultTTL := azureclient.DefaultCacheConfig().TTL
+	logger := zerolog.Nop()
+
+	got := parseCacheTTL(logger)
+	if got != defaultTTL {
+		t.Errorf("parseCacheTTL(unset) = %v, want default %v", got, defaultTTL)
+	}
+}
+
+// TestParseCacheTTL_ZeroDisablesCache verifies that "0s" returns 0
+// which causes NewCachedClient to disable caching.
+func TestParseCacheTTL_ZeroDisablesCache(t *testing.T) {
+	t.Setenv("FINFOCUS_CACHE_TTL", "0s")
+	logger := zerolog.Nop()
+
+	got := parseCacheTTL(logger)
+	if got != 0 {
+		t.Errorf("parseCacheTTL(\"0s\") = %v, want 0", got)
+	}
+}
+
+// TestParseCacheTTL_NegativeFallsBackToDefault verifies that negative durations
+// are treated as invalid and fall back to the default TTL.
+func TestParseCacheTTL_NegativeFallsBackToDefault(t *testing.T) {
+	defaultTTL := azureclient.DefaultCacheConfig().TTL
+
+	tests := []struct {
+		name     string
+		envValue string
+	}{
+		{name: "negative_seconds", envValue: "-5s"},
+		{name: "negative_hours", envValue: "-1h"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("FINFOCUS_CACHE_TTL", tt.envValue)
+
+			var buf bytes.Buffer
+			logger := zerolog.New(&buf).Level(zerolog.WarnLevel)
+
+			got := parseCacheTTL(logger)
+			if got != defaultTTL {
+				t.Errorf("parseCacheTTL(%q) = %v, want default %v", tt.envValue, got, defaultTTL)
+			}
+
+			// Verify warning was logged
+			if buf.Len() == 0 {
+				t.Errorf("expected warning log for negative value %q, got none", tt.envValue)
+			}
+		})
+	}
 }
