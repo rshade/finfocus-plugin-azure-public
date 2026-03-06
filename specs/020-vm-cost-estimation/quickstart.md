@@ -36,7 +36,7 @@ grpcurl -plaintext -d '{
 }' localhost:PORT finfocus.v1.CostSourceService/EstimateCost
 ```
 
-Expected response:
+Example response (actual `costMonthly` varies with current Azure pricing):
 
 ```json
 {

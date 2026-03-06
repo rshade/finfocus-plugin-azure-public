@@ -34,6 +34,6 @@ before proceeding to planning
 ## Notes
 
 - All items pass validation. Spec is ready for `/speckit.clarify` or `/speckit.plan`.
-- Scope is deliberately narrow: Linux VMs with Consumption pricing only (v0.4.0).
+- Scope is deliberately narrow: Linux VMs with Consumption pricing only (v0.1.0).
 - The issue references internal constants (730 hours/month) which are documented
   as domain-standard assumptions rather than implementation details.

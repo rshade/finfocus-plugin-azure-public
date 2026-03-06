@@ -554,6 +554,108 @@ func TestEstimateQueryFromRequest_MissingBoth_ReturnsError(t *testing.T) {
 	}
 }
 
+func TestEstimateQueryFromRequest_AliasHandling(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		attrs      map[string]any
+		wantRegion string
+		wantSKU    string
+		wantCurr   string
+		wantErr    string // empty means no error expected
+	}{
+		{
+			name:       "location and vmSize",
+			attrs:      map[string]any{"location": "eastus", "vmSize": "Standard_B1s"},
+			wantRegion: "eastus",
+			wantSKU:    "Standard_B1s",
+			wantCurr:   "USD",
+		},
+		{
+			name:       "region alias",
+			attrs:      map[string]any{"region": "westus2", "vmSize": "Standard_D2s_v3"},
+			wantRegion: "westus2",
+			wantSKU:    "Standard_D2s_v3",
+			wantCurr:   "USD",
+		},
+		{
+			name:       "sku alias",
+			attrs:      map[string]any{"location": "eastus", "sku": "Standard_B2s"},
+			wantRegion: "eastus",
+			wantSKU:    "Standard_B2s",
+			wantCurr:   "USD",
+		},
+		{
+			name:       "armSkuName alias",
+			attrs:      map[string]any{"location": "eastus", "armSkuName": "Standard_B4ms"},
+			wantRegion: "eastus",
+			wantSKU:    "Standard_B4ms",
+			wantCurr:   "USD",
+		},
+		{
+			name:       "currency alias",
+			attrs:      map[string]any{"location": "eastus", "vmSize": "Standard_B1s", "currency": "EUR"},
+			wantRegion: "eastus",
+			wantSKU:    "Standard_B1s",
+			wantCurr:   "EUR",
+		},
+		{
+			name:       "currencyCode key",
+			attrs:      map[string]any{"location": "eastus", "vmSize": "Standard_B1s", "currencyCode": "GBP"},
+			wantRegion: "eastus",
+			wantSKU:    "Standard_B1s",
+			wantCurr:   "GBP",
+		},
+		{
+			name:    "missing region only",
+			attrs:   map[string]any{"vmSize": "Standard_B1s"},
+			wantErr: "missing required field(s): region",
+		},
+		{
+			name:    "missing sku only",
+			attrs:   map[string]any{"location": "eastus"},
+			wantErr: "missing required field(s): sku",
+		},
+		{
+			name:    "missing both",
+			attrs:   map[string]any{},
+			wantErr: "missing required field(s): region, sku",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			req := newEstimateCostRequest(t, "", tc.attrs)
+			query, err := estimateQueryFromRequest(req)
+
+			if tc.wantErr != "" {
+				if err == nil {
+					t.Fatalf("expected error %q, got nil", tc.wantErr)
+				}
+				if err.Error() != tc.wantErr {
+					t.Fatalf("expected error %q, got %q", tc.wantErr, err.Error())
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if query.ArmRegionName != tc.wantRegion {
+				t.Errorf("region: got %q, want %q", query.ArmRegionName, tc.wantRegion)
+			}
+			if query.ArmSkuName != tc.wantSKU {
+				t.Errorf("sku: got %q, want %q", query.ArmSkuName, tc.wantSKU)
+			}
+			if query.CurrencyCode != tc.wantCurr {
+				t.Errorf("currency: got %q, want %q", query.CurrencyCode, tc.wantCurr)
+			}
+		})
+	}
+}
+
 func TestEstimateCost_ValidRequest_SetsPricingCategoryStandard(t *testing.T) {
 	t.Parallel()
 
@@ -626,6 +728,19 @@ func TestEstimateCost_UnsupportedResourceType_ReturnsUnimplemented(t *testing.T)
 
 	calc := NewCalculator(zerolog.Nop())
 	req := newEstimateCostRequest(t, "network/LoadBalancer", map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_B1s",
+	})
+
+	_, err := calc.EstimateCost(context.Background(), req)
+	assertStatusCodeContains(t, err, codes.Unimplemented, "unsupported resource type")
+}
+
+func TestEstimateCost_VirtualMachineScaleSet_ReturnsUnimplemented(t *testing.T) {
+	t.Parallel()
+
+	calc := NewCalculator(zerolog.Nop())
+	req := newEstimateCostRequest(t, "azure:compute/virtualMachineScaleSet:VirtualMachineScaleSet", map[string]any{
 		"location": "eastus",
 		"vmSize":   "Standard_B1s",
 	})
@@ -1028,7 +1143,9 @@ func TestGetProjectedCostSetsExpiresAtFromCache(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			t.Fatalf("encode response: %v", err)
+			t.Errorf("encode response: %v", err)
+			http.Error(w, "encode response: "+err.Error(), http.StatusInternalServerError)
+			return
 		}
 	}))
 	defer server.Close()
@@ -1095,7 +1212,9 @@ func TestGetActualCostSetsExpiresAtFromCache(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			t.Fatalf("encode response: %v", err)
+			t.Errorf("encode response: %v", err)
+			http.Error(w, "encode response: "+err.Error(), http.StatusInternalServerError)
+			return
 		}
 	}))
 	defer server.Close()
@@ -1146,7 +1265,9 @@ func TestEstimateCostUsesCachedClient(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			t.Fatalf("encode response: %v", err)
+			t.Errorf("encode response: %v", err)
+			http.Error(w, "encode response: "+err.Error(), http.StatusInternalServerError)
+			return
 		}
 	}))
 	defer server.Close()
@@ -1221,7 +1342,9 @@ func newPriceServer(
 
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			t.Fatalf("encode response: %v", err)
+			t.Errorf("encode response: %v", err)
+			http.Error(w, "encode response: "+err.Error(), http.StatusInternalServerError)
+			return
 		}
 	}))
 }

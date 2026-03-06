@@ -110,7 +110,7 @@ func (c *Calculator) EstimateCost(
 		Str("resource_type", resourceType).
 		Msg("handling EstimateCost request")
 
-	if resourceType != "" && !strings.Contains(strings.ToLower(resourceType), "compute/virtualmachine") {
+	if resourceType != "" && !isVirtualMachineResourceType(strings.ToLower(resourceType)) {
 		err := status.Errorf(codes.Unimplemented, "unsupported resource type: %s", resourceType)
 		log.Warn().
 			Str("region", region).
@@ -185,7 +185,7 @@ func (c *Calculator) EstimateCost(
 		Msg("EstimateCost completed")
 
 	return pluginsdk.NewEstimateCostResponse(
-		pluginsdk.WithEstimateCost(currency, unitPrice*pluginsdk.HoursPerMonth),
+		pluginsdk.WithEstimateCost(currency, costMonthly),
 		pluginsdk.WithPricingCategory(
 			finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD,
 		),
@@ -434,6 +434,24 @@ func projectedQueryFromRequest(req *finfocusv1.GetProjectedCostRequest) (azurecl
 	}
 
 	return query, true
+}
+
+// isVirtualMachineResourceType checks whether the lowercased resource type
+// refers to compute/virtualmachine as a full segment (not a prefix of e.g.
+// "compute/virtualmachinescaleset").
+func isVirtualMachineResourceType(lower string) bool {
+	const segment = "compute/virtualmachine"
+	idx := strings.Index(lower, segment)
+	if idx < 0 {
+		return false
+	}
+	end := idx + len(segment)
+	if end == len(lower) {
+		return true
+	}
+	// Next char must be a segment separator, not a continuation letter/digit.
+	next := lower[end]
+	return next == ':' || next == '/' || next == ' '
 }
 
 func firstNonEmptyTag(tags map[string]string, keys ...string) string {

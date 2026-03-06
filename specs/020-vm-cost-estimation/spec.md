@@ -81,8 +81,10 @@ with no outbound API call.
    TTL, **When** EstimateCost is called again with the same parameters, **Then**
    the response is returned from cache (no external API call is made).
 2. **Given** a cached pricing result, **When** EstimateCost returns the response,
-   **Then** the response includes a cache expiration hint so that upstream callers
-   know when to refresh.
+   **Then** cache expiration metadata is available out-of-band via the
+   `CachedResult.ExpiresAt` field (propagated to `GetActualCost` and
+   `GetProjectedCost` responses); `EstimateCostResponse` itself does not carry
+   a cache expiration field in the current proto revision.
 3. **Given** that the cache TTL has expired for a previously queried VM, **When**
    EstimateCost is called, **Then** the system fetches fresh pricing data from the
    external source.
@@ -192,7 +194,7 @@ with no outbound API call.
 ### Documentation
 
 - [x] README.md updates identified (if user-facing changes)
-- [x] API documentation needs outlined (godoc comments, contracts)
+- [x] API documentation needs to be outlined (godoc comments, contracts)
 - [x] Docstring coverage ≥80% maintained (all exported symbols documented)
 - [x] Examples/quickstart guide planned (if new capability)
 
