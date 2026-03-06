@@ -56,6 +56,8 @@
 - Go 1.25.5 + None (Go stdlib `math` only) (019-cost-utilities)
 - N/A — pure stateless functions (019-cost-utilities)
 - N/A — in-memory LRU+TTL cache only (stateless constraint) (020-vm-cost-estimation)
+- Go 1.25.7 + finfocus-spec v0.5.7 (pluginsdk), zerolog v1.34.0, google.golang.org/grpc, golang-lru/v2 (cache) (021-disk-cost-estimation)
+- N/A — stateless plugin (in-memory LRU+TTL cache only) (021-disk-cost-estimation)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
@@ -202,10 +204,46 @@ resp.GetPricingCategory() // FOCUS_PRICING_CATEGORY_STANDARD
 ```
 
 Behavior notes:
-- Empty `resource_type` is accepted for backward compatibility
+- Empty `resource_type` is accepted for backward compatibility (routes to VM path)
 - Unsupported non-empty `resource_type` returns `codes.Unimplemented`
 - Missing `location/region` or `vmSize/sku` returns `codes.InvalidArgument`
 - Cache hits are served from `CachedClient` with no outbound API request
+
+### Managed Disk Cost Estimation
+
+Estimate monthly Managed Disk pricing. Disk prices are monthly (not hourly
+like VMs), so `retailPrice` is returned directly as `cost_monthly`.
+
+```go
+attrs, err := structpb.NewStruct(map[string]any{
+    "location":  "eastus",
+    "disk_type": "Premium_SSD_LRS",
+    "size_gb":   128,
+})
+if err != nil {
+    return err
+}
+
+resp, err := calc.EstimateCost(ctx, &finfocusv1.EstimateCostRequest{
+    ResourceType: "azure:storage/managedDisk:ManagedDisk",
+    Attributes:   attrs,
+})
+// resp.GetCostMonthly() → e.g., 19.71 (P10 tier monthly price)
+```
+
+**Supported disk types**: `Standard_LRS`, `StandardSSD_LRS`, `Premium_SSD_LRS`,
+`Standard_ZRS`, `StandardSSD_ZRS`, `Premium_ZRS`
+
+**Attribute aliases**:
+- region: `location`, `region`
+- disk_type: `diskType`, `disk_type`, `sku`
+- size_gb: `sizeGb`, `size_gb`, `diskSizeGb`
+- currency: `currencyCode`, `currency` (default: USD)
+
+**Size-to-tier mapping**: Ceiling match — `size_gb` maps to smallest tier >= that
+size (e.g., 100 GB → P10/128 GiB tier). 14 tiers from 4 GiB to 32767 GiB.
+
+**ZRS pricing**: ZRS disk types use meter names with " ZRS" suffix (e.g., "P10 ZRS").
 
 ## Environment Variables
 
