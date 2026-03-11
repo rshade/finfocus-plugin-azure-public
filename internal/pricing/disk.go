@@ -37,7 +37,7 @@ type diskTierCapacity struct {
 // diskTierCapacities is the static table of tier numbers to GiB capacities,
 // sorted by capacity ascending for ceiling-match lookup.
 //
-//nolint:gochecknoglobals // Static lookup table; immutable after init.
+//nolint:gochecknoglobals,mnd // Static lookup table; immutable after init. Tier numbers and capacities are domain constants.
 var diskTierCapacities = []diskTierCapacity{
 	{Number: 1, Capacity: 4},
 	{Number: 2, Capacity: 8},

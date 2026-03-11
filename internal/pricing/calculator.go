@@ -2,6 +2,7 @@ package pricing
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -301,7 +302,9 @@ func (c *Calculator) estimateDiskCost(
 // estimateDiskQueryFromRequest extracts and validates disk-specific attributes
 // from an EstimateCostRequest. Returns the PriceQuery, diskTypeInfo, sizeGB,
 // or an error listing all missing/invalid fields.
-func estimateDiskQueryFromRequest(req *finfocusv1.EstimateCostRequest) (azureclient.PriceQuery, diskTypeInfo, float64, error) {
+func estimateDiskQueryFromRequest(
+	req *finfocusv1.EstimateCostRequest,
+) (azureclient.PriceQuery, diskTypeInfo, float64, error) {
 	attributes := map[string]any{}
 	if req != nil && req.GetAttributes() != nil {
 		attributes = req.GetAttributes().AsMap()
@@ -312,7 +315,7 @@ func estimateDiskQueryFromRequest(req *finfocusv1.EstimateCostRequest) (azurecli
 	sizeGBStr := firstNonEmptyMapValue(attributes, "sizeGb", "size_gb", "diskSizeGb")
 	currency := firstNonEmptyMapValue(attributes, "currencyCode", "currency")
 	if currency == "" {
-		currency = "USD"
+		currency = defaultCurrency
 	}
 
 	// Validate required fields — report all missing in one error.
@@ -361,7 +364,7 @@ func parseSizeGB(value string) (float64, error) {
 		return 0, fmt.Errorf("size_gb must be a valid number: %s", value)
 	}
 	if sizeGB <= 0 {
-		return 0, fmt.Errorf("size_gb must be greater than 0")
+		return 0, errors.New("size_gb must be greater than 0")
 	}
 	return sizeGB, nil
 }
@@ -522,7 +525,7 @@ func estimateQueryFromRequest(req *finfocusv1.EstimateCostRequest) (azureclient.
 		CurrencyCode:  firstNonEmptyMapValue(attributes, "currencyCode", "currency"),
 	}
 	if query.CurrencyCode == "" {
-		query.CurrencyCode = "USD"
+		query.CurrencyCode = defaultCurrency
 	}
 	if query.ServiceName == "" {
 		query.ServiceName = defaultServiceName
@@ -544,17 +547,6 @@ func estimateQueryFromRequest(req *finfocusv1.EstimateCostRequest) (azureclient.
 	return query, nil
 }
 
-func estimateRequestRegionAndSKU(req *finfocusv1.EstimateCostRequest) (string, string) {
-	if req == nil || req.GetAttributes() == nil {
-		return "", ""
-	}
-
-	attributes := req.GetAttributes().AsMap()
-	region := firstNonEmptyMapValue(attributes, "location", "region")
-	sku := firstNonEmptyMapValue(attributes, "vmSize", "sku", "armSkuName")
-	return region, sku
-}
-
 func actualQueryFromRequest(req *finfocusv1.GetActualCostRequest) (azureclient.PriceQuery, bool) {
 	if req == nil {
 		return azureclient.PriceQuery{}, false
@@ -569,7 +561,7 @@ func actualQueryFromRequest(req *finfocusv1.GetActualCostRequest) (azureclient.P
 		CurrencyCode:  firstNonEmptyTag(tags, "currency", "currencyCode"),
 	}
 	if query.CurrencyCode == "" {
-		query.CurrencyCode = "USD"
+		query.CurrencyCode = defaultCurrency
 	}
 	if query.ServiceName == "" {
 		query.ServiceName = defaultServiceName
@@ -598,7 +590,7 @@ func projectedQueryFromRequest(req *finfocusv1.GetProjectedCostRequest) (azurecl
 		ProductName:   firstNonEmptyTag(resource.GetTags(), "product", "productName"),
 	}
 	if query.CurrencyCode == "" {
-		query.CurrencyCode = "USD"
+		query.CurrencyCode = defaultCurrency
 	}
 	if query.ServiceName == "" {
 		query.ServiceName = defaultServiceName
@@ -661,7 +653,7 @@ func unitPriceAndCurrency(items []azureclient.PriceItem) (float64, string, error
 	}
 	currency := item.CurrencyCode
 	if strings.TrimSpace(currency) == "" {
-		currency = "USD"
+		currency = defaultCurrency
 	}
 
 	return price, currency, nil

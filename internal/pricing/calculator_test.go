@@ -1307,12 +1307,12 @@ func TestEstimateCost_Disk_Success(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name          string
-		diskType      string
-		sizeGB        float64
-		items         []azureclient.PriceItem
-		wantCost      float64
-		wantCurrency  string
+		name         string
+		diskType     string
+		sizeGB       float64
+		items        []azureclient.PriceItem
+		wantCost     float64
+		wantCurrency string
 	}{
 		{
 			name:     "Premium_SSD_LRS_P10",
@@ -1445,7 +1445,9 @@ func TestEstimateCost_Disk_ResourceTypeRouting(t *testing.T) {
 	}
 
 	// Serve both VM and disk items (server doesn't filter, test validates routing via cost)
-	allItems := append(vmItems, diskItems...)
+	allItems := make([]azureclient.PriceItem, 0, len(vmItems)+len(diskItems))
+	allItems = append(allItems, vmItems...)
+	allItems = append(allItems, diskItems...)
 	server := newPriceServer(t, allItems, nil)
 	defer server.Close()
 
