@@ -1301,6 +1301,421 @@ func TestEstimateCostUsesCachedClient(t *testing.T) {
 	}
 }
 
+// Phase 3: US1+US2 Tests (T010-T012)
+
+func TestEstimateCost_Disk_Success(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		diskType     string
+		sizeGB       float64
+		items        []azureclient.PriceItem
+		wantCost     float64
+		wantCurrency string
+	}{
+		{
+			name:     "Premium_SSD_LRS_P10",
+			diskType: "Premium_SSD_LRS",
+			sizeGB:   128,
+			items: []azureclient.PriceItem{
+				{MeterName: "P4", RetailPrice: 5.28, CurrencyCode: "USD"},
+				{MeterName: "P10", RetailPrice: 19.71, CurrencyCode: "USD"},
+				{MeterName: "P20", RetailPrice: 38.02, CurrencyCode: "USD"},
+			},
+			wantCost:     19.71,
+			wantCurrency: "USD",
+		},
+		{
+			name:     "Standard_LRS_S30",
+			diskType: "Standard_LRS",
+			sizeGB:   1024,
+			items: []azureclient.PriceItem{
+				{MeterName: "S20", RetailPrice: 20.48, CurrencyCode: "USD"},
+				{MeterName: "S30", RetailPrice: 40.96, CurrencyCode: "USD"},
+			},
+			wantCost:     40.96,
+			wantCurrency: "USD",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			server := newPriceServer(t, tc.items, nil)
+			defer server.Close()
+
+			cachedClient := newCalculatorTestCachedClient(t, server.URL)
+			defer cachedClient.Close()
+
+			calc := NewCalculator(zerolog.Nop(), cachedClient)
+			req := newEstimateCostRequest(t, "azure:storage/managedDisk:ManagedDisk", map[string]any{
+				"location":  "eastus",
+				"disk_type": tc.diskType,
+				"size_gb":   tc.sizeGB,
+			})
+
+			resp, err := calc.EstimateCost(context.Background(), req)
+			if err != nil {
+				t.Fatalf("EstimateCost() failed: %v", err)
+			}
+
+			if math.Abs(resp.GetCostMonthly()-tc.wantCost) > 0.001 {
+				t.Errorf("cost_monthly = %.2f, want %.2f", resp.GetCostMonthly(), tc.wantCost)
+			}
+			if resp.GetCurrency() != tc.wantCurrency {
+				t.Errorf("currency = %q, want %q", resp.GetCurrency(), tc.wantCurrency)
+			}
+			if resp.GetPricingCategory() != finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD {
+				t.Errorf("pricing_category = %v, want STANDARD", resp.GetPricingCategory())
+			}
+		})
+	}
+}
+
+func TestEstimateCost_Disk_ValidationErrors(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		attrs   map[string]any
+		wantMsg string
+	}{
+		{
+			name:    "missing_region",
+			attrs:   map[string]any{"disk_type": "Premium_SSD_LRS", "size_gb": 128},
+			wantMsg: "region",
+		},
+		{
+			name:    "missing_disk_type",
+			attrs:   map[string]any{"location": "eastus", "size_gb": 128},
+			wantMsg: "disk_type",
+		},
+		{
+			name:    "missing_size_gb",
+			attrs:   map[string]any{"location": "eastus", "disk_type": "Premium_SSD_LRS"},
+			wantMsg: "size_gb",
+		},
+		{
+			name:    "all_missing",
+			attrs:   map[string]any{},
+			wantMsg: "region, disk_type, size_gb",
+		},
+		{
+			name:    "size_gb_zero",
+			attrs:   map[string]any{"location": "eastus", "disk_type": "Premium_SSD_LRS", "size_gb": 0},
+			wantMsg: "size_gb must be greater than 0",
+		},
+		{
+			name:    "size_gb_negative",
+			attrs:   map[string]any{"location": "eastus", "disk_type": "Premium_SSD_LRS", "size_gb": -1},
+			wantMsg: "size_gb must be greater than 0",
+		},
+		{
+			name:    "unsupported_disk_type",
+			attrs:   map[string]any{"location": "eastus", "disk_type": "UltraSSD_LRS", "size_gb": 128},
+			wantMsg: "unsupported disk type",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			calc := NewCalculator(zerolog.Nop())
+			req := newEstimateCostRequest(t, "azure:storage/managedDisk:ManagedDisk", tc.attrs)
+
+			_, err := calc.EstimateCost(context.Background(), req)
+			assertStatusCodeContains(t, err, codes.InvalidArgument, tc.wantMsg)
+		})
+	}
+}
+
+func TestEstimateCost_Disk_ResourceTypeRouting(t *testing.T) {
+	t.Parallel()
+
+	vmItems := []azureclient.PriceItem{
+		{MeterName: "B1s", RetailPrice: 0.0200, CurrencyCode: "USD",
+			ArmRegionName: "eastus", ArmSkuName: "Standard_B1s", ServiceName: "Virtual Machines"},
+	}
+	diskItems := []azureclient.PriceItem{
+		{MeterName: "P10", RetailPrice: 19.71, CurrencyCode: "USD",
+			ArmRegionName: "eastus", ArmSkuName: "Premium_LRS", ServiceName: "Managed Disks"},
+	}
+
+	// Serve both VM and disk items (server doesn't filter, test validates routing via cost)
+	allItems := make([]azureclient.PriceItem, 0, len(vmItems)+len(diskItems))
+	allItems = append(allItems, vmItems...)
+	allItems = append(allItems, diskItems...)
+	server := newPriceServer(t, allItems, nil)
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	calc := NewCalculator(zerolog.Nop(), cachedClient)
+
+	// Disk resource type routes to disk path
+	diskReq := newEstimateCostRequest(t, "azure:storage/managedDisk:ManagedDisk", map[string]any{
+		"location":  "eastus",
+		"disk_type": "Premium_SSD_LRS",
+		"size_gb":   128,
+	})
+	diskResp, err := calc.EstimateCost(context.Background(), diskReq)
+	if err != nil {
+		t.Fatalf("disk EstimateCost() failed: %v", err)
+	}
+	// Disk cost should be 19.71 (monthly, not multiplied by 730)
+	if math.Abs(diskResp.GetCostMonthly()-19.71) > 0.01 {
+		t.Errorf("disk cost = %.2f, want 19.71 (monthly, not hourly×730)", diskResp.GetCostMonthly())
+	}
+
+	// VM resource type still routes to VM path
+	vmReq := newEstimateCostRequest(t, "azure:compute/virtualMachine:VirtualMachine", map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_B1s",
+	})
+	vmResp, err := calc.EstimateCost(context.Background(), vmReq)
+	if err != nil {
+		t.Fatalf("VM EstimateCost() failed: %v", err)
+	}
+	// VM cost should be hourly × 730
+	vmExpected := 0.0200 * 730.0
+	if math.Abs(vmResp.GetCostMonthly()-vmExpected) > 0.01 {
+		t.Errorf("VM cost = %.2f, want %.2f (hourly×730)", vmResp.GetCostMonthly(), vmExpected)
+	}
+
+	// Empty resource type falls through to VM path (backward compat)
+	emptyReq := newEstimateCostRequest(t, "", map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_B1s",
+	})
+	emptyResp, err := calc.EstimateCost(context.Background(), emptyReq)
+	if err != nil {
+		t.Fatalf("empty resource type EstimateCost() failed: %v", err)
+	}
+	if math.Abs(emptyResp.GetCostMonthly()-vmExpected) > 0.01 {
+		t.Errorf("empty type cost = %.2f, want %.2f", emptyResp.GetCostMonthly(), vmExpected)
+	}
+}
+
+// Phase 4: US3 Tests (T017-T018)
+
+func TestEstimateCost_Disk_AllTypes(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		diskType string
+		items    []azureclient.PriceItem
+		wantCost float64
+	}{
+		{
+			name:     "Standard_LRS",
+			diskType: "Standard_LRS",
+			items:    []azureclient.PriceItem{{MeterName: "S10", RetailPrice: 5.89, CurrencyCode: "USD"}},
+			wantCost: 5.89,
+		},
+		{
+			name:     "StandardSSD_LRS",
+			diskType: "StandardSSD_LRS",
+			items:    []azureclient.PriceItem{{MeterName: "E10", RetailPrice: 9.60, CurrencyCode: "USD"}},
+			wantCost: 9.60,
+		},
+		{
+			name:     "Premium_SSD_LRS",
+			diskType: "Premium_SSD_LRS",
+			items:    []azureclient.PriceItem{{MeterName: "P10", RetailPrice: 19.71, CurrencyCode: "USD"}},
+			wantCost: 19.71,
+		},
+		{
+			name:     "Standard_ZRS",
+			diskType: "Standard_ZRS",
+			items:    []azureclient.PriceItem{{MeterName: "S10 ZRS", RetailPrice: 7.37, CurrencyCode: "USD"}},
+			wantCost: 7.37,
+		},
+		{
+			name:     "StandardSSD_ZRS",
+			diskType: "StandardSSD_ZRS",
+			items:    []azureclient.PriceItem{{MeterName: "E10 ZRS", RetailPrice: 12.00, CurrencyCode: "USD"}},
+			wantCost: 12.00,
+		},
+		{
+			name:     "Premium_ZRS",
+			diskType: "Premium_ZRS",
+			items:    []azureclient.PriceItem{{MeterName: "P10 ZRS", RetailPrice: 24.64, CurrencyCode: "USD"}},
+			wantCost: 24.64,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			server := newPriceServer(t, tc.items, nil)
+			defer server.Close()
+
+			cachedClient := newCalculatorTestCachedClient(t, server.URL)
+			defer cachedClient.Close()
+
+			calc := NewCalculator(zerolog.Nop(), cachedClient)
+			req := newEstimateCostRequest(t, "azure:storage/managedDisk:ManagedDisk", map[string]any{
+				"location":  "eastus",
+				"disk_type": tc.diskType,
+				"size_gb":   128,
+			})
+
+			resp, err := calc.EstimateCost(context.Background(), req)
+			if err != nil {
+				t.Fatalf("EstimateCost() failed: %v", err)
+			}
+
+			if math.Abs(resp.GetCostMonthly()-tc.wantCost) > 0.001 {
+				t.Errorf("cost = %.2f, want %.2f", resp.GetCostMonthly(), tc.wantCost)
+			}
+		})
+	}
+}
+
+func TestEstimateCost_Disk_UnsupportedTypes(t *testing.T) {
+	t.Parallel()
+
+	unsupported := []string{"UltraSSD_LRS", "PremiumV2_LRS", "MadeUp_LRS"}
+	for _, diskType := range unsupported {
+		t.Run(diskType, func(t *testing.T) {
+			t.Parallel()
+
+			calc := NewCalculator(zerolog.Nop())
+			req := newEstimateCostRequest(t, "azure:storage/managedDisk:ManagedDisk", map[string]any{
+				"location":  "eastus",
+				"disk_type": diskType,
+				"size_gb":   128,
+			})
+
+			_, err := calc.EstimateCost(context.Background(), req)
+			assertStatusCodeContains(t, err, codes.InvalidArgument, "unsupported disk type")
+		})
+	}
+}
+
+// Phase 5: US4 Tests (T022-T023)
+
+func TestEstimateCost_Disk_SizeScaling(t *testing.T) {
+	t.Parallel()
+
+	items := []azureclient.PriceItem{
+		{MeterName: "P4", RetailPrice: 5.28, CurrencyCode: "USD"},
+		{MeterName: "P10", RetailPrice: 19.71, CurrencyCode: "USD"},
+		{MeterName: "P15", RetailPrice: 28.57, CurrencyCode: "USD"},
+		{MeterName: "P20", RetailPrice: 38.02, CurrencyCode: "USD"},
+	}
+
+	tests := []struct {
+		name     string
+		sizeGB   float64
+		wantCost float64
+		wantTier string
+	}{
+		{name: "exact_32_P4", sizeGB: 32, wantCost: 5.28},
+		{name: "ceiling_100_P10", sizeGB: 100, wantCost: 19.71},
+		{name: "exact_128_P10", sizeGB: 128, wantCost: 19.71},
+		{name: "ceiling_200_P15", sizeGB: 200, wantCost: 28.57},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			server := newPriceServer(t, items, nil)
+			defer server.Close()
+
+			cachedClient := newCalculatorTestCachedClient(t, server.URL)
+			defer cachedClient.Close()
+
+			calc := NewCalculator(zerolog.Nop(), cachedClient)
+			req := newEstimateCostRequest(t, "azure:storage/managedDisk:ManagedDisk", map[string]any{
+				"location":  "eastus",
+				"disk_type": "Premium_SSD_LRS",
+				"size_gb":   tc.sizeGB,
+			})
+
+			resp, err := calc.EstimateCost(context.Background(), req)
+			if err != nil {
+				t.Fatalf("EstimateCost() failed: %v", err)
+			}
+
+			if math.Abs(resp.GetCostMonthly()-tc.wantCost) > 0.001 {
+				t.Errorf("cost = %.2f, want %.2f", resp.GetCostMonthly(), tc.wantCost)
+			}
+		})
+	}
+}
+
+func TestEstimateCost_Disk_SizeEdgeCases(t *testing.T) {
+	t.Parallel()
+
+	items := []azureclient.PriceItem{
+		{MeterName: "P1", RetailPrice: 0.60, CurrencyCode: "USD"},
+		{MeterName: "P15", RetailPrice: 28.57, CurrencyCode: "USD"},
+		{MeterName: "P80", RetailPrice: 3276.80, CurrencyCode: "USD"},
+	}
+
+	tests := []struct {
+		name     string
+		sizeGB   float64
+		wantCost float64
+		wantErr  bool
+		errCode  codes.Code
+	}{
+		{name: "fractional_0.5_rounds_to_P1", sizeGB: 0.5, wantCost: 0.60},
+		{name: "largest_tier_32767", sizeGB: 32767, wantCost: 3276.80},
+		{name: "exceeds_max_tier", sizeGB: 99999, wantErr: true, errCode: codes.NotFound},
+		{name: "fractional_128.5_rounds_to_P15", sizeGB: 128.5, wantCost: 28.57},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			server := newPriceServer(t, items, nil)
+			defer server.Close()
+
+			cachedClient := newCalculatorTestCachedClient(t, server.URL)
+			defer cachedClient.Close()
+
+			calc := NewCalculator(zerolog.Nop(), cachedClient)
+			req := newEstimateCostRequest(t, "azure:storage/managedDisk:ManagedDisk", map[string]any{
+				"location":  "eastus",
+				"disk_type": "Premium_SSD_LRS",
+				"size_gb":   tc.sizeGB,
+			})
+
+			resp, err := calc.EstimateCost(context.Background(), req)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("expected error, got nil")
+				}
+				st, ok := status.FromError(err)
+				if !ok {
+					t.Fatalf("expected gRPC status error, got: %v", err)
+				}
+				if st.Code() != tc.errCode {
+					t.Fatalf("expected code %v, got %v", tc.errCode, st.Code())
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("EstimateCost() failed: %v", err)
+			}
+			if math.Abs(resp.GetCostMonthly()-tc.wantCost) > 0.001 {
+				t.Errorf("cost = %.2f, want %.2f", resp.GetCostMonthly(), tc.wantCost)
+			}
+		})
+	}
+}
+
 func newEstimateCostRequest(
 	t *testing.T,
 	resourceType string,

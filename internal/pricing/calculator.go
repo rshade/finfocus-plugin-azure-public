@@ -2,6 +2,7 @@ package pricing
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -90,8 +91,9 @@ func (c *Calculator) Supports(
 	}, nil
 }
 
-// EstimateCost estimates monthly VM cost from Azure Retail Prices data.
-// The request must contain region/location and sku/vmSize attributes.
+// EstimateCost estimates monthly cost from Azure Retail Prices data.
+// Supports VM and Managed Disk resource types via resource-type routing.
+// The request must contain the appropriate attributes for the resource type.
 // Returns InvalidArgument for missing required fields, Unimplemented for
 // unsupported resource types, and mapped gRPC status codes for Azure API
 // failures.
@@ -102,32 +104,41 @@ func (c *Calculator) EstimateCost(
 	log := logging.RequestLogger(ctx, c.logger)
 
 	resourceType := strings.TrimSpace(req.GetResourceType())
-	region, sku := estimateRequestRegionAndSKU(req)
+	lowerType := strings.ToLower(resourceType)
 
 	log.Info().
-		Str("region", region).
-		Str("sku", sku).
 		Str("resource_type", resourceType).
 		Msg("handling EstimateCost request")
 
-	if resourceType != "" && !isVirtualMachineResourceType(strings.ToLower(resourceType)) {
+	// Route by resource type: disk → VM → backward compat (empty) → reject
+	switch {
+	case isManagedDiskResourceType(lowerType):
+		return c.estimateDiskCost(ctx, req, resourceType)
+	case resourceType == "" || isVirtualMachineResourceType(lowerType):
+		return c.estimateVMCost(ctx, req, resourceType)
+	default:
 		err := status.Errorf(codes.Unimplemented, "unsupported resource type: %s", resourceType)
 		log.Warn().
-			Str("region", region).
-			Str("sku", sku).
 			Str("resource_type", resourceType).
 			Str("result_status", "error").
 			Err(err).
 			Msg("EstimateCost validation failed")
 		return nil, err
 	}
+}
+
+// estimateVMCost handles VM cost estimation (existing path).
+func (c *Calculator) estimateVMCost(
+	ctx context.Context,
+	req *finfocusv1.EstimateCostRequest,
+	resourceType string,
+) (*finfocusv1.EstimateCostResponse, error) {
+	log := logging.RequestLogger(ctx, c.logger)
 
 	query, err := estimateQueryFromRequest(req)
 	if err != nil {
 		err = status.Error(codes.InvalidArgument, err.Error())
 		log.Warn().
-			Str("region", region).
-			Str("sku", sku).
 			Str("resource_type", resourceType).
 			Str("result_status", "error").
 			Err(err).
@@ -190,6 +201,172 @@ func (c *Calculator) EstimateCost(
 			finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD,
 		),
 	), nil
+}
+
+// estimateDiskCost handles Managed Disk cost estimation.
+// Disk pricing is monthly (not hourly like VMs), so retailPrice is used directly.
+func (c *Calculator) estimateDiskCost(
+	ctx context.Context,
+	req *finfocusv1.EstimateCostRequest,
+	resourceType string,
+) (*finfocusv1.EstimateCostResponse, error) {
+	log := logging.RequestLogger(ctx, c.logger)
+
+	query, diskInfo, sizeGB, err := estimateDiskQueryFromRequest(req)
+	if err != nil {
+		err = status.Error(codes.InvalidArgument, err.Error())
+		log.Warn().
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(err).
+			Msg("EstimateCost disk validation failed")
+		return nil, err
+	}
+
+	if c.cachedClient == nil {
+		unimplementedErr := status.Error(codes.Unimplemented, "not yet implemented")
+		log.Warn().
+			Str("region", query.ArmRegionName).
+			Str("disk_type", diskInfo.ArmSkuName).
+			Float64("size_gb", sizeGB).
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(unimplementedErr).
+			Msg("EstimateCost unavailable")
+		return nil, unimplementedErr
+	}
+
+	result, err := c.cachedClient.GetPrices(ctx, query)
+	if err != nil {
+		err = MapToGRPCStatus(err).Err()
+		log.Error().
+			Str("region", query.ArmRegionName).
+			Str("disk_type", diskInfo.ArmSkuName).
+			Float64("size_gb", sizeGB).
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(err).
+			Msg("EstimateCost disk pricing lookup failed")
+		return nil, err
+	}
+
+	tierName, err := tierForSize(diskInfo.TierPrefix, sizeGB)
+	if err != nil {
+		notFoundErr := status.Errorf(codes.NotFound,
+			"no disk tier found for %.0f GB with type %s", sizeGB, diskInfo.ArmSkuName)
+		log.Warn().
+			Str("region", query.ArmRegionName).
+			Str("disk_type", diskInfo.ArmSkuName).
+			Float64("size_gb", sizeGB).
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(notFoundErr).
+			Msg("EstimateCost disk tier lookup failed")
+		return nil, notFoundErr
+	}
+
+	costMonthly, currency, err := selectDiskTierPrice(result.Items, tierName, diskInfo.Redundancy)
+	if err != nil {
+		err = MapToGRPCStatus(err).Err()
+		log.Error().
+			Str("region", query.ArmRegionName).
+			Str("disk_type", diskInfo.ArmSkuName).
+			Float64("size_gb", sizeGB).
+			Str("tier", tierName).
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(err).
+			Msg("EstimateCost disk tier price lookup failed")
+		return nil, err
+	}
+
+	log.Info().
+		Str("region", query.ArmRegionName).
+		Str("disk_type", diskInfo.ArmSkuName).
+		Float64("size_gb", sizeGB).
+		Str("tier", tierName).
+		Str("resource_type", resourceType).
+		Float64("cost_monthly", costMonthly).
+		Str("currency", currency).
+		Str("result_status", "success").
+		Msg("EstimateCost disk completed")
+
+	return pluginsdk.NewEstimateCostResponse(
+		pluginsdk.WithEstimateCost(currency, costMonthly),
+		pluginsdk.WithPricingCategory(
+			finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD,
+		),
+	), nil
+}
+
+// estimateDiskQueryFromRequest extracts and validates disk-specific attributes
+// from an EstimateCostRequest. Returns the PriceQuery, diskTypeInfo, sizeGB,
+// or an error listing all missing/invalid fields.
+func estimateDiskQueryFromRequest(
+	req *finfocusv1.EstimateCostRequest,
+) (azureclient.PriceQuery, diskTypeInfo, float64, error) {
+	attributes := map[string]any{}
+	if req != nil && req.GetAttributes() != nil {
+		attributes = req.GetAttributes().AsMap()
+	}
+
+	region := firstNonEmptyMapValue(attributes, "location", "region")
+	diskTypeStr := firstNonEmptyMapValue(attributes, "diskType", "disk_type", "sku")
+	sizeGBStr := firstNonEmptyMapValue(attributes, "sizeGb", "size_gb", "diskSizeGb")
+	currency := firstNonEmptyMapValue(attributes, "currencyCode", "currency")
+	if currency == "" {
+		currency = defaultCurrency
+	}
+
+	// Validate required fields — report all missing in one error.
+	var missingFields []string
+	if region == "" {
+		missingFields = append(missingFields, "region")
+	}
+	if diskTypeStr == "" {
+		missingFields = append(missingFields, "disk_type")
+	}
+	if sizeGBStr == "" {
+		missingFields = append(missingFields, "size_gb")
+	}
+	if len(missingFields) > 0 {
+		return azureclient.PriceQuery{}, diskTypeInfo{}, 0,
+			fmt.Errorf("missing required field(s): %s", strings.Join(missingFields, ", "))
+	}
+
+	// Parse and validate size_gb.
+	sizeGB, err := parseSizeGB(sizeGBStr)
+	if err != nil {
+		return azureclient.PriceQuery{}, diskTypeInfo{}, 0, err
+	}
+
+	// Validate and normalize disk type.
+	diskInfo, err := normalizeDiskType(diskTypeStr)
+	if err != nil {
+		return azureclient.PriceQuery{}, diskTypeInfo{}, 0, err
+	}
+
+	query := azureclient.PriceQuery{
+		ArmRegionName: region,
+		ArmSkuName:    diskInfo.ArmSkuName,
+		ServiceName:   "Managed Disks",
+		CurrencyCode:  currency,
+	}
+
+	return query, diskInfo, sizeGB, nil
+}
+
+// parseSizeGB parses and validates the size_gb attribute value.
+func parseSizeGB(value string) (float64, error) {
+	var sizeGB float64
+	_, err := fmt.Sscanf(value, "%f", &sizeGB)
+	if err != nil {
+		return 0, fmt.Errorf("size_gb must be a valid number: %s", value)
+	}
+	if sizeGB <= 0 {
+		return 0, errors.New("size_gb must be greater than 0")
+	}
+	return sizeGB, nil
 }
 
 // GetActualCost is a stub that returns Unimplemented status.
@@ -348,7 +525,7 @@ func estimateQueryFromRequest(req *finfocusv1.EstimateCostRequest) (azureclient.
 		CurrencyCode:  firstNonEmptyMapValue(attributes, "currencyCode", "currency"),
 	}
 	if query.CurrencyCode == "" {
-		query.CurrencyCode = "USD"
+		query.CurrencyCode = defaultCurrency
 	}
 	if query.ServiceName == "" {
 		query.ServiceName = defaultServiceName
@@ -370,17 +547,6 @@ func estimateQueryFromRequest(req *finfocusv1.EstimateCostRequest) (azureclient.
 	return query, nil
 }
 
-func estimateRequestRegionAndSKU(req *finfocusv1.EstimateCostRequest) (string, string) {
-	if req == nil || req.GetAttributes() == nil {
-		return "", ""
-	}
-
-	attributes := req.GetAttributes().AsMap()
-	region := firstNonEmptyMapValue(attributes, "location", "region")
-	sku := firstNonEmptyMapValue(attributes, "vmSize", "sku", "armSkuName")
-	return region, sku
-}
-
 func actualQueryFromRequest(req *finfocusv1.GetActualCostRequest) (azureclient.PriceQuery, bool) {
 	if req == nil {
 		return azureclient.PriceQuery{}, false
@@ -395,7 +561,7 @@ func actualQueryFromRequest(req *finfocusv1.GetActualCostRequest) (azureclient.P
 		CurrencyCode:  firstNonEmptyTag(tags, "currency", "currencyCode"),
 	}
 	if query.CurrencyCode == "" {
-		query.CurrencyCode = "USD"
+		query.CurrencyCode = defaultCurrency
 	}
 	if query.ServiceName == "" {
 		query.ServiceName = defaultServiceName
@@ -424,7 +590,7 @@ func projectedQueryFromRequest(req *finfocusv1.GetProjectedCostRequest) (azurecl
 		ProductName:   firstNonEmptyTag(resource.GetTags(), "product", "productName"),
 	}
 	if query.CurrencyCode == "" {
-		query.CurrencyCode = "USD"
+		query.CurrencyCode = defaultCurrency
 	}
 	if query.ServiceName == "" {
 		query.ServiceName = defaultServiceName
@@ -487,7 +653,7 @@ func unitPriceAndCurrency(items []azureclient.PriceItem) (float64, string, error
 	}
 	currency := item.CurrencyCode
 	if strings.TrimSpace(currency) == "" {
-		currency = "USD"
+		currency = defaultCurrency
 	}
 
 	return price, currency, nil
