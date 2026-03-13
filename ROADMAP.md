@@ -20,19 +20,27 @@ Managed Disks.
 **Milestone:**
 [v0.1.0 - Core Estimation](https://github.com/rshade/finfocus-plugin-azure-public/milestone/4)
 
-- [ ] [#17](https://github.com/rshade/finfocus-plugin-azure-public/issues/17)
+- [x] [#17](https://github.com/rshade/finfocus-plugin-azure-public/issues/17)
   Implement VM cost estimation (EstimateCost RPC) [L]
-- [ ] [#18](https://github.com/rshade/finfocus-plugin-azure-public/issues/18)
+- [x] [#18](https://github.com/rshade/finfocus-plugin-azure-public/issues/18)
   Implement Managed Disk cost estimation [M]
 - [ ] [#20](https://github.com/rshade/finfocus-plugin-azure-public/issues/20)
   Create integration tests with live Azure Retail Prices API [L]
+- [ ] [#59](https://github.com/rshade/finfocus-plugin-azure-public/issues/59)
+  Implement GetProjectedCost RPC for Azure pricing projection [M]
+- [ ] [#60](https://github.com/rshade/finfocus-plugin-azure-public/issues/60)
+  Implement GetActualCost RPC for Azure historical cost lookup [M]
+- [ ] [#61](https://github.com/rshade/finfocus-plugin-azure-public/issues/61)
+  Remove boundary-violating RPC stubs [S]
 
 **Verification:**
 
-- EstimateCost returns accurate costs for Standard_B1s VM
-- Managed Disk estimates scale with size
+- ~~EstimateCost returns accurate costs for Standard_B1s VM~~ (done)
+- ~~Managed Disk estimates scale with size~~ (done)
 - Estimates within 5% of Azure Pricing Calculator
 - Integration tests pass against live API
+- GetProjectedCost and GetActualCost RPCs return correct responses
+- Boundary-violating stubs removed, embedded type handles `Unimplemented`
 
 ---
 
@@ -174,10 +182,14 @@ testing, validation, and documentation.
 
 ### Q1 2026
 
-#### Pre-release: Core Estimation (partial)
+#### v0.1.0 - Core Estimation (partial)
 
 - [x] [#16](https://github.com/rshade/finfocus-plugin-azure-public/issues/16)
   Implement ResourceDescriptor to Azure filter mapping [L]
+- [x] [#17](https://github.com/rshade/finfocus-plugin-azure-public/issues/17)
+  Implement VM cost estimation (EstimateCost RPC) [L]
+- [x] [#18](https://github.com/rshade/finfocus-plugin-azure-public/issues/18)
+  Implement Managed Disk cost estimation [M]
 - [x] [#19](https://github.com/rshade/finfocus-plugin-azure-public/issues/19)
   Create cost calculation utilities (hourly to monthly conversion) [S]
 
@@ -254,15 +266,15 @@ The following features violate architectural constraints defined in
 | Pre-release: Scaffold & Transport | Complete | 6/6 (100%) |
 | Pre-release: Azure Client | Complete | 5/5 (100%) |
 | Pre-release: Caching Layer | Complete | 4/4 (100%) |
-| v0.1.0 - Core Estimation | Active | 2/5 (40%) |
+| v0.1.0 - Core Estimation | Active | 4/8 (50%) |
 | v0.2.0 - Quality & Testing | Planned | 0/4 (0%) |
 | v0.3.0 - Extended Services | Planned | 0/6 (0%) |
 
 <!-- markdownlint-enable MD013 -->
 
-**Completed Issues**: #1-#16, #19
+**Completed Issues**: #1-#19
 
-**Open Issues**: #17, #18, #20 (v0.1.0), #42-#57 (future)
+**Open Issues**: #20, #59-#61 (v0.1.0), #42-#57 (future)
 
 LOE Key: [S] = Small (1-2 days), [M] = Medium (3-5 days),
 [L] = Large (5+ days)
