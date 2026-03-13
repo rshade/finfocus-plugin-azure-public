@@ -458,42 +458,6 @@ func (c *Calculator) GetPricingSpec(
 	return nil, status.Error(codes.Unimplemented, "not yet implemented")
 }
 
-// GetRecommendations is a stub that returns Unimplemented status.
-// Recommendations are not supported by the public API.
-func (c *Calculator) GetRecommendations(
-	ctx context.Context,
-	_ *finfocusv1.GetRecommendationsRequest,
-) (*finfocusv1.GetRecommendationsResponse, error) {
-	log := logging.RequestLogger(ctx, c.logger)
-	log.Info().Msg("handling GetRecommendations request")
-
-	return nil, status.Error(codes.Unimplemented, "not yet implemented")
-}
-
-// DismissRecommendation is a stub that returns Unimplemented status.
-// Recommendations are not supported.
-func (c *Calculator) DismissRecommendation(
-	ctx context.Context,
-	_ *finfocusv1.DismissRecommendationRequest,
-) (*finfocusv1.DismissRecommendationResponse, error) {
-	log := logging.RequestLogger(ctx, c.logger)
-	log.Info().Msg("handling DismissRecommendation request")
-
-	return nil, status.Error(codes.Unimplemented, "not yet implemented")
-}
-
-// GetBudgets is a stub that returns Unimplemented status.
-// Budgets are not supported by the public API.
-func (c *Calculator) GetBudgets(
-	ctx context.Context,
-	_ *finfocusv1.GetBudgetsRequest,
-) (*finfocusv1.GetBudgetsResponse, error) {
-	log := logging.RequestLogger(ctx, c.logger)
-	log.Info().Msg("handling GetBudgets request")
-
-	return nil, status.Error(codes.Unimplemented, "not yet implemented")
-}
-
 // DryRun is a stub that returns Unimplemented status.
 // Field mapping is not yet implemented.
 func (c *Calculator) DryRun(

@@ -115,7 +115,7 @@ func selectDiskTierPrice(items []azureclient.PriceItem, tierName string, redunda
 			}
 			currency := item.CurrencyCode
 			if strings.TrimSpace(currency) == "" {
-				currency = "USD"
+				currency = defaultCurrency
 			}
 			return price, currency, nil
 		}
