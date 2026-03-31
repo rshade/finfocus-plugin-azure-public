@@ -152,6 +152,27 @@ kill -SIGTERM $PID  # Graceful shutdown, exit code 0
 Resource type matching is case-insensitive. Additional resource types will be
 added in future releases.
 
+## Integration Tests
+
+Integration tests query the live Azure Retail Prices API to validate the
+full EstimateCost pipeline end-to-end:
+
+```bash
+go test -v -tags=integration -timeout=5m ./examples/...
+```
+
+Tests include rate-limiting delays (12s between API calls) and use ±25%
+tolerance on reference prices to absorb Azure pricing changes. If tests
+fail due to price drift, update the reference constants in
+`examples/estimate_cost_integration_test.go` (run with `-v` to see actual
+prices).
+
+To skip integration tests (e.g., in offline environments):
+
+```bash
+SKIP_INTEGRATION=true go test -tags=integration ./examples/...
+```
+
 ## Development
 
 See [CLAUDE.md](CLAUDE.md) for development commands and guidelines.
