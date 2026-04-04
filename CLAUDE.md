@@ -8,6 +8,7 @@
 - **Setup**: `make ensure`
 - **Help**: `make help`
 - **Run Plugin**: `go run cmd/finfocus-plugin-azure-public/main.go`
+- **Integration Tests**: `go test -v -tags=integration -timeout=5m ./examples/...`
 
 ## Development
 - **Go Version**: 1.25.7
@@ -58,6 +59,8 @@
 - N/A — in-memory LRU+TTL cache only (stateless constraint) (020-vm-cost-estimation)
 - Go 1.25.7 + finfocus-spec v0.5.7 (pluginsdk), zerolog v1.34.0, google.golang.org/grpc, golang-lru/v2 (cache) (021-disk-cost-estimation)
 - N/A — stateless plugin (in-memory LRU+TTL cache only) (021-disk-cost-estimation)
+- Go 1.25.7 (from `go.mod`) + `azureclient` (HTTP client with retry), (022-integration-tests)
+- N/A — stateless, in-memory LRU+TTL cache only (022-integration-tests)
 
 ## Recent Changes
 - 002-grpc-server-port: Added Go 1.25.5
@@ -254,6 +257,7 @@ size (e.g., 100 GB → P10/128 GiB tier). 14 tiers from 4 GiB to 32767 GiB.
 | `FINFOCUS_PLUGIN_PORT` | 0 (ephemeral) | gRPC listen port |
 | `FINFOCUS_LOG_LEVEL` | info | Log level (debug, info, warn, error) |
 | `FINFOCUS_CACHE_TTL` | 24h | Cache TTL duration (e.g., "10s", "1h", "0s" to disable) |
+| `SKIP_INTEGRATION` | (unset) | Set to "true" to skip integration tests |
 
 <!-- markdownlint-enable MD013 -->
 
