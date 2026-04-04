@@ -411,36 +411,112 @@ func (c *Calculator) GetActualCost(
 	), nil
 }
 
-// GetProjectedCost is a stub that returns Unimplemented status.
-// Azure pricing lookup is not yet implemented.
+// GetProjectedCost returns the projected monthly cost for an Azure resource
+// based on current retail pricing. It uses MapDescriptorToQuery for validation
+// and maps errors to specific gRPC status codes.
+//
+// Supported resource types:
+//   - compute/VirtualMachine: hourly retail price × 730 hrs/mo
+//   - storage/ManagedDisk, storage/BlobStorage: validated but returns Unimplemented
+//
+// Error codes:
+//   - InvalidArgument: nil descriptor, missing region/sku
+//   - Unimplemented: unsupported provider/resource type, nil cachedClient, non-VM types
+//   - NotFound: no pricing data for region/SKU
+//   - ResourceExhausted, Unavailable, Internal: Azure API errors
+//
+// Response fields: unit_price, currency, cost_per_month, billing_detail,
+// pricing_category (STANDARD), expires_at (cache hint).
 func (c *Calculator) GetProjectedCost(
 	ctx context.Context,
 	req *finfocusv1.GetProjectedCostRequest,
 ) (*finfocusv1.GetProjectedCostResponse, error) {
 	log := logging.RequestLogger(ctx, c.logger)
-	log.Info().Msg("handling GetProjectedCost request")
 
-	query, ok := projectedQueryFromRequest(req)
-	if !ok || c.cachedClient == nil {
-		return nil, status.Error(codes.Unimplemented, "not yet implemented")
+	// Validate via MapDescriptorToQuery — returns sentinel errors.
+	query, err := MapDescriptorToQuery(req.GetResource())
+	if err != nil {
+		grpcErr := MapToGRPCStatus(err).Err()
+		log.Warn().
+			Str("result_status", "error").
+			Err(grpcErr).
+			Msg("GetProjectedCost validation failed")
+		return nil, grpcErr
 	}
 
-	cachedResult, err := c.cachedClient.GetPrices(ctx, query)
+	log.Info().
+		Str("region", query.ArmRegionName).
+		Str("sku", query.ArmSkuName).
+		Str("resource_type", query.ServiceName).
+		Msg("handling GetProjectedCost request")
+
+	// Route by service name: only VMs are fully implemented.
+	if query.ServiceName != defaultServiceName {
+		unimplErr := status.Errorf(codes.Unimplemented,
+			"%s cost projection not yet implemented", query.ServiceName)
+		log.Warn().
+			Str("resource_type", query.ServiceName).
+			Str("result_status", "error").
+			Err(unimplErr).
+			Msg("GetProjectedCost unsupported resource type")
+		return nil, unimplErr
+	}
+
+	if c.cachedClient == nil {
+		unimplErr := status.Error(codes.Unimplemented, "not yet implemented")
+		log.Warn().
+			Str("result_status", "error").
+			Err(unimplErr).
+			Msg("GetProjectedCost unavailable")
+		return nil, unimplErr
+	}
+
+	cachedResult, err := c.cachedClient.GetPrices(ctx, *query)
 	if err != nil {
-		return nil, MapToGRPCStatus(err).Err()
+		grpcErr := MapToGRPCStatus(err).Err()
+		log.Error().
+			Str("region", query.ArmRegionName).
+			Str("sku", query.ArmSkuName).
+			Str("resource_type", query.ServiceName).
+			Str("result_status", "error").
+			Err(grpcErr).
+			Msg("GetProjectedCost pricing lookup failed")
+		return nil, grpcErr
 	}
 
 	unitPrice, currency, err := unitPriceAndCurrency(cachedResult.Items)
 	if err != nil {
-		return nil, MapToGRPCStatus(err).Err()
+		grpcErr := MapToGRPCStatus(err).Err()
+		log.Error().
+			Str("region", query.ArmRegionName).
+			Str("sku", query.ArmSkuName).
+			Str("resource_type", query.ServiceName).
+			Str("result_status", "error").
+			Err(grpcErr).
+			Msg("GetProjectedCost response mapping failed")
+		return nil, grpcErr
 	}
 
+	costMonthly := unitPrice * pluginsdk.HoursPerMonth
+	billingDetail := fmt.Sprintf(
+		"Azure Retail Prices API: %s in %s at $%.4f/hr * %.0f hrs/mo",
+		query.ArmSkuName, query.ArmRegionName, unitPrice, pluginsdk.HoursPerMonth,
+	)
+
+	log.Info().
+		Str("region", query.ArmRegionName).
+		Str("sku", query.ArmSkuName).
+		Str("resource_type", query.ServiceName).
+		Float64("cost_monthly", costMonthly).
+		Str("currency", currency).
+		Float64("unit_price", unitPrice).
+		Str("result_status", "success").
+		Msg("GetProjectedCost completed")
+
 	return pluginsdk.NewGetProjectedCostResponse(
-		pluginsdk.WithProjectedCostDetails(
-			unitPrice,
-			currency,
-			unitPrice*pluginsdk.HoursPerMonth,
-			"azure-retail-prices",
+		pluginsdk.WithProjectedCostDetails(unitPrice, currency, costMonthly, billingDetail),
+		pluginsdk.WithProjectedCostPricingCategory(
+			finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD,
 		),
 		pluginsdk.WithProjectedCostExpiresAt(cachedResult.ExpiresAt),
 	), nil
@@ -523,35 +599,6 @@ func actualQueryFromRequest(req *finfocusv1.GetActualCostRequest) (azureclient.P
 		ServiceName:   firstNonEmptyTag(tags, "service", "serviceName"),
 		ProductName:   firstNonEmptyTag(tags, "product", "productName"),
 		CurrencyCode:  firstNonEmptyTag(tags, "currency", "currencyCode"),
-	}
-	if query.CurrencyCode == "" {
-		query.CurrencyCode = defaultCurrency
-	}
-	if query.ServiceName == "" {
-		query.ServiceName = defaultServiceName
-	}
-	if query.ArmRegionName == "" || query.ArmSkuName == "" {
-		return azureclient.PriceQuery{}, false
-	}
-
-	return query, true
-}
-
-func projectedQueryFromRequest(req *finfocusv1.GetProjectedCostRequest) (azureclient.PriceQuery, bool) {
-	if req == nil || req.GetResource() == nil {
-		return azureclient.PriceQuery{}, false
-	}
-	resource := req.GetResource()
-	if !strings.EqualFold(resource.GetProvider(), "azure") {
-		return azureclient.PriceQuery{}, false
-	}
-
-	query := azureclient.PriceQuery{
-		ArmRegionName: resource.GetRegion(),
-		ArmSkuName:    resource.GetSku(),
-		CurrencyCode:  firstNonEmptyTag(resource.GetTags(), "currency", "currencyCode"),
-		ServiceName:   firstNonEmptyTag(resource.GetTags(), "service", "serviceName"),
-		ProductName:   firstNonEmptyTag(resource.GetTags(), "product", "productName"),
 	}
 	if query.CurrencyCode == "" {
 		query.CurrencyCode = defaultCurrency

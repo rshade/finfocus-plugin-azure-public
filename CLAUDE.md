@@ -248,6 +248,53 @@ size (e.g., 100 GB → P10/128 GiB tier). 14 tiers from 4 GiB to 32767 GiB.
 
 **ZRS pricing**: ZRS disk types use meter names with " ZRS" suffix (e.g., "P10 ZRS").
 
+## GetProjectedCost RPC (`internal/pricing/calculator.go`)
+
+Returns projected monthly cost for Azure resources via `ResourceDescriptor`:
+
+```go
+req := &finfocusv1.GetProjectedCostRequest{
+    Resource: &finfocusv1.ResourceDescriptor{
+        Provider:     "azure",
+        ResourceType: "compute/VirtualMachine",
+        Region:       "eastus",
+        Sku:          "Standard_B1s",
+    },
+}
+
+resp, err := calc.GetProjectedCost(ctx, req)
+// resp.GetUnitPrice()      → 0.0104 (hourly)
+// resp.GetCurrency()       → "USD"
+// resp.GetCostPerMonth()   → 7.592 (0.0104 × 730)
+// resp.GetBillingDetail()  → "Azure Retail Prices API: Standard_B1s in ..."
+// resp.GetPricingCategory() → FOCUS_PRICING_CATEGORY_STANDARD
+// resp.GetExpiresAt()      → cache expiry timestamp
+```
+
+**Supported resource types**:
+
+| Resource Type | Status | Pricing Model |
+| --- | --- | --- |
+| `compute/VirtualMachine` | Supported | Hourly × 730 hrs/mo |
+| `storage/ManagedDisk` | Validates, returns Unimplemented | Monthly retail price |
+| `storage/BlobStorage` | Validates, returns Unimplemented | Per-GB monthly price |
+
+**Error codes**:
+
+- `InvalidArgument`: nil descriptor, missing region/sku
+- `Unimplemented`: unsupported provider/resource type, nil cachedClient, non-VM
+- `NotFound`: no pricing data for region/SKU
+- `ResourceExhausted`, `Unavailable`, `Internal`: Azure API errors
+
+**Validation**: Uses `MapDescriptorToQuery()` with sentinel errors mapped via
+`MapToGRPCStatus()`. Tag fallback: `Tags["region"]` and `Tags["sku"]` when
+primary fields empty. Default currency: USD.
+
+**Logging**: Structured zerolog at all decision points — Info for request
+entry and success (with `cost_monthly`, `currency`, `unit_price`,
+`result_status=success`), Warn for validation failures and nil cachedClient,
+Error for API/cache failures.
+
 ## Environment Variables
 
 <!-- markdownlint-disable MD013 -->
