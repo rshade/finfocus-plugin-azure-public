@@ -34,7 +34,7 @@ func toFields(keysAndValues []interface{}) map[string]interface{} {
 	fields := make(map[string]interface{})
 	// Loop condition i+1 < len ensures we never access out-of-bounds
 	for i := 0; i+1 < len(keysAndValues); i += 2 {
-		key, ok := keysAndValues[i].(string) //nolint:gosec // G602: bounds checked by loop condition i+1 < len
+		key, ok := keysAndValues[i].(string)
 		if !ok {
 			continue
 		}

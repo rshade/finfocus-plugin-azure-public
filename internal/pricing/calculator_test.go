@@ -207,16 +207,28 @@ func TestCalculatorConcurrentRequestsMaintainSeparateTraceIDs(t *testing.T) {
 }
 
 func TestProjectedCostSupported(t *testing.T) {
-	t.Skip("Skipping: GetProjectedCost not implemented yet. Azure pricing lookup requires implementation.")
+	t.Parallel()
 
-	logger := zerolog.Nop()
-	plugin := NewCalculator(logger)
+	server := newPriceServer(t, []azureclient.PriceItem{
+		{
+			ArmRegionName: "eastus",
+			ArmSkuName:    "Standard_B1s",
+			ServiceName:   "Virtual Machines",
+			CurrencyCode:  "USD",
+			RetailPrice:   0.0104,
+		},
+	}, nil)
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	plugin := NewCalculator(zerolog.Nop(), cachedClient)
 	testPlugin := pluginsdk.NewTestPlugin(t, plugin)
 
-	// Test supported resource
-	resource := pluginsdk.CreateTestResource("aws", "aws:ec2:Instance", map[string]string{
-		"instanceType": "t3.micro",
-		"region":       "us-east-1",
+	resource := pluginsdk.CreateTestResource("azure", "compute/VirtualMachine", map[string]string{
+		"region": "eastus",
+		"sku":    "Standard_B1s",
 	})
 
 	resp := testPlugin.TestProjectedCost(resource, false)
@@ -990,14 +1002,23 @@ func TestGetActualCostReturnsUnimplemented(t *testing.T) {
 	}
 }
 
-// TestGetProjectedCostReturnsUnimplemented verifies GetProjectedCost returns Unimplemented status.
+// TestGetProjectedCostReturnsUnimplemented verifies GetProjectedCost returns
+// Unimplemented status when cachedClient is nil (graceful degradation).
 func TestGetProjectedCostReturnsUnimplemented(t *testing.T) {
 	t.Parallel()
 
-	logger := zerolog.Nop()
-	calc := NewCalculator(logger)
+	calc := NewCalculator(zerolog.Nop()) // no cachedClient
 
-	_, err := calc.GetProjectedCost(context.Background(), &finfocusv1.GetProjectedCostRequest{})
+	req := &finfocusv1.GetProjectedCostRequest{
+		Resource: &finfocusv1.ResourceDescriptor{
+			Provider:     "azure",
+			ResourceType: "compute/VirtualMachine",
+			Region:       "eastus",
+			Sku:          "Standard_B1s",
+		},
+	}
+
+	_, err := calc.GetProjectedCost(context.Background(), req)
 	if err == nil {
 		t.Fatal("expected Unimplemented error, got nil")
 	}
@@ -1092,7 +1113,7 @@ func TestGetProjectedCostSetsExpiresAtFromCache(t *testing.T) {
 	req := &finfocusv1.GetProjectedCostRequest{
 		Resource: &finfocusv1.ResourceDescriptor{
 			Provider:     "azure",
-			ResourceType: "azure:compute/virtualMachine:VirtualMachine",
+			ResourceType: "compute/VirtualMachine",
 			Region:       "eastus",
 			Sku:          "Standard_B1s",
 		},
@@ -1645,6 +1666,348 @@ func TestEstimateCost_Disk_SizeEdgeCases(t *testing.T) {
 			}
 			if math.Abs(resp.GetCostMonthly()-tc.wantCost) > 0.001 {
 				t.Errorf("cost = %.2f, want %.2f", resp.GetCostMonthly(), tc.wantCost)
+			}
+		})
+	}
+}
+
+// --- Phase 2: GetProjectedCost TDD Tests (T004-T007) ---
+
+// T004: Table-driven validation test for GetProjectedCost.
+func TestGetProjectedCost_Validation(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		req      *finfocusv1.GetProjectedCostRequest
+		wantCode codes.Code
+		wantMsg  string
+	}{
+		{
+			name:     "nil_request",
+			req:      nil,
+			wantCode: codes.InvalidArgument,
+			wantMsg:  "descriptor is nil",
+		},
+		{
+			name: "nil_descriptor",
+			req: &finfocusv1.GetProjectedCostRequest{
+				Resource: nil,
+			},
+			wantCode: codes.InvalidArgument,
+			wantMsg:  "descriptor is nil",
+		},
+		{
+			name: "wrong_provider",
+			req: &finfocusv1.GetProjectedCostRequest{
+				Resource: &finfocusv1.ResourceDescriptor{
+					Provider:     "gcp",
+					ResourceType: "compute/VirtualMachine",
+					Region:       "eastus",
+					Sku:          "Standard_B1s",
+				},
+			},
+			wantCode: codes.Unimplemented,
+			wantMsg:  "unsupported provider",
+		},
+		{
+			name: "unsupported_resource_type",
+			req: &finfocusv1.GetProjectedCostRequest{
+				Resource: &finfocusv1.ResourceDescriptor{
+					Provider:     "azure",
+					ResourceType: "network/LoadBalancer",
+					Region:       "eastus",
+					Sku:          "Standard",
+				},
+			},
+			wantCode: codes.Unimplemented,
+			wantMsg:  "unsupported resource type",
+		},
+		{
+			name: "missing_region",
+			req: &finfocusv1.GetProjectedCostRequest{
+				Resource: &finfocusv1.ResourceDescriptor{
+					Provider:     "azure",
+					ResourceType: "compute/VirtualMachine",
+					Sku:          "Standard_B1s",
+				},
+			},
+			wantCode: codes.InvalidArgument,
+			wantMsg:  "region",
+		},
+		{
+			name: "missing_sku",
+			req: &finfocusv1.GetProjectedCostRequest{
+				Resource: &finfocusv1.ResourceDescriptor{
+					Provider:     "azure",
+					ResourceType: "compute/VirtualMachine",
+					Region:       "eastus",
+				},
+			},
+			wantCode: codes.InvalidArgument,
+			wantMsg:  "sku",
+		},
+		{
+			name: "missing_both_region_and_sku",
+			req: &finfocusv1.GetProjectedCostRequest{
+				Resource: &finfocusv1.ResourceDescriptor{
+					Provider:     "azure",
+					ResourceType: "compute/VirtualMachine",
+				},
+			},
+			wantCode: codes.InvalidArgument,
+			wantMsg:  "region, sku",
+		},
+		{
+			name: "nil_cachedClient",
+			req: &finfocusv1.GetProjectedCostRequest{
+				Resource: &finfocusv1.ResourceDescriptor{
+					Provider:     "azure",
+					ResourceType: "compute/VirtualMachine",
+					Region:       "eastus",
+					Sku:          "Standard_B1s",
+				},
+			},
+			wantCode: codes.Unimplemented,
+			wantMsg:  "not yet implemented",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			calc := NewCalculator(zerolog.Nop()) // no cachedClient
+			_, err := calc.GetProjectedCost(context.Background(), tc.req)
+			assertStatusCodeContains(t, err, tc.wantCode, tc.wantMsg)
+		})
+	}
+}
+
+// T005: Success response test asserting all response fields.
+func TestGetProjectedCost_Success_VMResponse(t *testing.T) {
+	t.Parallel()
+
+	server := newPriceServer(t, []azureclient.PriceItem{
+		{
+			ArmRegionName: "eastus",
+			ArmSkuName:    "Standard_B1s",
+			ServiceName:   "Virtual Machines",
+			CurrencyCode:  "USD",
+			RetailPrice:   0.0104,
+		},
+	}, nil)
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	calc := NewCalculator(zerolog.Nop(), cachedClient)
+	req := &finfocusv1.GetProjectedCostRequest{
+		Resource: &finfocusv1.ResourceDescriptor{
+			Provider:     "azure",
+			ResourceType: "compute/VirtualMachine",
+			Region:       "eastus",
+			Sku:          "Standard_B1s",
+		},
+	}
+
+	resp, err := calc.GetProjectedCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("GetProjectedCost() failed: %v", err)
+	}
+
+	// unit_price
+	if math.Abs(resp.GetUnitPrice()-0.0104) > 0.000001 {
+		t.Errorf("unit_price = %.6f, want 0.0104", resp.GetUnitPrice())
+	}
+
+	// currency
+	if resp.GetCurrency() != "USD" {
+		t.Errorf("currency = %q, want USD", resp.GetCurrency())
+	}
+
+	// cost_per_month = unit_price * 730
+	wantMonthly := 0.0104 * 730.0
+	if math.Abs(resp.GetCostPerMonth()-wantMonthly) > 0.001 {
+		t.Errorf("cost_per_month = %.4f, want %.4f", resp.GetCostPerMonth(), wantMonthly)
+	}
+
+	// billing_detail (exact format)
+	wantDetail := "Azure Retail Prices API: Standard_B1s in eastus at $0.0104/hr * 730 hrs/mo"
+	if resp.GetBillingDetail() != wantDetail {
+		t.Errorf("billing_detail = %q, want %q", resp.GetBillingDetail(), wantDetail)
+	}
+
+	// pricing_category
+	if resp.GetPricingCategory() != finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD {
+		t.Errorf("pricing_category = %v, want STANDARD", resp.GetPricingCategory())
+	}
+
+	// expires_at
+	if resp.GetExpiresAt() == nil {
+		t.Error("expires_at should not be nil")
+	}
+}
+
+// T007: API error propagation test.
+func TestGetProjectedCost_APIError(t *testing.T) {
+	t.Parallel()
+
+	// Server returns empty results → ErrNotFound → codes.NotFound
+	server := newPriceServer(t, []azureclient.PriceItem{}, nil)
+	defer server.Close()
+
+	cachedClient := newCalculatorTestCachedClient(t, server.URL)
+	defer cachedClient.Close()
+
+	calc := NewCalculator(zerolog.Nop(), cachedClient)
+	req := &finfocusv1.GetProjectedCostRequest{
+		Resource: &finfocusv1.ResourceDescriptor{
+			Provider:     "azure",
+			ResourceType: "compute/VirtualMachine",
+			Region:       "eastus",
+			Sku:          "Definitely_Not_A_Real_SKU",
+		},
+	}
+
+	_, err := calc.GetProjectedCost(context.Background(), req)
+	assertStatusCodeContains(t, err, codes.NotFound)
+}
+
+// --- Phase 3: GetProjectedCost Logging Tests (T015a) ---
+
+// T015a: Table-driven logging test for GetProjectedCost.
+func TestGetProjectedCost_Logging(t *testing.T) {
+	t.Parallel()
+
+	type logTestCase struct {
+		name       string
+		items      []azureclient.PriceItem // nil means no cachedClient
+		req        *finfocusv1.GetProjectedCostRequest
+		wantLevel  string
+		wantStatus string
+		wantFields []string
+	}
+
+	tests := []logTestCase{
+		{
+			name: "success_logs_info_with_cost_fields",
+			items: []azureclient.PriceItem{
+				{
+					ArmRegionName: "eastus",
+					ArmSkuName:    "Standard_B1s",
+					ServiceName:   "Virtual Machines",
+					CurrencyCode:  "USD",
+					RetailPrice:   0.0104,
+				},
+			},
+			req: &finfocusv1.GetProjectedCostRequest{
+				Resource: &finfocusv1.ResourceDescriptor{
+					Provider:     "azure",
+					ResourceType: "compute/VirtualMachine",
+					Region:       "eastus",
+					Sku:          "Standard_B1s",
+				},
+			},
+			wantLevel:  "info",
+			wantStatus: "success",
+			wantFields: []string{"cost_monthly", "currency", "unit_price"},
+		},
+		{
+			name: "validation_failure_logs_warn",
+			req: &finfocusv1.GetProjectedCostRequest{
+				Resource: &finfocusv1.ResourceDescriptor{
+					Provider:     "azure",
+					ResourceType: "compute/VirtualMachine",
+				},
+			},
+			wantLevel:  "warn",
+			wantStatus: "error",
+		},
+		{
+			name:  "api_failure_logs_error",
+			items: []azureclient.PriceItem{}, // empty → NotFound
+			req: &finfocusv1.GetProjectedCostRequest{
+				Resource: &finfocusv1.ResourceDescriptor{
+					Provider:     "azure",
+					ResourceType: "compute/VirtualMachine",
+					Region:       "eastus",
+					Sku:          "Nonexistent_SKU",
+				},
+			},
+			wantLevel:  "error",
+			wantStatus: "error",
+			wantFields: []string{"region", "sku", "resource_type"},
+		},
+		{
+			name: "nil_cachedClient_logs_warn",
+			req: &finfocusv1.GetProjectedCostRequest{
+				Resource: &finfocusv1.ResourceDescriptor{
+					Provider:     "azure",
+					ResourceType: "compute/VirtualMachine",
+					Region:       "eastus",
+					Sku:          "Standard_B1s",
+				},
+			},
+			wantLevel:  "warn",
+			wantStatus: "error",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var buf bytes.Buffer
+			logger := zerolog.New(&buf)
+
+			var calc *Calculator
+			if tc.items != nil {
+				server := newPriceServer(t, tc.items, nil)
+				defer server.Close()
+				cachedClient := newCalculatorTestCachedClient(t, server.URL)
+				defer cachedClient.Close()
+				calc = NewCalculator(logger, cachedClient)
+			} else {
+				calc = NewCalculator(logger)
+			}
+
+			_, _ = calc.GetProjectedCost(context.Background(), tc.req)
+
+			logLines := strings.Split(strings.TrimSpace(buf.String()), "\n")
+			var found bool
+			for _, line := range logLines {
+				if line == "" {
+					continue
+				}
+				var entry map[string]any
+				if err := json.Unmarshal([]byte(line), &entry); err != nil {
+					continue
+				}
+				rs, ok := entry["result_status"].(string)
+				if !ok {
+					continue
+				}
+				if rs != tc.wantStatus {
+					continue
+				}
+				found = true
+
+				if lvl, ok := entry["level"].(string); ok && lvl != tc.wantLevel {
+					t.Errorf("expected log level %q, got %q", tc.wantLevel, lvl)
+				}
+
+				for _, field := range tc.wantFields {
+					if _, exists := entry[field]; !exists {
+						t.Errorf("expected field %q in log entry, got: %v", field, entry)
+					}
+				}
+				break
+			}
+
+			if !found {
+				t.Errorf("expected log entry with result_status=%q, log output: %s", tc.wantStatus, buf.String())
 			}
 		})
 	}
