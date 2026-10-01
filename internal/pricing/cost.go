@@ -3,6 +3,8 @@ package pricing
 import (
 	"context"
 	"fmt"
+	"math"
+	"sort"
 	"strings"
 	"time"
 
@@ -414,12 +416,11 @@ func (c *Calculator) quoteBlob(
 		return monthlyQuote{}, err
 	}
 
-	perGB, currency, err := selectBlobStoredPrice(result.Items)
+	monthly, perGB, currency, unit, err := selectBlobStoredMonthly(result.Items, sizeGB)
 	if err != nil {
 		return monthlyQuote{}, MapToGRPCStatus(err).Err()
 	}
 
-	monthly := perGB * sizeGB
 	return monthlyQuote{
 		unitPrice: perGB,
 		monthly:   monthly,
@@ -438,7 +439,7 @@ func (c *Calculator) quoteBlob(
 		meters: []quoteMeter{{
 			key:   breakdownStorage,
 			price: perGB,
-			unit:  blobStoredUnit(result.Items),
+			unit:  unit,
 		}},
 	}, nil
 }
@@ -659,25 +660,81 @@ func missingFieldsError(fields []string) error {
 	)
 }
 
-// selectBlobStoredPrice returns the per-GB monthly price for blob capacity.
-// Among meters whose name contains "Data Stored", the lowest tierMinimumUnits
-// is the list price. Volume bands have a higher minimum. No Data Stored meter
-// is ErrNotFound.
-func selectBlobStoredPrice(items []azureclient.PriceItem) (float64, string, error) {
+// selectBlobStoredMonthly bills Data Stored in marginal volume bands.
+// tierMinimumUnits is the start of a band. Each GB is priced by the band it
+// falls in. The returned unit price is the first band, which is the list rate.
+// No Data Stored meter is ErrNotFound.
+func selectBlobStoredMonthly(
+	items []azureclient.PriceItem,
+	sizeGB float64,
+) (float64, float64, string, string, error) {
 	chosen, err := chosenBlobStored(items)
 	if err != nil {
-		return 0, "", err
+		return 0, 0, "", "", err
 	}
 
-	price := chosen.RetailPrice
-	if price == 0 {
-		price = chosen.UnitPrice
+	var bands []azureclient.PriceItem
+	for i := range items {
+		item := items[i]
+		if item.MeterName != chosen.MeterName {
+			continue
+		}
+		if !strings.Contains(strings.ToLower(item.MeterName), blobDataStoredMeter) {
+			continue
+		}
+		bands = append(bands, item)
 	}
+	sort.SliceStable(bands, func(i, j int) bool {
+		return bands[i].TierMinimumUnits < bands[j].TierMinimumUnits
+	})
+	bands = uniqueTierBands(bands)
+
 	currency := chosen.CurrencyCode
 	if strings.TrimSpace(currency) == "" {
 		currency = defaultCurrency
 	}
-	return price, currency, nil
+	return marginalGBMonth(bands, sizeGB), retailOrUnit(chosen), currency, chosen.UnitOfMeasure, nil
+}
+
+// marginalGBMonth prices sizeGB across bands ordered by TierMinimumUnits.
+// The next band's minimum is this band's end. A later duplicate minimum is dropped
+// by uniqueTierBands before this runs.
+func marginalGBMonth(bands []azureclient.PriceItem, sizeGB float64) float64 {
+	var total float64
+	for i, band := range bands {
+		start := band.TierMinimumUnits
+		end := math.Inf(1)
+		if i+1 < len(bands) {
+			end = bands[i+1].TierMinimumUnits
+		}
+		if sizeGB <= start {
+			break
+		}
+		qty := math.Min(sizeGB, end) - start
+		total += qty * retailOrUnit(band)
+	}
+	return total
+}
+
+func uniqueTierBands(bands []azureclient.PriceItem) []azureclient.PriceItem {
+	if len(bands) == 0 {
+		return nil
+	}
+	unique := []azureclient.PriceItem{bands[0]}
+	for _, band := range bands[1:] {
+		if band.TierMinimumUnits == unique[len(unique)-1].TierMinimumUnits {
+			continue
+		}
+		unique = append(unique, band)
+	}
+	return unique
+}
+
+func retailOrUnit(item azureclient.PriceItem) float64 {
+	if item.RetailPrice == 0 {
+		return item.UnitPrice
+	}
+	return item.RetailPrice
 }
 
 func chosenBlobStored(items []azureclient.PriceItem) (azureclient.PriceItem, error) {
@@ -701,12 +758,4 @@ func chosenBlobStored(items []azureclient.PriceItem) (azureclient.PriceItem, err
 		return azureclient.PriceItem{}, azureclient.ErrNotFound
 	}
 	return *chosen, nil
-}
-
-func blobStoredUnit(items []azureclient.PriceItem) string {
-	chosen, err := chosenBlobStored(items)
-	if err != nil {
-		return ""
-	}
-	return chosen.UnitOfMeasure
 }

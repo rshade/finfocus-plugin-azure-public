@@ -917,6 +917,8 @@ commits, then write `superpowers-run-report.md` with the Not delivered register.
 
 #### AZ-6.14 — Oracle comparison gate (run this right after AZ-6.1)
 
+**Status:** DONE, `go test -count=1 -run TestOracleComparison ./internal/pricing/` passed, 51 cases in `.superpowers/oracle-results.md`. Break check: doubling `unit * pluginsdk.HoursPerMonth` in the VM quote failed 19 cases, then restored. `git diff -- internal/pricing/testdata/oracle/` empty. Ambiguous AKS free chose 36.50. Ambiguous SQL zone redundancy returned NotFound because the fixture has no base compute row. Spot EstimateCost is NotFound and stays AZ-6.2.
+
 **Description**: `internal/pricing/testdata/oracle/` holds an independent expected-price table
 (about 50 cases, derived from the live Retail Prices API by a script that never read this
 plugin). Write the comparison test that its `README.md` specifies: offline against the recorded

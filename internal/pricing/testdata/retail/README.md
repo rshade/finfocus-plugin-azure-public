@@ -33,8 +33,9 @@ stays `compute/VirtualMachine`.
 product `General Block Blob v2` in `eastus`. `NextPageLink` was empty, so this
 file is that single response. The query does not filter `armSkuName`. A capacity
 meter is `skuName`, a space, then `Data Stored`, unit `1 GB/Month`. Hot meters
-repeat for `tierMinimumUnits` bands; the base band is `0`. Monthly cost is that
-row's `retailPrice` times size in GB, not times 730.
+repeat for `tierMinimumUnits` bands. Monthly cost walks those bands: each GB
+uses the rate of the band it falls in. The first band starts at `0`. It is
+not multiplied by 730.
 
 ```bash
 mkdir -p internal/pricing/testdata/retail/storageaccount
@@ -174,8 +175,9 @@ Rows are selected locally. Manual throughput is product `Azure Cosmos DB`,
 sku `RUs`, meter `100 RU/s`, unit `1/Hour`. The leading integer in the meter
 name is the RU block. Monthly RU cost is `ru_per_second / that integer`,
 times `retailPrice`, times 730. Storage is meter `Data Stored`, unit
-`1 GB/Month`. Monthly storage is `retailPrice` times size in GB, not times
-730. `multi_master=true` uses sku `mRUs`, meter `100 Multi-master RU/s`, and
+`1 GB/Month`, and only when `size_gb` is set. Monthly storage is
+`retailPrice` times size in GB, not times 730. An omitted `size_gb` has no
+storage component. `multi_master=true` uses sku `mRUs`, meter `100 Multi-master RU/s`, and
 that sku's `Data Stored` row.
 
 sku `Free`, sku `Free Tier`, sku `RUm`, and meter `1000 RU/m` are not

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	finfocusv1 "github.com/rshade/finfocus-spec/sdk/go/proto/finfocus/v1"
@@ -86,12 +87,12 @@ func (c *Calculator) quoteStorageAccount(
 		return monthlyQuote{}, err
 	}
 
-	item, err := selectStorageAccountItem(result.Items, sku)
+	item, bands, err := storageAccountBands(result.Items, sku)
 	if err != nil {
 		return monthlyQuote{}, MapToGRPCStatus(err).Err()
 	}
 
-	monthly := item.RetailPrice * sizeGB
+	monthly := marginalGBMonth(bands, sizeGB)
 	currency := item.CurrencyCode
 	if strings.TrimSpace(currency) == "" {
 		currency = defaultCurrency
@@ -170,13 +171,16 @@ func canonicalStorageAccountSKU(raw string) (string, error) {
 	return tier + " " + redundancy, nil
 }
 
-// selectStorageAccountItem returns the base General Block Blob v2 capacity row.
-// Rows that share a meter differ by tierMinimumUnits; the lowest band is the
-// list price. Reserved-capacity rows contain TB or PB and are skipped.
-// No match is ErrNotFound and names the tier and redundancy.
-func selectStorageAccountItem(items []azureclient.PriceItem, sku string) (azureclient.PriceItem, error) {
+// storageAccountBands returns the base row and every marginal band for sku,
+// ordered by tierMinimumUnits. The base row is the lowest minimum. Duplicate
+// minima keep the first row. Reserved-capacity rows contain TB or PB and are
+// skipped. No match is ErrNotFound and names the tier and redundancy.
+func storageAccountBands(
+	items []azureclient.PriceItem,
+	sku string,
+) (azureclient.PriceItem, []azureclient.PriceItem, error) {
 	wantMeter := sku + storageDataStoredSuffix
-	var chosen *azureclient.PriceItem
+	var bands []azureclient.PriceItem
 	for i := range items {
 		item := items[i]
 		if storageReservedCapacity(item) {
@@ -189,22 +193,22 @@ func selectStorageAccountItem(items []azureclient.PriceItem, sku string) (azurec
 			item.Type != storagePriceTypeConsumption {
 			continue
 		}
-		if chosen != nil && item.TierMinimumUnits >= chosen.TierMinimumUnits {
-			continue
-		}
-		match := item
-		chosen = &match
+		bands = append(bands, item)
 	}
-	if chosen == nil {
+	if len(bands) == 0 {
 		tier, redundancy := storageTierAndRedundancy(sku)
-		return azureclient.PriceItem{}, fmt.Errorf(
+		return azureclient.PriceItem{}, nil, fmt.Errorf(
 			"no storage account price for tier %s redundancy %s: %w",
 			tier,
 			redundancy,
 			azureclient.ErrNotFound,
 		)
 	}
-	return *chosen, nil
+	sort.SliceStable(bands, func(i, j int) bool {
+		return bands[i].TierMinimumUnits < bands[j].TierMinimumUnits
+	})
+	bands = uniqueTierBands(bands)
+	return bands[0], bands, nil
 }
 
 func storageReservedCapacity(item azureclient.PriceItem) bool {

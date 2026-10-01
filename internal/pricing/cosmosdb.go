@@ -82,6 +82,7 @@ type cosmosRequest struct {
 	model        string
 	ru           float64
 	sizeGB       float64
+	sizeSet      bool
 	requestUnits float64
 	multi        bool
 }
@@ -118,7 +119,7 @@ func cosmosManualSpec(resource *finfocusv1.ResourceDescriptor, model string) (co
 		return cosmosRequest{}, status.Error(codes.InvalidArgument, err.Error())
 	}
 	raw, field := cosmosRawRU(resource.GetTags())
-	missing := cosmosMissingProvisioned(region, raw, sizeSet)
+	missing := cosmosMissingProvisioned(region, raw)
 	if len(missing) > 0 {
 		return cosmosRequest{}, missingFieldsError(missing)
 	}
@@ -127,24 +128,22 @@ func cosmosManualSpec(resource *finfocusv1.ResourceDescriptor, model string) (co
 		return cosmosRequest{}, err
 	}
 	return cosmosRequest{
-		region: region,
-		model:  model,
-		ru:     ru,
-		sizeGB: sizeGB,
-		multi:  model == cosmosModelManual && cosmosMultiMaster(resource.GetTags()),
+		region:  region,
+		model:   model,
+		ru:      ru,
+		sizeGB:  sizeGB,
+		sizeSet: sizeSet,
+		multi:   model == cosmosModelManual && cosmosMultiMaster(resource.GetTags()),
 	}, nil
 }
 
-func cosmosMissingProvisioned(region, rawRU string, sizeSet bool) []string {
+func cosmosMissingProvisioned(region, rawRU string) []string {
 	var missing []string
 	if region == "" {
 		missing = append(missing, "region")
 	}
 	if rawRU == "" {
 		missing = append(missing, cosmosTagRUPerSecond)
-	}
-	if !sizeSet {
-		missing = append(missing, "size_gb")
 	}
 	return missing
 }
@@ -204,23 +203,28 @@ func cosmosProvisionedQuote(
 	if err != nil {
 		return monthlyQuote{}, cosmosStatus(err)
 	}
-	stored, err := cosmosStorageItem(result.Items, spec)
-	if err != nil {
-		return monthlyQuote{}, cosmosStatus(err)
-	}
-	if itemCurrency(stored) != itemCurrency(ruItem) {
-		return monthlyQuote{}, status.Error(codes.InvalidArgument, "cosmos meters use different currencies")
-	}
 	ruCost := spec.ru / float64(block) * ruItem.RetailPrice * pluginsdk.HoursPerMonth
-	storageCost := stored.RetailPrice * spec.sizeGB
-	quote := cosmosQuote(resource, spec, ruItem, result.ExpiresAt, map[string]float64{
-		cosmosComponentRU: ruCost,
-		breakdownStorage:  storageCost,
-	})
-	quote.meters = []quoteMeter{
+	components := map[string]float64{cosmosComponentRU: ruCost}
+	meters := []quoteMeter{
 		{key: cosmosComponentRU, price: ruItem.RetailPrice, unit: ruItem.UnitOfMeasure},
-		{key: breakdownStorage, price: stored.RetailPrice, unit: stored.UnitOfMeasure},
 	}
+	if spec.sizeSet {
+		stored, storedErr := cosmosStorageItem(result.Items, spec)
+		if storedErr != nil {
+			return monthlyQuote{}, cosmosStatus(storedErr)
+		}
+		if itemCurrency(stored) != itemCurrency(ruItem) {
+			return monthlyQuote{}, status.Error(codes.InvalidArgument, "cosmos meters use different currencies")
+		}
+		components[breakdownStorage] = stored.RetailPrice * spec.sizeGB
+		meters = append(meters, quoteMeter{
+			key:   breakdownStorage,
+			price: stored.RetailPrice,
+			unit:  stored.UnitOfMeasure,
+		})
+	}
+	quote := cosmosQuote(resource, spec, ruItem, result.ExpiresAt, components)
+	quote.meters = meters
 	return quote, nil
 }
 
@@ -565,14 +569,27 @@ func cosmosBillingDetail(spec cosmosRequest) string {
 	case cosmosModelServerless:
 		return fmt.Sprintf("Cosmos DB serverless %g request units in %s", spec.requestUnits, spec.region)
 	case cosmosModelAutoscale:
-		return fmt.Sprintf("Cosmos DB autoscale %g RU/s %g GB in %s", spec.ru, spec.sizeGB, spec.region)
+		return fmt.Sprintf("Cosmos DB autoscale %g RU/s%s in %s", spec.ru, cosmosSizeDetail(spec), spec.region)
 	default:
 		kind := "provisioned"
 		if spec.multi {
 			kind = "multi-master"
 		}
-		return fmt.Sprintf("Cosmos DB %s %g RU/s %g GB in %s", kind, spec.ru, spec.sizeGB, spec.region)
+		return fmt.Sprintf(
+			"Cosmos DB %s %g RU/s%s in %s",
+			kind,
+			spec.ru,
+			cosmosSizeDetail(spec),
+			spec.region,
+		)
 	}
+}
+
+func cosmosSizeDetail(spec cosmosRequest) string {
+	if !spec.sizeSet {
+		return ""
+	}
+	return fmt.Sprintf(" %g GB", spec.sizeGB)
 }
 
 func cosmosStatus(err error) error {
