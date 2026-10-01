@@ -24,6 +24,9 @@ Rows share `armSkuName` and `priceType`. They differ by `skuName`,
 - An empty `priority` uses the non-Windows on-demand row.
 - Any other non-empty `priority` is rejected.
 
+`EstimateCost` reads the same values from the attribute `priority`. A Spot
+quote sets pricing category Dynamic. The interruption score stays 0.
+
 Monthly cost is that row's `retailPrice` times 730 hours. The resource type
 stays `compute/VirtualMachine`.
 

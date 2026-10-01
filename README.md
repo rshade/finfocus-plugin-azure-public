@@ -156,7 +156,9 @@ kill -SIGTERM $PID  # Graceful shutdown, exit code 0
 | `cosmosdb/Account` | Azure Cosmos DB | `400 RU` |
 
 Resource type matching is case-insensitive. Spot is a Virtual Machine with
-tag `priority=Spot`. Load Balancer and the other stretch types are not
+tag `priority=Spot`, or the same `priority` attribute on `EstimateCost`.
+The response category is Dynamic. Any other priority value is rejected.
+Load Balancer and the other stretch types are not
 priced: each Load Balancer SKU has more than one meter.
 
 ## Integration Tests

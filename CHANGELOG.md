@@ -26,3 +26,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `GetPluginInfo` reports spec version `v0.7.0`. `EstimateCost` selects the on-demand Linux VM meter. Blob Storage returns not found when no `Data Stored` meter matches.
 - Blob Storage and Storage Accounts bill capacity across volume bands. A size past the first `tierMinimumUnits` uses the next band's rate for the remainder.
 - Cosmos DB provisioned quotes omit storage when `size_gb` is absent. The scale pricing model does the same.
+- `EstimateCost` honours Virtual Machine `priority=Spot` and returns pricing category Dynamic. The interruption score stays 0 because no risk source is available.

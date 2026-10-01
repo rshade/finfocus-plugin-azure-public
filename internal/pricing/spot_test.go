@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/rshade/finfocus-plugin-azure-public/internal/azureclient"
 )
@@ -102,6 +103,13 @@ func TestGetProjectedCostSpotVMFromFixture(t *testing.T) {
 			if got := resp.GetCostBreakdown()["compute"]; math.Abs(got-resp.GetCostPerMonth()) > 1e-9 {
 				t.Fatalf("compute breakdown = %v, cost_per_month = %v", got, resp.GetCostPerMonth())
 			}
+			wantCategory := finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD
+			if tt.wantSpot {
+				wantCategory = finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_DYNAMIC
+			}
+			if resp.GetPricingCategory() != wantCategory {
+				t.Fatalf("pricing_category = %s, want %s", resp.GetPricingCategory(), wantCategory)
+			}
 			detail := resp.GetBillingDetail()
 			if tt.wantSpot {
 				if !strings.Contains(detail, "Spot") || strings.Contains(detail, "On-demand") {
@@ -155,6 +163,94 @@ func TestGetProjectedCostSpotOverGRPC(t *testing.T) {
 	}
 	if math.Abs(resp.GetCostPerMonth()-wantMonthly) > 1e-9 {
 		t.Fatalf("cost_per_month = %v, want %v", resp.GetCostPerMonth(), wantMonthly)
+	}
+}
+
+func TestEstimateCostSpotD2sV3Eastus(t *testing.T) {
+	t.Parallel()
+
+	loaded := loadSpotRetailFixture(t)
+	onDemand := fixtureVMItem(t, loaded.Items, false)
+	spot := fixtureVMItem(t, loaded.Items, true)
+	spotMonthly := spot.RetailPrice * pluginsdk.HoursPerMonth
+	// 13.74 is the oracle monthly for Standard_D2s_v3 eastus Spot, rounded to cents.
+	if math.Abs(spotMonthly-13.74) > 0.01 {
+		t.Fatalf("fixture spot monthly = %v, want about 13.74", spotMonthly)
+	}
+	onDemandMonthly := onDemand.RetailPrice * pluginsdk.HoursPerMonth
+
+	calc := newPricingCalc(t, loaded.Items)
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	server := grpc.NewServer()
+	finfocusv1.RegisterCostSourceServiceServer(server, pluginsdk.NewServer(calc))
+	go func() {
+		_ = server.Serve(lis)
+	}()
+	t.Cleanup(server.Stop)
+
+	conn, err := grpc.NewClient(
+		"passthrough:///"+lis.Addr().String(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		t.Fatalf("grpc client: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = conn.Close()
+	})
+	client := finfocusv1.NewCostSourceServiceClient(conn)
+
+	spotResp, err := client.EstimateCost(context.Background(), estimateVMRequest(t, "Spot"))
+	if err != nil {
+		t.Fatalf("spot EstimateCost() failed: %v", err)
+	}
+	if math.Abs(spotResp.GetCostMonthly()-spotMonthly) > 1e-6 {
+		t.Fatalf("spot cost_monthly = %v, want %v", spotResp.GetCostMonthly(), spotMonthly)
+	}
+	if spotResp.GetPricingCategory() != finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_DYNAMIC {
+		t.Fatalf("spot pricing_category = %s, want DYNAMIC", spotResp.GetPricingCategory())
+	}
+
+	demandResp, err := client.EstimateCost(context.Background(), estimateVMRequest(t, ""))
+	if err != nil {
+		t.Fatalf("on-demand EstimateCost() failed: %v", err)
+	}
+	if math.Abs(demandResp.GetCostMonthly()-onDemandMonthly) > 1e-6 {
+		t.Fatalf("on-demand cost_monthly = %v, want %v", demandResp.GetCostMonthly(), onDemandMonthly)
+	}
+	if demandResp.GetPricingCategory() != finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD {
+		t.Fatalf("on-demand pricing_category = %s, want STANDARD", demandResp.GetPricingCategory())
+	}
+
+	_, err = client.EstimateCost(context.Background(), estimateVMRequest(t, "LowPriority"))
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("code = %s, want InvalidArgument (err=%v)", status.Code(err), err)
+	}
+	if !strings.Contains(status.Convert(err).Message(), "LowPriority") {
+		t.Fatalf("message %q does not name LowPriority", status.Convert(err).Message())
+	}
+}
+
+func estimateVMRequest(t *testing.T, priority string) *finfocusv1.EstimateCostRequest {
+	t.Helper()
+
+	attrs := map[string]any{
+		"location": "eastus",
+		"vmSize":   "Standard_D2s_v3",
+	}
+	if priority != "" {
+		attrs["priority"] = priority
+	}
+	fields, err := structpb.NewStruct(attrs)
+	if err != nil {
+		t.Fatalf("attributes: %v", err)
+	}
+	return &finfocusv1.EstimateCostRequest{
+		ResourceType: "azure:compute/virtualMachine:VirtualMachine",
+		Attributes:   fields,
 	}
 }
 

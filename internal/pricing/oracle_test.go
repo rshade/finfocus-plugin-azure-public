@@ -170,20 +170,21 @@ func judgeOracleOK(
 		return
 	}
 	result.verdict = "pass"
-	if estimateErr == nil && item.Kind != "vm_spot_linux" {
-		if math.Abs(estimateCost-pluginCost) > oracleTolerance(pluginCost) {
-			result.verdict = "fail"
-			result.fail = fmt.Sprintf(
-				"EstimateCost %v disagrees with GetProjectedCost %v",
-				estimateCost,
-				pluginCost,
-			)
-		}
+	if item.Kind != "vm_ondemand_linux" && item.Kind != "vm_spot_linux" && item.Kind != "managed_disk" {
+		return
 	}
-	if item.Kind == "vm_spot_linux" && estimateErr == nil {
-		if math.Abs(estimateCost-pluginCost) > oracleTolerance(pluginCost) {
-			result.estimate += " (on-demand path; AZ-6.2)"
-		}
+	if estimateErr != nil {
+		result.verdict = "fail"
+		result.fail = "EstimateCost error: " + status.Convert(estimateErr).Message()
+		return
+	}
+	if math.Abs(estimateCost-pluginCost) > oracleTolerance(pluginCost) {
+		result.verdict = "fail"
+		result.fail = fmt.Sprintf(
+			"EstimateCost %v disagrees with GetProjectedCost %v",
+			estimateCost,
+			pluginCost,
+		)
 	}
 }
 
@@ -474,10 +475,14 @@ func oracleEstimateRequest(item oracleCase) (*finfocusv1.EstimateCostRequest, bo
 		if item.Hint != nil && item.Hint.SKU != "" {
 			sku = item.Hint.SKU
 		}
-		attrs, err := structpb.NewStruct(map[string]any{
+		attrsMap := map[string]any{
 			"location": item.Region,
 			"vmSize":   sku,
-		})
+		}
+		if item.Kind == "vm_spot_linux" {
+			attrsMap["priority"] = "Spot"
+		}
+		attrs, err := structpb.NewStruct(attrsMap)
 		if err != nil {
 			return nil, false
 		}

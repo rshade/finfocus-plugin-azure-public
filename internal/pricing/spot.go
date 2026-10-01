@@ -17,14 +17,36 @@ const vmPrioritySpot = "Spot"
 // An empty priority is on-demand. Any other non-empty value is InvalidArgument
 // and the message names that value.
 func descriptorSpot(resource *finfocusv1.ResourceDescriptor) (bool, error) {
-	priority := strings.TrimSpace(resource.GetTags()["priority"])
-	if priority == "" {
+	if resource == nil {
+		return false, nil
+	}
+	return prioritySpot(resource.GetTags()["priority"])
+}
+
+// prioritySpot reports whether raw selects Spot. An empty value is on-demand.
+// Any other non-empty value is InvalidArgument and the message names it.
+func prioritySpot(raw string) (bool, error) {
+	priority := strings.TrimSpace(raw)
+	if priority == "" || priority == "<nil>" {
 		return false, nil
 	}
 	if strings.EqualFold(priority, vmPrioritySpot) {
 		return true, nil
 	}
 	return false, status.Errorf(codes.InvalidArgument, "unsupported priority %q", priority)
+}
+
+// estimateSpot reads the EstimateCost attribute priority. The same values as
+// the descriptor tag apply: empty is on-demand, Spot is Spot.
+func estimateSpot(req *finfocusv1.EstimateCostRequest) (bool, error) {
+	if req == nil || req.GetAttributes() == nil {
+		return false, nil
+	}
+	raw, ok := req.GetAttributes().AsMap()["priority"]
+	if !ok || raw == nil {
+		return false, nil
+	}
+	return prioritySpot(fmt.Sprint(raw))
 }
 
 // selectVMItem picks the non-Windows on-demand or Spot row.
