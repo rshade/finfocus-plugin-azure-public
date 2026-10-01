@@ -797,6 +797,8 @@ spec versions with a command that can pass, such as
 
 #### AZ-6.2 — Spot pricing: finish the edges [Issue #42]
 
+**Status:** DONE, `go test -count=1 -run 'TestEstimateCostSpotD2sV3Eastus|TestGetProjectedCostSpotVMFromFixture|TestOracleComparison$' ./internal/pricing/` passed. Spot `EstimateCost` for `Standard_D2s_v3` eastus is 13.73568 per month with category Dynamic. An empty priority stays on demand. `LowPriority` is InvalidArgument. Break check: the test failed on the on-demand total 70.08 before `selectVMItem` received the Spot flag.
+
 **Description**: Spot is reachable today through `GetProjectedCost` with the resource tag
 `priority=Spot` (`descriptorSpot` in `spot.go`), and `selectVMItem` picks the Linux Spot row
 correctly. Audit on 2026-10-01 found the edges missing: `EstimateCost` and the regional

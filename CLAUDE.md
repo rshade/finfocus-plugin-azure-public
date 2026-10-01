@@ -217,7 +217,7 @@ Behavior notes:
 - Unsupported non-empty `resource_type` returns `codes.Unimplemented`
 - Missing `location/region` or `vmSize/sku` returns `codes.InvalidArgument`
 - Cache hits are served from `CachedClient` with no outbound API request
-- VM `EstimateCost` uses the Linux on-demand row (`selectVMItem` with spot false)
+- VM `EstimateCost` reads attribute `priority`. `Spot` uses the Linux Spot row and pricing category Dynamic. An empty priority stays the on-demand row and Standard. Any other value is InvalidArgument.
 - `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.0`). A value without the `v` prefix is rejected by the SDK
 
 ### Managed Disk Cost Estimation

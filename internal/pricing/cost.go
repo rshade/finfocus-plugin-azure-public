@@ -171,6 +171,12 @@ func (c *Calculator) GetProjectedCost(
 		return nil, err
 	}
 
+	category := projectedPricingCategory(resource)
+	if category == finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_DYNAMIC {
+		log.Warn().
+			Str("resource_type", resource.GetResourceType()).
+			Msg("spot interruption risk is unknown; score left at 0")
+	}
 	resp := pluginsdk.NewGetProjectedCostResponse(
 		pluginsdk.WithProjectedCostDetails(
 			quote.unitPrice,
@@ -178,9 +184,7 @@ func (c *Calculator) GetProjectedCost(
 			quote.monthly,
 			quote.billingDetail,
 		),
-		pluginsdk.WithProjectedCostPricingCategory(
-			finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD,
-		),
+		pluginsdk.WithProjectedCostPricingCategory(category),
 		pluginsdk.WithProjectedCostBreakdown(projectedBreakdown(quote)),
 		pluginsdk.WithProjectedCostExpiresAt(quote.expiresAt),
 	)
@@ -200,6 +204,13 @@ func (c *Calculator) GetProjectedCost(
 		Msg("GetProjectedCost completed")
 
 	return resp, nil
+}
+
+func projectedPricingCategory(resource *finfocusv1.ResourceDescriptor) finfocusv1.FocusPricingCategory {
+	if resource == nil || !isVirtualMachineResourceType(strings.ToLower(resource.GetResourceType())) {
+		return finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD
+	}
+	return focusPricingCategory(resource)
 }
 
 func (c *Calculator) quoteResource(

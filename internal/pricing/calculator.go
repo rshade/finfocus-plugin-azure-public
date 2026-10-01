@@ -66,6 +66,8 @@ func (c *Calculator) GetPluginInfo(
 // to map the resource descriptor to an Azure pricing query. Returns
 // Supported:true if the mapping succeeds, or Supported:false with a reason
 // describing why the resource cannot be priced.
+// A Virtual Machine with tag priority=Spot is supported. The quote uses the
+// Linux Spot meter and pricing category Dynamic. Any other priority is not.
 func (c *Calculator) Supports(
 	ctx context.Context,
 	req *finfocusv1.SupportsRequest,
@@ -142,6 +144,16 @@ func (c *Calculator) estimateVMCost(
 		return nil, err
 	}
 
+	spot, err := estimateSpot(req)
+	if err != nil {
+		log.Warn().
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(err).
+			Msg("EstimateCost validation failed")
+		return nil, err
+	}
+
 	if c.cachedClient == nil {
 		unimplementedErr := status.Error(codes.Unimplemented, "not yet implemented")
 		log.Warn().
@@ -167,7 +179,7 @@ func (c *Calculator) estimateVMCost(
 		return nil, err
 	}
 
-	item, err := selectVMItem(result.Items, false)
+	item, err := selectVMItem(result.Items, spot)
 	if err != nil {
 		err = MapToGRPCStatus(err).Err()
 		log.Error().
@@ -194,6 +206,7 @@ func (c *Calculator) estimateVMCost(
 	}
 
 	costMonthly := unitPrice * pluginsdk.HoursPerMonth
+	category := estimateVMCategory(log, query.ArmRegionName, query.ArmSkuName, spot)
 
 	log.Info().
 		Str("region", query.ArmRegionName).
@@ -206,10 +219,19 @@ func (c *Calculator) estimateVMCost(
 
 	return pluginsdk.NewEstimateCostResponse(
 		pluginsdk.WithEstimateCost(currency, costMonthly),
-		pluginsdk.WithPricingCategory(
-			finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD,
-		),
+		pluginsdk.WithPricingCategory(category),
 	), nil
+}
+
+func estimateVMCategory(log zerolog.Logger, region, sku string, spot bool) finfocusv1.FocusPricingCategory {
+	if !spot {
+		return finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD
+	}
+	log.Warn().
+		Str("region", region).
+		Str("sku", sku).
+		Msg("spot interruption risk is unknown; score left at 0")
+	return finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_DYNAMIC
 }
 
 // estimateDiskCost handles Managed Disk cost estimation.
