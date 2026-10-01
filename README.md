@@ -15,7 +15,7 @@ pricing data from the Azure Retail Prices API and caching it for performance.
 
 ### Prerequisites
 
-- Go 1.25.5 or higher
+- Go 1.27.1 or higher
 - Internet connection (to fetch pricing data)
 
 ### Installation
@@ -98,14 +98,14 @@ All logs are written to stderr in JSON format with the following fields:
 }
 ```
 
-| Field            | Description                                                    |
-|------------------|----------------------------------------------------------------|
-| `level`          | Log severity: trace, debug, info, warn, error, fatal           |
-| `plugin_name`    | Always "azure-public"                                          |
-| `plugin_version` | Plugin version (or "dev" for development builds)               |
-| `time`           | RFC3339 timestamp                                              |
-| `message`        | Log message                                                    |
-| `trace_id`       | Request trace ID (only present when provided by FinFocus Core) |
+| Field | Description |
+| --- | --- |
+| `level` | Severity: trace, debug, info, warn, error, fatal |
+| `plugin_name` | Always "azure-public" |
+| `plugin_version` | Plugin version, or "dev" for a dev build |
+| `time` | RFC3339 timestamp |
+| `message` | Log message |
+| `trace_id` | Trace ID when FinFocus Core sends one |
 
 ### Parsing Logs
 
@@ -144,13 +144,20 @@ kill -SIGTERM $PID  # Graceful shutdown, exit code 0
 ## Supported Azure Resource Types
 
 | Resource Type | Azure Service Name | Example SKU |
-|---|---|---|
+| --- | --- | --- |
 | `compute/VirtualMachine` | Virtual Machines | `Standard_B1s` |
 | `storage/ManagedDisk` | Managed Disks | `Premium_LRS` |
-| `storage/BlobStorage` | Storage | `Standard_LRS` |
+| `storage/BlobStorage` | Storage | `Hot LRS` |
+| `storage/StorageAccount` | Storage | `Hot LRS` |
+| `web/AppServicePlan` | Azure App Service | `P1v3` |
+| `web/FunctionApp` | Functions | `Y1` |
+| `containerservice/KubernetesCluster` | Azure Kubernetes Service | `Standard` |
+| `sql/Database` | SQL Database | `GP_Gen5_2` |
+| `cosmosdb/Account` | Azure Cosmos DB | `400 RU` |
 
-Resource type matching is case-insensitive. Additional resource types will be
-added in future releases.
+Resource type matching is case-insensitive. Spot is a Virtual Machine with
+tag `priority=Spot`. Load Balancer and the other stretch types are not
+priced: each Load Balancer SKU has more than one meter.
 
 ## Integration Tests
 

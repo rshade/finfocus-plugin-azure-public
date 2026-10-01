@@ -43,7 +43,7 @@ type Client struct {
 }
 
 // NewClient creates a new Azure Retail Prices API client.
-// It validates the configuration and returns an error if invalid.
+// NewClient returns an error when the configuration is invalid.
 func NewClient(config Config) (*Client, error) {
 	if err := validateConfig(config); err != nil {
 		return nil, err
@@ -408,6 +408,7 @@ func buildFilterQuery(query PriceQuery) string {
 	return NewFilterBuilder().
 		Region(query.ArmRegionName).
 		SKU(query.ArmSkuName).
+		SkuName(query.SkuName).
 		Service(query.ServiceName).
 		ProductName(query.ProductName).
 		CurrencyCode(query.CurrencyCode).

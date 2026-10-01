@@ -31,10 +31,36 @@ test:
 	@echo "Running tests..."
 	go test -v -race ./...
 
+.PHONY: vet
+vet:
+	@echo "Running go vet..."
+	go vet ./...
+
+.PHONY: vulncheck
+vulncheck:
+	@echo "Running govulncheck..."
+	govulncheck ./...
+
 .PHONY: lint
-lint:
-	@echo "Running lint..."
+lint: vet
+	@echo "Running golangci-lint..."
 	golangci-lint run --timeout=10m ./...
+	@echo "Running markdownlint..."
+	markdownlint '*.md' 2>/dev/null || true
+	@echo "Running vale..."
+	vale --config=.vale.ini . 2>/dev/null || true
+	@echo "Running actionlint..."
+	actionlint .github/workflows/ 2>/dev/null || true
+
+.PHONY: fmt
+fmt:
+	@echo "Running gofmt..."
+	gofmt -s -w .
+
+.PHONY: goreleaser-check
+goreleaser-check:
+	@echo "Checking goreleaser config..."
+	goreleaser check
 
 .PHONY: clean
 clean:
@@ -49,9 +75,13 @@ ensure:
 .PHONY: help
 help:
 	@echo "Available targets:"
-	@echo "  build   - Compile the binary with version information"
-	@echo "  test    - Run unit tests with race detection"
-	@echo "  lint    - Run code quality checks (golangci-lint)"
-	@echo "  clean   - Remove build artifacts"
-	@echo "  ensure  - Install development dependencies"
-	@echo "  help    - Show this help message"
+	@echo "  build              - Compile the binary with version information"
+	@echo "  test               - Run unit tests with race detection"
+	@echo "  vet                - Run go vet"
+	@echo "  vulncheck          - Run govulncheck for security vulnerabilities"
+	@echo "  lint               - Run all linters (vet, golangci-lint, markdownlint, vale, actionlint)"
+	@echo "  fmt                - Format code with gofmt"
+	@echo "  goreleaser-check   - Verify goreleaser configuration"
+	@echo "  clean              - Remove build artifacts"
+	@echo "  ensure             - Install development dependencies"
+	@echo "  help               - Show this help message"

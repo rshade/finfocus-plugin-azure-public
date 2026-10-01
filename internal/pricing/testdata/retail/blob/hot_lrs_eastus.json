@@ -1,0 +1,19 @@
+{
+  "BillingCurrency": "USD",
+  "CustomerEntityId": "Default",
+  "CustomerEntityType": "Retail",
+  "Items": [
+    {
+      "currencyCode": "USD",
+      "retailPrice": 0.0001,
+      "meterName": "Hot LRS Write Operations"
+    },
+    {
+      "currencyCode": "USD",
+      "retailPrice": 0.0208,
+      "meterName": "Hot LRS Data Stored"
+    }
+  ],
+  "NextPageLink": "",
+  "Count": 2
+}

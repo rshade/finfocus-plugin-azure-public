@@ -9,6 +9,8 @@
 # Test Output
 *.out
 *.test
+test_plugin
+test_plugin_binary
 
 # Editor/IDE
 .vscode/
@@ -32,3 +34,10 @@ PR_MESSAGE.md
 # Environment Variables
 .env*
 CodeRabbitPrompt.md
+
+# Vale linting styles (synced via `vale sync`; vocabulary files are tracked)
+.vale/styles/
+!.vale/styles/config/vocabularies/
+
+# Superpowers working plan and run artifacts (not part of the release)
+.superpowers/

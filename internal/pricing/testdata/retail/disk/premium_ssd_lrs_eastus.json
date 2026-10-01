@@ -1,0 +1,19 @@
+{
+  "BillingCurrency": "USD",
+  "CustomerEntityId": "Default",
+  "CustomerEntityType": "Retail",
+  "Items": [
+    {
+      "currencyCode": "USD",
+      "retailPrice": 5.28,
+      "meterName": "P4 LRS Disk"
+    },
+    {
+      "currencyCode": "USD",
+      "retailPrice": 19.71,
+      "meterName": "P10 LRS Disk"
+    }
+  ],
+  "NextPageLink": "",
+  "Count": 2
+}

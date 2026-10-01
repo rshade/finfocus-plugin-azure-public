@@ -77,8 +77,12 @@ type PriceQuery struct {
 	// ArmRegionName filters by Azure region (e.g., "eastus").
 	ArmRegionName string
 
-	// ArmSkuName filters by SKU name (e.g., "Standard_B1s").
+	// ArmSkuName filters by the ARM SKU (e.g., "Standard_B1s").
 	ArmSkuName string
+
+	// SkuName filters by the retail skuName. Managed disks and blob meters
+	// publish skuName and leave armSkuName empty or tier-specific.
+	SkuName string
 
 	// ServiceName filters by service (e.g., "Virtual Machines").
 	ServiceName string
@@ -106,6 +110,8 @@ type PriceQuery struct {
 //	  "serviceName": "Virtual Machines",
 //	  "type": "Consumption"
 //	}
+//
+// PriceItem is one retail price row for a SKU and meter in a region.
 type PriceItem struct {
 	// ArmRegionName is the Azure Resource Manager region identifier (e.g., "eastus").
 	// This is the programmatic region name used in ARM templates.
@@ -125,6 +131,10 @@ type PriceItem struct {
 	// EffectiveStartDate is when this price became effective (ISO 8601 format).
 	// Example: "2020-08-01T00:00:00Z"
 	EffectiveStartDate string `json:"effectiveStartDate"`
+
+	// EffectiveEndDate is when this price stopped being effective (ISO 8601 format).
+	// An empty value means the price row is still open.
+	EffectiveEndDate string `json:"effectiveEndDate,omitempty"`
 
 	// IsPrimaryMeterRegion indicates whether this is the primary region for the meter.
 	// When true, this region is used for billing purposes.
@@ -204,6 +214,8 @@ type PriceItem struct {
 //	  "NextPageLink": "https://prices.azure.com/api/retail/prices?$skip=1000",
 //	  "Count": 1000
 //	}
+//
+// PriceResponse is one page of retail price rows plus the next-page link.
 type PriceResponse struct {
 	// BillingCurrency is the currency code for all prices in the response.
 	// Typically "USD" unless a different currency was requested.

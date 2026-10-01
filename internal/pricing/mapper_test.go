@@ -389,8 +389,14 @@ func TestSupportedResourceTypes(t *testing.T) {
 	types := SupportedResourceTypes()
 	expected := []string{
 		"compute/VirtualMachine",
+		"containerservice/KubernetesCluster",
+		"cosmosdb/Account",
+		"sql/Database",
 		"storage/BlobStorage",
 		"storage/ManagedDisk",
+		"storage/StorageAccount",
+		"web/AppServicePlan",
+		"web/FunctionApp",
 	}
 	if len(types) != len(expected) {
 		t.Fatalf("expected %d types, got %d: %v", len(expected), len(types), types)
