@@ -589,16 +589,11 @@ func TestGetProjectedCostCosmosInvalidArgument(t *testing.T) {
 			names:  []string{"ru_per_second"},
 		},
 		{
-			name:   "missing size_gb",
-			region: "eastus",
-			tags:   map[string]string{"ru_per_second": "400"},
-			names:  []string{"size_gb"},
-		},
-		{
 			name:   "missing ru and size",
 			region: "eastus",
 			tags:   map[string]string{},
-			names:  []string{"ru_per_second", "size_gb"},
+			names:  []string{"ru_per_second"},
+			absent: []string{"size_gb"},
 		},
 		{
 			name:   "missing region",
@@ -642,12 +637,6 @@ func TestGetProjectedCostCosmosInvalidArgument(t *testing.T) {
 			tags:   map[string]string{"pricing_model": "serverless"},
 			names:  []string{"request_units"},
 			absent: []string{"size_gb"},
-		},
-		{
-			name:   "autoscale missing size_gb",
-			region: "eastus",
-			tags:   map[string]string{"pricing_model": "autoscale", "ru_per_second": "400"},
-			names:  []string{"size_gb"},
 		},
 	}
 
@@ -895,6 +884,28 @@ func TestGetProjectedCostCosmosPrefixIsUnsupported(t *testing.T) {
 	))
 	if status.Code(err) != codes.Unimplemented {
 		t.Fatalf("code = %s, want Unimplemented (err=%v)", status.Code(err), err)
+	}
+}
+
+func TestGetProjectedCostCosmosOmitsStorageWhenSizeMissing(t *testing.T) {
+	t.Parallel()
+
+	loaded := loadRetailFixture(t, cosmosTestFile)
+	ruItem := requireCosmosItem(
+		t, loaded.Items, cosmosTestProduct, cosmosTestSKURU, cosmosTestMeterRU, cosmosTestUnitHour,
+	)
+	block := cosmosTestLeadingBlock(t, ruItem.MeterName)
+	ruMonthly := (cosmosTestRU / float64(block)) * ruItem.RetailPrice * pluginsdk.HoursPerMonth
+	calc := newCosmosCalc(t, loaded.Items)
+	resp, err := calc.GetProjectedCost(context.Background(), cosmosProjectedRequest(
+		cosmosTestCanonical, "eastus", map[string]string{"ru_per_second": "400"},
+	))
+	if err != nil {
+		t.Fatalf("GetProjectedCost() failed: %v", err)
+	}
+	assertCosmosBreakdown(t, resp, map[string]float64{"ru": ruMonthly}, ruItem.RetailPrice)
+	if _, ok := resp.GetCostBreakdown()["storage"]; ok {
+		t.Fatalf("storage breakdown = %v, want none", resp.GetCostBreakdown())
 	}
 }
 

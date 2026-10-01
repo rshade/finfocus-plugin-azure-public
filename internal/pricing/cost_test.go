@@ -126,6 +126,24 @@ func TestGetProjectedCostBlobScalesBySizeAndPrefersDataStored(t *testing.T) {
 	if resp.GetUnitPrice() != 0.0208 {
 		t.Fatalf("unit_price = %v, want per-GB 0.0208", resp.GetUnitPrice())
 	}
+
+	banded, err := calc.GetProjectedCost(context.Background(), &finfocusv1.GetProjectedCostRequest{
+		Resource: &finfocusv1.ResourceDescriptor{
+			Provider:     "azure",
+			ResourceType: "storage/BlobStorage",
+			Region:       "eastus",
+			Sku:          "Hot LRS",
+			Tags:         map[string]string{"size_gb": "60000"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("GetProjectedCost() banded blob failed: %v", err)
+	}
+	// 51200 GB at 0.0208 plus 8800 GB at 0.019968.
+	wantBanded := 51200*0.0208 + 8800*0.019968
+	if math.Abs(banded.GetCostPerMonth()-wantBanded) > 1e-6 {
+		t.Fatalf("banded cost_per_month = %v, want %v", banded.GetCostPerMonth(), wantBanded)
+	}
 }
 
 func TestChosenBlobStoredWriteOperationsReturnsNotFound(t *testing.T) {

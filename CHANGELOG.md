@@ -24,3 +24,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Managed Disk and Blob Storage queries use the Retail Prices `productName` and `skuName`. The live disk meter is `{tier} {LRS|ZRS} Disk` on service `Storage`. Blob capacity uses the `Blob Storage` base tier.
 - `GetPluginInfo` reports spec version `v0.7.0`. `EstimateCost` selects the on-demand Linux VM meter. Blob Storage returns not found when no `Data Stored` meter matches.
+- Blob Storage and Storage Accounts bill capacity across volume bands. A size past the first `tierMinimumUnits` uses the next band's rate for the remainder.
+- Cosmos DB provisioned quotes omit storage when `size_gb` is absent. The scale pricing model does the same.

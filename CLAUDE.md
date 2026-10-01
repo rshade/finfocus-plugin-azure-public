@@ -268,9 +268,14 @@ and Disk Operations are separate meters. `armSkuName` is not the filter.
 tags `tier` / `access_tier` plus `redundancy`. The meter is that SKU, a
 space, then `Data Stored`, unit `1 GB/Month`. Monthly cost is
 `retailPrice * size_gb`
-for the `tierMinimumUnits` 0 band. It is not multiplied by 730. The query
+across marginal `tierMinimumUnits` bands. Each GB uses the band it falls
+in. The first band is the list rate. It is not multiplied by 730. The query
 leaves `ArmSkuName` empty. A missing meter is `NotFound` and names the tier
 and redundancy.
+
+`storage/BlobStorage` uses the same marginal bands on meters whose name
+contains `Data Stored`. A size that stays inside the first band is
+`retailPrice * size_gb`.
 
 ### App Service Plan Cost Estimation
 
@@ -352,7 +357,10 @@ DTU, serverless, Business Critical, Hyperscale, and other hardware return
 `GetProjectedCost` prices `cosmosdb/Account`, including Pulumi
 `azure:cosmosdb/account:Account`. The query is the region plus service
 `Azure Cosmos DB`. `ArmSkuName` stays empty. Manual provisioned is the
-default. Tags `ru_per_second` (or `rus`) and `size_gb` are required.
+default. Tags `ru_per_second` (or `rus`) are required. `size_gb` is
+optional: when it is omitted there is no storage component and no storage
+meter is required. A present `size_gb` must be greater than 0 and uses the
+storage meter.
 
 Manual RU uses sku `RUs`, meter `100 RU/s`, unit `1/Hour`. Monthly RU cost
 is `(ru_per_second / the leading integer in the meter name) * retailPrice * 730`.
@@ -364,9 +372,9 @@ meters.
 `(request_units / 1000000) * retailPrice`. There is no storage component.
 `pricing_model=autoscale` matches a meter that ends with `100 RUs` on
 product `Azure Cosmos DB autoscale`, then applies the same `/ 100 * 730`
-rule. Storage stays the provisioned `Data Stored` row. sku `Free`,
-`Free Tier`, and `RUm` are not selected. Components are `ru` and, for
-provisioned and autoscale, `storage`.
+rule. When `size_gb` is set, storage stays the provisioned `Data Stored`
+row. sku `Free`, `Free Tier`, and `RUm` are not selected. Components are
+`ru` and, when storage was requested, `storage`.
 
 ### Other cost RPCs
 
