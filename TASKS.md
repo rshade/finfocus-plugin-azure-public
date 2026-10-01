@@ -76,7 +76,7 @@ Nothing in the current tracker is deferred. See the Issue Index.
 
 #### AZ-1.1 — Upgrade Go to 1.27.1
 
-**Status:** REOPENED, run 1's verify (`head -2 go.mod | grep`) exited 1 because the directive is on line 3. Re-verify with a command that can pass (AZ-6.1).
+**Status:** DONE, `go list -m -f '{{.GoVersion}}'` prints `1.27.1` and `grep finfocus-spec go.mod` prints `github.com/rshade/finfocus-spec v0.7.0`. Break check: `head -2 go.mod | grep "go 1.27.1"` exits 1 because the directive is on line 3.
 
 **Description**: Update `go.mod` to Go 1.27.1 to match AWS plugin baseline and ensure compatibility with latest finfocus-spec versions.
 
@@ -786,6 +786,8 @@ for the run (commit per task, spec-gap issues, the Not delivered register) are i
 `superpowers-prompt.md`.
 
 #### AZ-6.1 — Checkpoint, run branch, and a re-verifiable AZ-1.1
+
+**Status:** DONE, `git rev-parse --short HEAD` of the checkpoint is `0d26960` on `run/grok-20261001`, and `go list -m -f '{{.GoVersion}}'` prints `1.27.1`. Break check: `head -2 go.mod | grep "go 1.27.1"` exits 1. `main` stays at `8d369ef`.
 
 **Description**: Create the run branch and the checkpoint commit. Re-verify the Go and
 spec versions with a command that can pass, such as
