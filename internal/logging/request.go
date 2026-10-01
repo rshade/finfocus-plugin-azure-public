@@ -23,7 +23,7 @@ const maxTraceIDLen = 128
 //
 // Trace IDs longer than 128 characters are truncated to prevent log bloat.
 //
-// All existing fields on the base logger (plugin, version, etc.) are preserved.
+// RequestLogger preserves existing fields on the base logger, such as plugin and version.
 func RequestLogger(ctx context.Context, base zerolog.Logger) zerolog.Logger {
 	traceID := pluginsdk.TraceIDFromContext(ctx)
 	if traceID == "" {

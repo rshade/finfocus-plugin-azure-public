@@ -165,6 +165,12 @@ query, err := pricing.MapDescriptorToQuery(desc)
 | `compute/VirtualMachine` | Virtual Machines |
 | `storage/ManagedDisk` | Managed Disks |
 | `storage/BlobStorage` | Storage |
+| `storage/StorageAccount` | Storage |
+| `web/AppServicePlan` | Azure App Service |
+| `web/FunctionApp` | Functions |
+| `containerservice/KubernetesCluster` | Azure Kubernetes Service |
+| `sql/Database` | SQL Database |
+| `cosmosdb/Account` | Azure Cosmos DB |
 
 **Behavior**:
 - Case-insensitive provider and resource type matching
@@ -211,6 +217,8 @@ Behavior notes:
 - Unsupported non-empty `resource_type` returns `codes.Unimplemented`
 - Missing `location/region` or `vmSize/sku` returns `codes.InvalidArgument`
 - Cache hits are served from `CachedClient` with no outbound API request
+- VM `EstimateCost` uses the Linux on-demand row (`selectVMItem` with spot false)
+- `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.0`). A value without the `v` prefix is rejected by the SDK
 
 ### Managed Disk Cost Estimation
 
@@ -246,7 +254,148 @@ resp, err := calc.EstimateCost(ctx, &finfocusv1.EstimateCostRequest{
 **Size-to-tier mapping**: Ceiling match — `size_gb` maps to smallest tier >= that
 size (e.g., 100 GB → P10/128 GiB tier). 14 tiers from 4 GiB to 32767 GiB.
 
-**ZRS pricing**: ZRS disk types use meter names with " ZRS" suffix (e.g., "P10 ZRS").
+**Live meter**: service `Storage`, product `Premium SSD Managed Disks`,
+`Standard SSD Managed Disks`, or `Standard HDD Managed Disks`. The price row
+is skuName `{tier} {LRS|ZRS}` and meterName `{tier} {LRS|ZRS} Disk`
+(for example, `P10 LRS` / `P10 LRS Disk` at 19.71 USD per month). Disk Mount
+and Disk Operations are separate meters. `armSkuName` is not the filter.
+
+### Storage Account Cost Estimation
+
+`GetProjectedCost` prices `storage/StorageAccount` (including Pulumi
+`azure:storage/storageAccount:StorageAccount`) from product
+`General Block Blob v2`. The SKU is `{Tier} {Redundancy}` (`Hot LRS`), or
+tags `tier` / `access_tier` plus `redundancy`. The meter is that SKU, a
+space, then `Data Stored`, unit `1 GB/Month`. Monthly cost is
+`retailPrice * size_gb`
+for the `tierMinimumUnits` 0 band. It is not multiplied by 730. The query
+leaves `ArmSkuName` empty. A missing meter is `NotFound` and names the tier
+and redundancy.
+
+### App Service Plan Cost Estimation
+
+`GetProjectedCost` prices `web/AppServicePlan`, including Pulumi
+`azure:appservice/plan:Plan`. The query is the region plus service
+`Azure App Service`, and `ArmSkuName` stays empty. The short SKU is matched
+locally with spaces removed, case-insensitive. Linux is the default, from a
+`productName` that contains Linux. Tag `os=Windows` selects a product whose
+name does not contain Linux. Any other non-empty `os` value, including the
+string Linux, is `InvalidArgument`. The meter is `meterName` equal to the
+SKU, or the SKU followed by a space and `App`, unit `1 Hour`. Stamp, SSL, Domain, and ASIP
+meters are skipped. Monthly cost is `retailPrice * 730`. The breakdown key
+is `compute`.
+
+### Function App Cost Estimation
+
+`GetProjectedCost` prices `web/FunctionApp`, including Pulumi
+`azure:appservice/functionApp:FunctionApp`. The service name is `Functions`.
+Classic Consumption (`Standard`, `Y1`, `Dynamic`, `Consumption`, an empty
+SKU, or `pricing_model=consumption`) uses `Standard Execution Time`
+(unit `1 GB Second`) and `Standard Total Executions` (unit `10`, so billable
+executions are divided by 10). When a positive sibling exists, the zero row
+is ignored. The free grant of 1,000,000 executions and 400,000 GB-seconds
+is applied to this one resource before that divide. Consumption is a usage
+total, so it is not multiplied by 730. Components are `executions` and
+`gb_seconds`.
+
+Premium uses `Premium vCPU Duration` and `Premium Memory Duration`. Each
+component is count times `retailPrice` times 730, once. Keys are `vcpu` and
+`memory`. A Function App SKU that matches an App Service plan SKU uses the
+plan quote. `EP1` and Flex are `InvalidArgument`.
+
+### AKS Cost Estimation
+
+`GetProjectedCost` prices `containerservice/KubernetesCluster`, including
+Pulumi `azure:containerservice/kubernetesCluster:KubernetesCluster`. The
+query is the region plus service `Azure Kubernetes Service`. `ArmSkuName`
+and `ProductName` stay empty.
+
+Standard control plane uses meter `Standard Uptime SLA`, unit `1 Hour`,
+and monthly `retailPrice * 730`. Tag `support=lts` uses
+`Standard Long Term Support` instead. Free uses meter
+`FreeTierInfrastructureCost Uptime SLA` and keeps the row whose
+`effectiveEndDate` is empty. Tier `Automatic` is `InvalidArgument`.
+
+Node pools use tags `node_pool_1_sku` and `node_pool_1_count`, with optional
+`node_pool_1_name` (default `pool_1`), and the same pair for pool 2. Each
+pool is one on-demand VM quote multiplied by the count. A cluster Spot tag
+is not copied onto the node. Components `control_plane` and
+`node_pool_<name>` sum to the monthly cost.
+
+### SQL Database Cost Estimation
+
+`GetProjectedCost` prices `sql/Database`, including Pulumi
+`azure:sql/database:Database`, for General Purpose Gen5 provisioned compute
+and storage. The query is the region, service `SQL Database`, and the
+product name. `ArmSkuName` stays empty. SKU `GP_Gen5_{n}` wins over tags.
+`size_gb` is required, and `sizeGb` is accepted.
+
+Compute uses sku `{n} vCore`, meter `vCore`, unit `1 Hour`, on product
+`SQL Database Single/Elastic Pool General Purpose - Compute Gen5`. That
+retail price already covers n vCores. Monthly compute is `retailPrice * 730`.
+The sku named `vCore` is the 1-vCore unit row and is not the match.
+
+Storage uses meter `General Purpose Data Stored`, unit `1 GB/Month`, on
+product `SQL Database Single/Elastic Pool General Purpose - Storage`.
+Monthly storage is `retailPrice * size_gb`.
+`General Purpose Data Stored - Free` is not the overage.
+
+Tag `zone_redundant=true` adds meter `Zone Redundancy vCore` and meter
+`General Purpose Zone Redundancy Data Stored`. Components are `compute`,
+`storage`, and those two zone keys when zone redundancy was requested.
+
+DTU, serverless, Business Critical, Hyperscale, and other hardware return
+`Unimplemented`. The message names the model and `AZ-2.7`.
+
+### Cosmos DB Cost Estimation
+
+`GetProjectedCost` prices `cosmosdb/Account`, including Pulumi
+`azure:cosmosdb/account:Account`. The query is the region plus service
+`Azure Cosmos DB`. `ArmSkuName` stays empty. Manual provisioned is the
+default. Tags `ru_per_second` (or `rus`) and `size_gb` are required.
+
+Manual RU uses sku `RUs`, meter `100 RU/s`, unit `1/Hour`. Monthly RU cost
+is `(ru_per_second / the leading integer in the meter name) * retailPrice * 730`.
+Storage uses meter `Data Stored`, unit `1 GB/Month`, and monthly
+`retailPrice * size_gb`. Tag `multi_master=true` uses sku `mRUs` for both
+meters.
+
+`pricing_model=serverless` uses meter `1M RUs`, unit `1M`. Monthly cost is
+`(request_units / 1000000) * retailPrice`. There is no storage component.
+`pricing_model=autoscale` matches a meter that ends with `100 RUs` on
+product `Azure Cosmos DB autoscale`, then applies the same `/ 100 * 730`
+rule. Storage stays the provisioned `Data Stored` row. sku `Free`,
+`Free Tier`, and `RUm` are not selected. Components are `ru` and, for
+provisioned and autoscale, `storage`.
+
+### Other cost RPCs
+
+`DryRun` validates a descriptor and does not call Azure. A known type with
+missing fields is supported and not configuration-valid. An unknown type is
+not supported, and the RPC still returns a response. The OData filter is
+logged, not returned. Field mappings start unsupported, and only a field a
+successful `GetProjectedCost` fills is marked supported.
+
+`GetPricingSpec` calls the same quote as `GetProjectedCost` and returns one
+`PricingSpec` for that resource. It is not a catalog list.
+
+`GetActualCost` is the projected monthly cost times `hours / 730`. The
+default window is 730 hours. The source string carries
+`azure-retail-prices[confidence:HIGH|MEDIUM|LOW]`. A FOCUS record is built
+only when the caller of `buildFocusRecord` passes a billing account id.
+Production passes an empty id, logs the validation error, and leaves
+`FocusRecord` nil.
+
+`estimation.SavingsFraction` returns `(onDemand-other)/onDemand` with no
+rounding. It is not wired to an RPC. `GetProjectedCost` still returns one
+price. Savings plan rates are a nested `savingsPlan` array on preview
+Consumption meters, not `priceType eq 'SavingsPlan'`.
+
+`SortRegionPrices` orders Linux on-demand VM rows from saved pages. A miss
+is `Found: false` and a zero price that is not a cost. The RPC still prices
+one region.
+
+Carbon is findings only, in `docs/findings/carbon.md`. No estimator is wired.
 
 ## Environment Variables
 
@@ -284,7 +433,7 @@ result, err := cachedClient.GetPrices(ctx, query)
 ```
 
 Cache behavior:
-- Key normalization: `CacheKey(query)` => `region|sku|product|service|currency` (lowercase, trimmed)
+- Key normalization: `CacheKey(query)` => `region|armsku|skuname|product|service|currency` (lowercase, trimmed)
 - L1 cache: in-process LRU+TTL (default 1000 entries, 24h TTL)
 - L2 hint: `CachedResult.ExpiresAt` (default 4h) propagated to gRPC projected/actual cost responses
 - TTL override: `FINFOCUS_CACHE_TTL` env var parsed in `main.go` (e.g., "10s", "1h", "0s" to disable)

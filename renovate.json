@@ -1,0 +1,9 @@
+{
+  "extends": ["config:base"],
+  "go": {
+    "rangeStrategy": "auto"
+  },
+  "npm": {
+    "rangeStrategy": "auto"
+  }
+}

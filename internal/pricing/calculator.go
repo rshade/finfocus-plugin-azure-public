@@ -11,14 +11,10 @@ import (
 	finfocusv1 "github.com/rshade/finfocus-spec/sdk/go/proto/finfocus/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/rshade/finfocus-plugin-azure-public/internal/azureclient"
 	"github.com/rshade/finfocus-plugin-azure-public/internal/logging"
 )
-
-// specVersion is the version of the finfocus-spec this plugin implements.
-const specVersion = "1.0.0"
 
 const defaultServiceName = "Virtual Machines"
 
@@ -61,7 +57,7 @@ func (c *Calculator) GetPluginInfo(
 	return &finfocusv1.GetPluginInfoResponse{
 		Name:        "azure-public",
 		Version:     "0.1.0",
-		SpecVersion: specVersion,
+		SpecVersion: pluginsdk.SpecVersion,
 		Providers:   []string{"azure"},
 	}, nil
 }
@@ -171,7 +167,20 @@ func (c *Calculator) estimateVMCost(
 		return nil, err
 	}
 
-	unitPrice, currency, err := unitPriceAndCurrency(result.Items)
+	item, err := selectVMItem(result.Items, false)
+	if err != nil {
+		err = MapToGRPCStatus(err).Err()
+		log.Error().
+			Str("region", query.ArmRegionName).
+			Str("sku", query.ArmSkuName).
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(err).
+			Msg("EstimateCost response mapping failed")
+		return nil, err
+	}
+
+	unitPrice, currency, err := unitPriceAndCurrency([]azureclient.PriceItem{item})
 	if err != nil {
 		err = MapToGRPCStatus(err).Err()
 		log.Error().
@@ -223,6 +232,22 @@ func (c *Calculator) estimateDiskCost(
 		return nil, err
 	}
 
+	tierName, err := tierForSize(diskInfo.TierPrefix, sizeGB)
+	if err != nil {
+		notFoundErr := status.Errorf(codes.NotFound,
+			"no disk tier found for %.0f GB with type %s", sizeGB, diskInfo.ArmSkuName)
+		log.Warn().
+			Str("region", query.ArmRegionName).
+			Str("disk_type", diskInfo.ArmSkuName).
+			Float64("size_gb", sizeGB).
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(notFoundErr).
+			Msg("EstimateCost disk tier lookup failed")
+		return nil, notFoundErr
+	}
+	query = diskRetailQuery(query.ArmRegionName, query.CurrencyCode, diskInfo, tierName)
+
 	if c.cachedClient == nil {
 		unimplementedErr := status.Error(codes.Unimplemented, "not yet implemented")
 		log.Warn().
@@ -248,21 +273,6 @@ func (c *Calculator) estimateDiskCost(
 			Err(err).
 			Msg("EstimateCost disk pricing lookup failed")
 		return nil, err
-	}
-
-	tierName, err := tierForSize(diskInfo.TierPrefix, sizeGB)
-	if err != nil {
-		notFoundErr := status.Errorf(codes.NotFound,
-			"no disk tier found for %.0f GB with type %s", sizeGB, diskInfo.ArmSkuName)
-		log.Warn().
-			Str("region", query.ArmRegionName).
-			Str("disk_type", diskInfo.ArmSkuName).
-			Float64("size_gb", sizeGB).
-			Str("resource_type", resourceType).
-			Str("result_status", "error").
-			Err(notFoundErr).
-			Msg("EstimateCost disk tier lookup failed")
-		return nil, notFoundErr
 	}
 
 	costMonthly, currency, err := selectDiskTierPrice(result.Items, tierName, diskInfo.Redundancy)
@@ -349,7 +359,7 @@ func estimateDiskQueryFromRequest(
 	query := azureclient.PriceQuery{
 		ArmRegionName: region,
 		ArmSkuName:    diskInfo.ArmSkuName,
-		ServiceName:   "Managed Disks",
+		ServiceName:   managedDisksService,
 		CurrencyCode:  currency,
 	}
 
@@ -369,105 +379,99 @@ func parseSizeGB(value string) (float64, error) {
 	return sizeGB, nil
 }
 
-// GetActualCost is a stub that returns Unimplemented status.
-// Cost history retrieval is not yet implemented.
-func (c *Calculator) GetActualCost(
-	ctx context.Context,
-	req *finfocusv1.GetActualCostRequest,
-) (*finfocusv1.GetActualCostResponse, error) {
-	log := logging.RequestLogger(ctx, c.logger)
-	log.Info().Msg("handling GetActualCost request")
-
-	query, ok := actualQueryFromRequest(req)
-	if !ok || c.cachedClient == nil {
-		return nil, status.Error(codes.Unimplemented, "not yet implemented")
-	}
-
-	cachedResult, err := c.cachedClient.GetPrices(ctx, query)
-	if err != nil {
-		return nil, MapToGRPCStatus(err).Err()
-	}
-
-	unitPrice, _, err := unitPriceAndCurrency(cachedResult.Items)
-	if err != nil {
-		return nil, MapToGRPCStatus(err).Err()
-	}
-
-	result := &finfocusv1.ActualCostResult{
-		Timestamp:   timestamppb.Now(),
-		Cost:        unitPrice,
-		UsageAmount: 1,
-		UsageUnit:   "hour",
-		Source:      "azure-retail-prices",
-	}
-	pluginsdk.ApplyActualCostResultOptions(
-		result,
-		pluginsdk.WithActualCostResultExpiresAt(cachedResult.ExpiresAt),
-	)
-
-	return pluginsdk.NewActualCostResponse(
-		pluginsdk.WithResults([]*finfocusv1.ActualCostResult{result}),
-		pluginsdk.WithTotalCount(1),
-	), nil
-}
-
-// GetProjectedCost is a stub that returns Unimplemented status.
-// Azure pricing lookup is not yet implemented.
-func (c *Calculator) GetProjectedCost(
-	ctx context.Context,
-	req *finfocusv1.GetProjectedCostRequest,
-) (*finfocusv1.GetProjectedCostResponse, error) {
-	log := logging.RequestLogger(ctx, c.logger)
-	log.Info().Msg("handling GetProjectedCost request")
-
-	query, ok := projectedQueryFromRequest(req)
-	if !ok || c.cachedClient == nil {
-		return nil, status.Error(codes.Unimplemented, "not yet implemented")
-	}
-
-	cachedResult, err := c.cachedClient.GetPrices(ctx, query)
-	if err != nil {
-		return nil, MapToGRPCStatus(err).Err()
-	}
-
-	unitPrice, currency, err := unitPriceAndCurrency(cachedResult.Items)
-	if err != nil {
-		return nil, MapToGRPCStatus(err).Err()
-	}
-
-	return pluginsdk.NewGetProjectedCostResponse(
-		pluginsdk.WithProjectedCostDetails(
-			unitPrice,
-			currency,
-			unitPrice*pluginsdk.HoursPerMonth,
-			"azure-retail-prices",
-		),
-		pluginsdk.WithProjectedCostExpiresAt(cachedResult.ExpiresAt),
-	), nil
-}
-
-// GetPricingSpec is a stub that returns Unimplemented status.
-// Pricing schema is not yet implemented.
-func (c *Calculator) GetPricingSpec(
-	ctx context.Context,
-	_ *finfocusv1.GetPricingSpecRequest,
-) (*finfocusv1.GetPricingSpecResponse, error) {
-	log := logging.RequestLogger(ctx, c.logger)
-	log.Info().Msg("handling GetPricingSpec request")
-
-	return nil, status.Error(codes.Unimplemented, "not yet implemented")
-}
-
-// DryRun is a stub that returns Unimplemented status.
-// Field mapping is not yet implemented.
+// DryRun delegates to HandleDryRun so direct callers and the gRPC server agree.
 func (c *Calculator) DryRun(
 	ctx context.Context,
-	_ *finfocusv1.DryRunRequest,
+	req *finfocusv1.DryRunRequest,
+) (*finfocusv1.DryRunResponse, error) {
+	return c.HandleDryRun(ctx, req)
+}
+
+// HandleDryRun validates a resource descriptor without calling Azure.
+// pluginsdk.Server.DryRun calls this method.
+func (c *Calculator) HandleDryRun(
+	ctx context.Context,
+	req *finfocusv1.DryRunRequest,
 ) (*finfocusv1.DryRunResponse, error) {
 	log := logging.RequestLogger(ctx, c.logger)
 	log.Info().Msg("handling DryRun request")
 
-	return nil, status.Error(codes.Unimplemented, "not yet implemented")
+	if req.GetResource() == nil {
+		return nil, status.Error(codes.InvalidArgument, "resource descriptor is required")
+	}
+
+	query, err := MapDescriptorToQuery(req.GetResource())
+	if errors.Is(err, ErrUnsupportedResourceType) {
+		return unsupportedDryRunResponse(), nil
+	}
+	if err != nil {
+		return invalidDryRunResponse(err.Error()), nil
+	}
+
+	filter := retailPriceFilter(query)
+	log.Debug().Str("odata_filter", filter).Msg("odata filter omitted from DryRunResponse")
+
+	return supportedDryRunResponse(), nil
+}
+
+func supportedDryRunResponse() *finfocusv1.DryRunResponse {
+	return pluginsdk.NewDryRunResponse(
+		pluginsdk.WithFieldMappings(projectedFieldMappings()),
+		pluginsdk.WithResourceTypeSupported(true),
+		pluginsdk.WithConfigurationValid(true),
+	)
+}
+
+func invalidDryRunResponse(message string) *finfocusv1.DryRunResponse {
+	return pluginsdk.NewDryRunResponse(
+		pluginsdk.WithFieldMappings(projectedFieldMappings()),
+		pluginsdk.WithResourceTypeSupported(true),
+		pluginsdk.WithConfigurationValid(false),
+		pluginsdk.WithConfigurationErrors([]string{message}),
+	)
+}
+
+func unsupportedDryRunResponse() *finfocusv1.DryRunResponse {
+	return pluginsdk.NewDryRunResponse(
+		pluginsdk.WithResourceTypeSupported(false),
+		pluginsdk.WithConfigurationValid(true),
+	)
+}
+
+// projectedFocusFields lists FOCUS names filled by GetProjectedCostResponse:
+// cost_per_month, currency, billing_detail, unit_price, and pricing_category.
+// provider_name is not set on that response.
+func projectedFocusFields() []string {
+	return []string{
+		"billed_cost",
+		"billing_currency",
+		"charge_description",
+		"list_unit_price",
+		"pricing_category",
+	}
+}
+
+func projectedFieldMappings() []*finfocusv1.FieldMapping {
+	mappings := pluginsdk.AllFieldsWithStatus(
+		finfocusv1.FieldSupportStatus_FIELD_SUPPORT_STATUS_UNSUPPORTED,
+	)
+	supported := finfocusv1.FieldSupportStatus_FIELD_SUPPORT_STATUS_SUPPORTED
+	for _, name := range projectedFocusFields() {
+		mappings = pluginsdk.SetFieldStatus(mappings, name, supported)
+	}
+	return mappings
+}
+
+// retailPriceFilter is the OData filter GetPrices would send.
+// DryRunResponse has no field for it.
+func retailPriceFilter(query *azureclient.PriceQuery) string {
+	return azureclient.NewFilterBuilder().
+		Region(query.ArmRegionName).
+		SKU(query.ArmSkuName).
+		Service(query.ServiceName).
+		ProductName(query.ProductName).
+		CurrencyCode(query.CurrencyCode).
+		Build()
 }
 
 // estimateQueryFromRequest extracts an Azure pricing query from EstimateCost
@@ -509,61 +513,6 @@ func estimateQueryFromRequest(req *finfocusv1.EstimateCostRequest) (azureclient.
 	}
 
 	return query, nil
-}
-
-func actualQueryFromRequest(req *finfocusv1.GetActualCostRequest) (azureclient.PriceQuery, bool) {
-	if req == nil {
-		return azureclient.PriceQuery{}, false
-	}
-
-	tags := req.GetTags()
-	query := azureclient.PriceQuery{
-		ArmRegionName: firstNonEmptyTag(tags, "region", "location"),
-		ArmSkuName:    firstNonEmptyTag(tags, "sku", "vmSize", "armSkuName"),
-		ServiceName:   firstNonEmptyTag(tags, "service", "serviceName"),
-		ProductName:   firstNonEmptyTag(tags, "product", "productName"),
-		CurrencyCode:  firstNonEmptyTag(tags, "currency", "currencyCode"),
-	}
-	if query.CurrencyCode == "" {
-		query.CurrencyCode = defaultCurrency
-	}
-	if query.ServiceName == "" {
-		query.ServiceName = defaultServiceName
-	}
-	if query.ArmRegionName == "" || query.ArmSkuName == "" {
-		return azureclient.PriceQuery{}, false
-	}
-
-	return query, true
-}
-
-func projectedQueryFromRequest(req *finfocusv1.GetProjectedCostRequest) (azureclient.PriceQuery, bool) {
-	if req == nil || req.GetResource() == nil {
-		return azureclient.PriceQuery{}, false
-	}
-	resource := req.GetResource()
-	if !strings.EqualFold(resource.GetProvider(), "azure") {
-		return azureclient.PriceQuery{}, false
-	}
-
-	query := azureclient.PriceQuery{
-		ArmRegionName: resource.GetRegion(),
-		ArmSkuName:    resource.GetSku(),
-		CurrencyCode:  firstNonEmptyTag(resource.GetTags(), "currency", "currencyCode"),
-		ServiceName:   firstNonEmptyTag(resource.GetTags(), "service", "serviceName"),
-		ProductName:   firstNonEmptyTag(resource.GetTags(), "product", "productName"),
-	}
-	if query.CurrencyCode == "" {
-		query.CurrencyCode = defaultCurrency
-	}
-	if query.ServiceName == "" {
-		query.ServiceName = defaultServiceName
-	}
-	if query.ArmRegionName == "" || query.ArmSkuName == "" {
-		return azureclient.PriceQuery{}, false
-	}
-
-	return query, true
 }
 
 // isVirtualMachineResourceType checks whether the lowercased resource type

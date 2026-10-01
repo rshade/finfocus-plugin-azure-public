@@ -55,8 +55,8 @@ func Condition(field, value string) FilterCondition {
 //
 // Named methods contribute AND conditions with last-write-wins semantics.
 // Or() contributes OR groups that are parenthesized when they contain
-// multiple conditions. The builder always includes a priceType filter:
-// "Consumption" by default, or the value set via Type().
+// multiple conditions. The builder always includes a priceType filter.
+// FilterBuilder uses priceType "Consumption" unless Type sets another value.
 type FilterBuilder struct {
 	andConditions map[string]string
 	orGroups      [][]FilterCondition
@@ -91,6 +91,11 @@ func (b *FilterBuilder) Service(value string) *FilterBuilder {
 // SKU sets armSkuName using AND semantics.
 func (b *FilterBuilder) SKU(value string) *FilterBuilder {
 	return b.setNamedCondition("armSkuName", value)
+}
+
+// SkuName sets skuName using AND semantics.
+func (b *FilterBuilder) SkuName(value string) *FilterBuilder {
+	return b.setNamedCondition("skuName", value)
 }
 
 // Type sets an explicit priceType. Blank values are ignored.

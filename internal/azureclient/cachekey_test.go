@@ -19,7 +19,7 @@ func TestCacheKey(t *testing.T) {
 				ServiceName:   " Virtual Machines ",
 				CurrencyCode:  " USD ",
 			},
-			want: "eastus|standard_b1s|virtual machines bs series|virtual machines|usd",
+			want: "eastus|standard_b1s||virtual machines bs series|virtual machines|usd",
 		},
 		{
 			name: "keeps empty fields as empty segments",
@@ -27,7 +27,18 @@ func TestCacheKey(t *testing.T) {
 				ArmRegionName: "westus2",
 				ServiceName:   "Storage",
 			},
-			want: "westus2|||storage|",
+			want: "westus2||||storage|",
+		},
+		{
+			name: "includes retail skuName",
+			query: PriceQuery{
+				ArmRegionName: "eastus",
+				SkuName:       "P10 LRS",
+				ProductName:   "Premium SSD Managed Disks",
+				ServiceName:   "Storage",
+				CurrencyCode:  "USD",
+			},
+			want: "eastus||p10 lrs|premium ssd managed disks|storage|usd",
 		},
 		{
 			name: "uses canonical field order",
@@ -38,7 +49,7 @@ func TestCacheKey(t *testing.T) {
 				ArmSkuName:    "Standard_B1s",
 				ArmRegionName: "eastus",
 			},
-			want: "eastus|standard_b1s|product name|virtual machines|usd",
+			want: "eastus|standard_b1s||product name|virtual machines|usd",
 		},
 	}
 

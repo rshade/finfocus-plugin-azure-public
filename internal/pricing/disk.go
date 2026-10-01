@@ -10,21 +10,45 @@ import (
 
 // diskTypeInfo holds the Azure API mapping for a supported disk type.
 type diskTypeInfo struct {
-	ArmSkuName string
-	TierPrefix string
-	Redundancy string
+	ArmSkuName  string
+	ProductName string
+	TierPrefix  string
+	Redundancy  string
 }
+
+const (
+	redundancyLRS = "LRS"
+	redundancyZRS = "ZRS"
+)
 
 // supportedDiskTypes maps user-facing disk type names (lowercased) to Azure API values.
 //
 //nolint:gochecknoglobals // Static lookup table; immutable after init.
 var supportedDiskTypes = map[string]diskTypeInfo{
-	"standard_lrs":    {ArmSkuName: "Standard_LRS", TierPrefix: "S", Redundancy: "LRS"},
-	"standardssd_lrs": {ArmSkuName: "StandardSSD_LRS", TierPrefix: "E", Redundancy: "LRS"},
-	"premium_ssd_lrs": {ArmSkuName: "Premium_LRS", TierPrefix: "P", Redundancy: "LRS"},
-	"standard_zrs":    {ArmSkuName: "Standard_ZRS", TierPrefix: "S", Redundancy: "ZRS"},
-	"standardssd_zrs": {ArmSkuName: "StandardSSD_ZRS", TierPrefix: "E", Redundancy: "ZRS"},
-	"premium_zrs":     {ArmSkuName: "Premium_ZRS", TierPrefix: "P", Redundancy: "ZRS"},
+	"standard_lrs": {
+		ArmSkuName: "Standard_LRS", ProductName: "Standard HDD Managed Disks",
+		TierPrefix: "S", Redundancy: redundancyLRS,
+	},
+	"standardssd_lrs": {
+		ArmSkuName: "StandardSSD_LRS", ProductName: "Standard SSD Managed Disks",
+		TierPrefix: "E", Redundancy: redundancyLRS,
+	},
+	"premium_ssd_lrs": {
+		ArmSkuName: "Premium_LRS", ProductName: "Premium SSD Managed Disks",
+		TierPrefix: "P", Redundancy: redundancyLRS,
+	},
+	"standard_zrs": {
+		ArmSkuName: "Standard_ZRS", ProductName: "Standard HDD Managed Disks",
+		TierPrefix: "S", Redundancy: redundancyZRS,
+	},
+	"standardssd_zrs": {
+		ArmSkuName: "StandardSSD_ZRS", ProductName: "Standard SSD Managed Disks",
+		TierPrefix: "E", Redundancy: redundancyZRS,
+	},
+	"premium_zrs": {
+		ArmSkuName: "Premium_ZRS", ProductName: "Premium SSD Managed Disks",
+		TierPrefix: "P", Redundancy: redundancyZRS,
+	},
 }
 
 // diskTierCapacity maps tier numbers to their provisioned capacity in GiB.
@@ -99,13 +123,37 @@ func isManagedDiskResourceType(lower string) bool {
 }
 
 // selectDiskTierPrice filters Azure price items by the target tier's meter name
-// and returns the retail price and currency. For ZRS disk types, the meter name
-// includes a " ZRS" suffix (e.g., "P10 ZRS").
-func selectDiskTierPrice(items []azureclient.PriceItem, tierName string, redundancy string) (float64, string, error) {
-	meterName := tierName
-	if redundancy == "ZRS" {
-		meterName = tierName + " ZRS"
+// and returns the retail price and currency. The live meter is "{tier} {redundancy} Disk"
+// (for example, "P10 LRS Disk"). "Disk Mount" and "Disk Operations" are different meters.
+func diskTierMeterName(tierName, redundancy string) string {
+	return tierName + " " + redundancy + " Disk"
+}
+
+// diskRetailQuery is the Retail Prices filter for one disk tier.
+// Service is Storage. armSkuName is not the disk price key: Premium P10 is
+// product "Premium SSD Managed Disks" and skuName "P10 LRS".
+func diskRetailQuery(region, currency string, info diskTypeInfo, tierName string) azureclient.PriceQuery {
+	return azureclient.PriceQuery{
+		ArmRegionName: region,
+		ServiceName:   storageServiceName,
+		ProductName:   info.ProductName,
+		SkuName:       tierName + " " + info.Redundancy,
+		CurrencyCode:  currency,
 	}
+}
+
+func diskMeterUnit(items []azureclient.PriceItem, tierName, redundancy string) string {
+	meterName := diskTierMeterName(tierName, redundancy)
+	for _, item := range items {
+		if item.MeterName == meterName {
+			return item.UnitOfMeasure
+		}
+	}
+	return ""
+}
+
+func selectDiskTierPrice(items []azureclient.PriceItem, tierName string, redundancy string) (float64, string, error) {
+	meterName := diskTierMeterName(tierName, redundancy)
 
 	for _, item := range items {
 		if item.MeterName == meterName {

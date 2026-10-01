@@ -54,7 +54,7 @@ specs/001-go-module-init/
 ### Source Code (repository root)
 
 ```text
-/mnt/c/GitHub/go/src/github.com/rshade/finfocus-plugin-azure-public/
+$GOPATH/src/github.com/rshade/finfocus-plugin-azure-public/
 ├── go.mod               # The primary artifact
 ├── go.sum               # Checksums
 ├── Makefile             # (Future)

@@ -13,23 +13,38 @@ import (
 // defaultCurrency is the currency code used when no preference is specified.
 const defaultCurrency = "USD"
 
+// managedDisksService is the Azure Retail Prices service name for managed disks.
+const managedDisksService = "Managed Disks"
+
 // resourceTypeToService maps normalized (lowercased) resource type identifiers
 // to their corresponding Azure service names for the Retail Prices API.
 //
 //nolint:gochecknoglobals // Static lookup table; immutable after init.
 var resourceTypeToService = map[string]string{
-	"compute/virtualmachine": "Virtual Machines",
-	"storage/manageddisk":    "Managed Disks",
-	"storage/blobstorage":    "Storage",
+	"compute/virtualmachine":      "Virtual Machines",
+	"storage/manageddisk":         managedDisksService,
+	"storage/blobstorage":         storageServiceName,
+	storageAccountResourceSegment: storageServiceName,
+	appServicePlanSegment:         appServiceName,
+	functionAppSegment:            functionsServiceName,
+	aksResourceSegment:            aksServiceName,
+	sqlDatabaseSegment:            sqlServiceName,
+	cosmosAccountSegment:          cosmosServiceName,
 }
 
 // canonicalResourceTypes maps normalized keys back to their display form.
 //
 //nolint:gochecknoglobals // Static lookup table; immutable after init.
 var canonicalResourceTypes = map[string]string{
-	"compute/virtualmachine": "compute/VirtualMachine",
-	"storage/manageddisk":    "storage/ManagedDisk",
-	"storage/blobstorage":    "storage/BlobStorage",
+	"compute/virtualmachine":      "compute/VirtualMachine",
+	"storage/manageddisk":         "storage/ManagedDisk",
+	"storage/blobstorage":         "storage/BlobStorage",
+	storageAccountResourceSegment: "storage/StorageAccount",
+	appServicePlanSegment:         canonicalAppServicePlan,
+	functionAppSegment:            canonicalFunctionApp,
+	aksResourceSegment:            canonicalKubernetesCluster,
+	sqlDatabaseSegment:            canonicalSQLDatabase,
+	cosmosAccountSegment:          canonicalCosmosAccount,
 }
 
 // MapDescriptorToQuery translates a finfocus ResourceDescriptor into an
@@ -39,11 +54,35 @@ var canonicalResourceTypes = map[string]string{
 //   - Provider must be "azure" (case-insensitive)
 //   - ResourceType must match a supported type (case-insensitive)
 //   - Region must be resolvable (primary field or Tags["region"])
-//   - SKU must be resolvable (primary field or Tags["sku"])
+//   - SKU must be resolvable (primary field or Tags["sku"]), except a function
+//     app, which may omit it
+//
+// Storage accounts also match a type that contains the storage/storageAccount
+// segment, including a Pulumi form. When Sku and Tags["sku"] are empty, the
+// SKU is Tags["tier"] or Tags["access_tier"] plus Tags["redundancy"]. The
+// query leaves ArmSkuName empty and sets ProductName to General Block Blob v2.
+// There is no ARM SKU to invent.
+//
+// App Service plans match web/appserviceplan and the Pulumi appservice/plan
+// segment. Function apps match web/functionapp and appservice/functionapp.
+// Both leave ArmSkuName empty: the short plan SKU is not an armSkuName filter.
+// A function app may omit SKU when it is classic Consumption.
+//
+// AKS clusters match containerservice/kubernetescluster, including the Pulumi
+// kubernetesCluster segment. ArmSkuName and ProductName stay empty. The tier
+// is not an ARM SKU. Sku, Tags["sku"], or Tags["tier"] satisfies that check.
+//
+// SQL databases match sql/database, including Pulumi azure:sql/database:Database.
+// ArmSkuName and ProductName stay empty. GP_Gen5_2 is not an ARM SKU. Sku,
+// Tags["sku"], or tags tier, hardware, and vcores satisfy that check.
+//
+// Cosmos DB accounts match cosmosdb/account, including Pulumi
+// azure:cosmosdb/account:Account. ArmSkuName and ProductName stay empty.
+// Throughput is not an ARM SKU. Region is required. Sku may be empty.
 //
 // Returns ErrUnsupportedResourceType for unknown providers or resource types.
 // Returns ErrMissingRequiredFields naming all missing fields in a single error.
-// Returns a valid *PriceQuery with CurrencyCode defaulted to "USD" on success.
+// MapDescriptorToQuery returns a PriceQuery whose CurrencyCode defaults to USD.
 func MapDescriptorToQuery(desc *finfocusv1.ResourceDescriptor) (*azureclient.PriceQuery, error) {
 	if desc == nil {
 		return nil, fmt.Errorf("%w: descriptor is nil", ErrMissingRequiredFields)
@@ -55,40 +94,129 @@ func MapDescriptorToQuery(desc *finfocusv1.ResourceDescriptor) (*azureclient.Pri
 	}
 
 	// Look up resource type (case-insensitive).
-	normalizedType := strings.ToLower(desc.GetResourceType())
-	serviceName, ok := resourceTypeToService[normalizedType]
+	normalizedType := strings.ToLower(strings.TrimSpace(desc.GetResourceType()))
+	mapped, ok := resolveMappedResource(normalizedType)
 	if !ok {
 		return nil, fmt.Errorf("unsupported resource type: %s: %w", desc.GetResourceType(), ErrUnsupportedResourceType)
 	}
+	serviceName := mapped.serviceName
+	storageAccount := mapped.storageAccount
 
 	// Resolve fields with tag fallback.
 	region := resolveField(desc.GetRegion(), "region", desc.GetTags())
 	sku := resolveField(desc.GetSku(), "sku", desc.GetTags())
+	if storageAccount {
+		resolved, err := storageAccountSKU(desc)
+		if err != nil {
+			return nil, err
+		}
+		sku = resolved
+	}
+	if mapped.aks && sku == "" {
+		sku = firstNonEmptyTag(desc.GetTags(), aksTierTag)
+	}
 
 	// Validate required fields — report all missing in one error.
 	var missing []string
 	if region == "" {
 		missing = append(missing, "region")
 	}
-	if sku == "" {
-		missing = append(missing, "sku")
-	}
+	missing = append(missing, missingMappedSKU(mapped, sku, desc.GetTags())...)
 	if len(missing) > 0 {
 		return nil, fmt.Errorf("%w: %s", ErrMissingRequiredFields, strings.Join(missing, ", "))
 	}
 
-	return &azureclient.PriceQuery{
+	query := &azureclient.PriceQuery{
 		ArmRegionName: region,
 		ArmSkuName:    sku,
 		ServiceName:   serviceName,
 		CurrencyCode:  defaultCurrency,
-	}, nil
+	}
+	if storageAccount {
+		query.ArmSkuName = ""
+		query.ProductName = generalBlockBlobV2Product
+	}
+	if mapped.appServicePlan || mapped.functionApp || mapped.aks || mapped.sqlDatabase || mapped.cosmos {
+		query.ArmSkuName = ""
+	}
+	return query, nil
+}
+
+type mappedResource struct {
+	serviceName    string
+	storageAccount bool
+	appServicePlan bool
+	functionApp    bool
+	aks            bool
+	sqlDatabase    bool
+	cosmos         bool
+}
+
+func resolveMappedResource(normalizedType string) (mappedResource, bool) {
+	serviceName, ok := resourceTypeToService[normalizedType]
+	mapped := mappedResource{serviceName: serviceName}
+	if isStorageAccountResourceType(normalizedType) {
+		mapped.storageAccount = true
+		if !ok {
+			mapped.serviceName = storageServiceName
+			ok = true
+		}
+	}
+	if isFunctionAppResourceType(normalizedType) {
+		mapped.functionApp = true
+		if !ok {
+			mapped.serviceName = functionsServiceName
+			ok = true
+		}
+	}
+	if isAppServicePlanResourceType(normalizedType) {
+		mapped.appServicePlan = true
+		if !ok {
+			mapped.serviceName = appServiceName
+			ok = true
+		}
+	}
+	if isAKSResourceType(normalizedType) {
+		mapped.aks = true
+		if !ok {
+			mapped.serviceName = aksServiceName
+			ok = true
+		}
+	}
+	if isSQLDatabaseResourceType(normalizedType) {
+		mapped.sqlDatabase = true
+		if !ok {
+			mapped.serviceName = sqlServiceName
+			ok = true
+		}
+	}
+	if isCosmosAccountResourceType(normalizedType) {
+		mapped.cosmos = true
+		if !ok {
+			mapped.serviceName = cosmosServiceName
+			ok = true
+		}
+	}
+	return mapped, ok
+}
+
+func missingMappedSKU(mapped mappedResource, sku string, tags map[string]string) []string {
+	if sku != "" || mapped.functionApp || mapped.cosmos {
+		return nil
+	}
+	if mapped.sqlDatabase {
+		return sqlIdentityMissing(tags)
+	}
+	name := "sku"
+	if mapped.aks {
+		name = aksTierTag
+	}
+	return []string{name}
 }
 
 // SupportedResourceTypes returns the list of resource type identifiers that
-// have a defined mapping to Azure service names. Resource types are returned
-// in their canonical form (e.g., "compute/VirtualMachine") and sorted
-// alphabetically.
+// have a defined mapping to Azure service names.
+// SupportedResourceTypes returns those identifiers in canonical form, sorted alphabetically.
 func SupportedResourceTypes() []string {
 	types := make([]string, 0, len(canonicalResourceTypes))
 	for _, canonical := range canonicalResourceTypes {

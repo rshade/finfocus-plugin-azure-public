@@ -22,7 +22,7 @@ var ErrMissingRequiredFields = errors.New("missing required fields")
 
 // MapToGRPCStatus maps an azureclient error to a gRPC status.
 // The error message is preserved in the gRPC status message.
-// Mapping is evaluated via errors.Is in priority order.
+// MapToGRPCStatus matches sentinel errors with errors.Is in priority order.
 func MapToGRPCStatus(err error) *status.Status {
 	if err == nil {
 		return status.New(codes.OK, "")

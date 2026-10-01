@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"math"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,7 +17,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rshade/finfocus-spec/sdk/go/pluginsdk"
 	finfocusv1 "github.com/rshade/finfocus-spec/sdk/go/proto/finfocus/v1"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -268,8 +271,49 @@ func TestGetPluginInfoReturnsSpecVersion(t *testing.T) {
 		t.Fatalf("GetPluginInfo failed: %v", err)
 	}
 
-	if resp.GetSpecVersion() == "" {
-		t.Error("expected spec_version to be populated, got empty string")
+	if resp.GetSpecVersion() != pluginsdk.SpecVersion {
+		t.Errorf("spec_version = %q, want %q", resp.GetSpecVersion(), pluginsdk.SpecVersion)
+	}
+}
+
+// TestGetPluginInfoServedSpecVersion serves the calculator and requires the
+// SDK spec version. A direct method call does not run ValidateSpecVersion.
+func TestGetPluginInfoServedSpecVersion(t *testing.T) {
+	t.Parallel()
+
+	calc := NewCalculator(zerolog.Nop())
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	server := grpc.NewServer()
+	finfocusv1.RegisterCostSourceServiceServer(server, pluginsdk.NewServer(calc))
+	go func() {
+		_ = server.Serve(lis)
+	}()
+	t.Cleanup(server.Stop)
+
+	conn, err := grpc.NewClient(
+		"passthrough:///"+lis.Addr().String(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		t.Fatalf("grpc client: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = conn.Close()
+	})
+
+	resp, err := finfocusv1.NewCostSourceServiceClient(conn).GetPluginInfo(
+		context.Background(),
+		&finfocusv1.GetPluginInfoRequest{},
+	)
+	if err != nil {
+		t.Fatalf("GetPluginInfo() failed: %v", err)
+	}
+	if resp.GetSpecVersion() != pluginsdk.SpecVersion {
+		t.Fatalf("spec_version = %q, want %q", resp.GetSpecVersion(), pluginsdk.SpecVersion)
 	}
 }
 
@@ -882,6 +926,34 @@ func TestEstimateCost_MultipleItems_UsesFirstItem(t *testing.T) {
 	}
 }
 
+// TestEstimateCostD2sV3UsesOnDemandLinux prices the saved eastus Standard_D2s_v3
+// page. The first row is Windows Low Priority at 0.075. On-demand Linux is 0.096.
+func TestEstimateCostD2sV3UsesOnDemandLinux(t *testing.T) {
+	t.Parallel()
+
+	loaded := loadSpotRetailFixture(t)
+	if loaded.Items[0].RetailPrice != 0.075 {
+		t.Fatalf("fixture first row = %v, want 0.075", loaded.Items[0].RetailPrice)
+	}
+
+	calc := newPricingCalc(t, loaded.Items)
+	req := newEstimateCostRequest(t, "azure:compute/virtualMachine:VirtualMachine", map[string]any{
+		"location": loaded.Items[0].ArmRegionName,
+		"vmSize":   loaded.Items[0].ArmSkuName,
+	})
+
+	resp, err := calc.EstimateCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("EstimateCost() failed: %v", err)
+	}
+
+	want := 0.096 * 730
+	got := resp.GetCostMonthly()
+	if math.Abs(got-want) > 1e-9 {
+		t.Fatalf("cost_monthly = %v, want %v (not %v)", got, want, 0.075*730)
+	}
+}
+
 func TestEstimateCost_RepeatedQuery_UsesCacheOnSecondCall(t *testing.T) {
 	t.Parallel()
 
@@ -968,8 +1040,9 @@ func TestEstimateCost_CacheStats_RecordsHitAndMiss(t *testing.T) {
 	}
 }
 
-// TestGetActualCostReturnsUnimplemented verifies GetActualCost returns Unimplemented status.
-func TestGetActualCostReturnsUnimplemented(t *testing.T) {
+// TestGetActualCostMissingFieldsReturnsInvalidArgument verifies an empty
+// actual-cost request fails validation instead of falling through to Unimplemented.
+func TestGetActualCostMissingFieldsReturnsInvalidArgument(t *testing.T) {
 	t.Parallel()
 
 	logger := zerolog.Nop()
@@ -977,7 +1050,7 @@ func TestGetActualCostReturnsUnimplemented(t *testing.T) {
 
 	_, err := calc.GetActualCost(context.Background(), &finfocusv1.GetActualCostRequest{})
 	if err == nil {
-		t.Fatal("expected Unimplemented error, got nil")
+		t.Fatal("expected InvalidArgument error, got nil")
 	}
 
 	st, ok := status.FromError(err)
@@ -985,13 +1058,14 @@ func TestGetActualCostReturnsUnimplemented(t *testing.T) {
 		t.Fatalf("expected gRPC status error, got: %v", err)
 	}
 
-	if st.Code() != codes.Unimplemented {
-		t.Errorf("expected Unimplemented code, got: %v", st.Code())
+	if st.Code() != codes.InvalidArgument {
+		t.Errorf("expected InvalidArgument code, got: %v (%s)", st.Code(), st.Message())
 	}
 }
 
-// TestGetProjectedCostReturnsUnimplemented verifies GetProjectedCost returns Unimplemented status.
-func TestGetProjectedCostReturnsUnimplemented(t *testing.T) {
+// TestGetProjectedCostMissingResourceReturnsInvalidArgument verifies a request
+// without a resource fails validation instead of falling through to Unimplemented.
+func TestGetProjectedCostMissingResourceReturnsInvalidArgument(t *testing.T) {
 	t.Parallel()
 
 	logger := zerolog.Nop()
@@ -999,7 +1073,7 @@ func TestGetProjectedCostReturnsUnimplemented(t *testing.T) {
 
 	_, err := calc.GetProjectedCost(context.Background(), &finfocusv1.GetProjectedCostRequest{})
 	if err == nil {
-		t.Fatal("expected Unimplemented error, got nil")
+		t.Fatal("expected InvalidArgument error, got nil")
 	}
 
 	st, ok := status.FromError(err)
@@ -1007,52 +1081,32 @@ func TestGetProjectedCostReturnsUnimplemented(t *testing.T) {
 		t.Fatalf("expected gRPC status error, got: %v", err)
 	}
 
-	if st.Code() != codes.Unimplemented {
-		t.Errorf("expected Unimplemented code, got: %v", st.Code())
+	if st.Code() != codes.InvalidArgument {
+		t.Errorf("expected InvalidArgument code, got: %v (%s)", st.Code(), st.Message())
 	}
 }
 
-// TestGetPricingSpecReturnsUnimplemented verifies GetPricingSpec returns Unimplemented status.
-func TestGetPricingSpecReturnsUnimplemented(t *testing.T) {
+// TestGetPricingSpecNilResourceReturnsInvalidArgument verifies a missing
+// resource names the field instead of returning the old Unimplemented stub.
+func TestGetPricingSpecNilResourceReturnsInvalidArgument(t *testing.T) {
 	t.Parallel()
 
-	logger := zerolog.Nop()
-	calc := NewCalculator(logger)
-
-	_, err := calc.GetPricingSpec(context.Background(), &finfocusv1.GetPricingSpecRequest{})
-	if err == nil {
-		t.Fatal("expected Unimplemented error, got nil")
+	calc := NewCalculator(zerolog.Nop())
+	tests := []struct {
+		name string
+		req  *finfocusv1.GetPricingSpecRequest
+	}{
+		{name: "nil request", req: nil},
+		{name: "nil resource", req: &finfocusv1.GetPricingSpecRequest{}},
 	}
 
-	st, ok := status.FromError(err)
-	if !ok {
-		t.Fatalf("expected gRPC status error, got: %v", err)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	if st.Code() != codes.Unimplemented {
-		t.Errorf("expected Unimplemented code, got: %v", st.Code())
-	}
-}
-
-// TestDryRunReturnsUnimplemented verifies DryRun returns Unimplemented status.
-func TestDryRunReturnsUnimplemented(t *testing.T) {
-	t.Parallel()
-
-	logger := zerolog.Nop()
-	calc := NewCalculator(logger)
-
-	_, err := calc.DryRun(context.Background(), &finfocusv1.DryRunRequest{})
-	if err == nil {
-		t.Fatal("expected Unimplemented error, got nil")
-	}
-
-	st, ok := status.FromError(err)
-	if !ok {
-		t.Fatalf("expected gRPC status error, got: %v", err)
-	}
-
-	if st.Code() != codes.Unimplemented {
-		t.Errorf("expected Unimplemented code, got: %v", st.Code())
+			_, err := calc.GetPricingSpec(context.Background(), tt.req)
+			assertInvalidArgument(t, err, "resource")
+		})
 	}
 }
 
@@ -1253,9 +1307,9 @@ func TestEstimateCost_Disk_Success(t *testing.T) {
 			diskType: "Premium_SSD_LRS",
 			sizeGB:   128,
 			items: []azureclient.PriceItem{
-				{MeterName: "P4", RetailPrice: 5.28, CurrencyCode: "USD"},
-				{MeterName: "P10", RetailPrice: 19.71, CurrencyCode: "USD"},
-				{MeterName: "P20", RetailPrice: 38.02, CurrencyCode: "USD"},
+				{MeterName: "P4 LRS Disk", RetailPrice: 5.28, CurrencyCode: "USD"},
+				{MeterName: "P10 LRS Disk", RetailPrice: 19.71, CurrencyCode: "USD"},
+				{MeterName: "P20 LRS Disk", RetailPrice: 38.02, CurrencyCode: "USD"},
 			},
 			wantCost:     19.71,
 			wantCurrency: "USD",
@@ -1265,8 +1319,8 @@ func TestEstimateCost_Disk_Success(t *testing.T) {
 			diskType: "Standard_LRS",
 			sizeGB:   1024,
 			items: []azureclient.PriceItem{
-				{MeterName: "S20", RetailPrice: 20.48, CurrencyCode: "USD"},
-				{MeterName: "S30", RetailPrice: 40.96, CurrencyCode: "USD"},
+				{MeterName: "S20 LRS Disk", RetailPrice: 20.48, CurrencyCode: "USD"},
+				{MeterName: "S30 LRS Disk", RetailPrice: 40.96, CurrencyCode: "USD"},
 			},
 			wantCost:     40.96,
 			wantCurrency: "USD",
@@ -1374,7 +1428,7 @@ func TestEstimateCost_Disk_ResourceTypeRouting(t *testing.T) {
 			ArmRegionName: "eastus", ArmSkuName: "Standard_B1s", ServiceName: "Virtual Machines"},
 	}
 	diskItems := []azureclient.PriceItem{
-		{MeterName: "P10", RetailPrice: 19.71, CurrencyCode: "USD",
+		{MeterName: "P10 LRS Disk", RetailPrice: 19.71, CurrencyCode: "USD",
 			ArmRegionName: "eastus", ArmSkuName: "Premium_LRS", ServiceName: "Managed Disks"},
 	}
 
@@ -1448,37 +1502,37 @@ func TestEstimateCost_Disk_AllTypes(t *testing.T) {
 		{
 			name:     "Standard_LRS",
 			diskType: "Standard_LRS",
-			items:    []azureclient.PriceItem{{MeterName: "S10", RetailPrice: 5.89, CurrencyCode: "USD"}},
+			items:    []azureclient.PriceItem{{MeterName: "S10 LRS Disk", RetailPrice: 5.89, CurrencyCode: "USD"}},
 			wantCost: 5.89,
 		},
 		{
 			name:     "StandardSSD_LRS",
 			diskType: "StandardSSD_LRS",
-			items:    []azureclient.PriceItem{{MeterName: "E10", RetailPrice: 9.60, CurrencyCode: "USD"}},
+			items:    []azureclient.PriceItem{{MeterName: "E10 LRS Disk", RetailPrice: 9.60, CurrencyCode: "USD"}},
 			wantCost: 9.60,
 		},
 		{
 			name:     "Premium_SSD_LRS",
 			diskType: "Premium_SSD_LRS",
-			items:    []azureclient.PriceItem{{MeterName: "P10", RetailPrice: 19.71, CurrencyCode: "USD"}},
+			items:    []azureclient.PriceItem{{MeterName: "P10 LRS Disk", RetailPrice: 19.71, CurrencyCode: "USD"}},
 			wantCost: 19.71,
 		},
 		{
 			name:     "Standard_ZRS",
 			diskType: "Standard_ZRS",
-			items:    []azureclient.PriceItem{{MeterName: "S10 ZRS", RetailPrice: 7.37, CurrencyCode: "USD"}},
+			items:    []azureclient.PriceItem{{MeterName: "S10 ZRS Disk", RetailPrice: 7.37, CurrencyCode: "USD"}},
 			wantCost: 7.37,
 		},
 		{
 			name:     "StandardSSD_ZRS",
 			diskType: "StandardSSD_ZRS",
-			items:    []azureclient.PriceItem{{MeterName: "E10 ZRS", RetailPrice: 12.00, CurrencyCode: "USD"}},
+			items:    []azureclient.PriceItem{{MeterName: "E10 ZRS Disk", RetailPrice: 12.00, CurrencyCode: "USD"}},
 			wantCost: 12.00,
 		},
 		{
 			name:     "Premium_ZRS",
 			diskType: "Premium_ZRS",
-			items:    []azureclient.PriceItem{{MeterName: "P10 ZRS", RetailPrice: 24.64, CurrencyCode: "USD"}},
+			items:    []azureclient.PriceItem{{MeterName: "P10 ZRS Disk", RetailPrice: 24.64, CurrencyCode: "USD"}},
 			wantCost: 24.64,
 		},
 	}
@@ -1539,10 +1593,10 @@ func TestEstimateCost_Disk_SizeScaling(t *testing.T) {
 	t.Parallel()
 
 	items := []azureclient.PriceItem{
-		{MeterName: "P4", RetailPrice: 5.28, CurrencyCode: "USD"},
-		{MeterName: "P10", RetailPrice: 19.71, CurrencyCode: "USD"},
-		{MeterName: "P15", RetailPrice: 28.57, CurrencyCode: "USD"},
-		{MeterName: "P20", RetailPrice: 38.02, CurrencyCode: "USD"},
+		{MeterName: "P4 LRS Disk", RetailPrice: 5.28, CurrencyCode: "USD"},
+		{MeterName: "P10 LRS Disk", RetailPrice: 19.71, CurrencyCode: "USD"},
+		{MeterName: "P15 LRS Disk", RetailPrice: 28.57, CurrencyCode: "USD"},
+		{MeterName: "P20 LRS Disk", RetailPrice: 38.02, CurrencyCode: "USD"},
 	}
 
 	tests := []struct {
@@ -1590,9 +1644,9 @@ func TestEstimateCost_Disk_SizeEdgeCases(t *testing.T) {
 	t.Parallel()
 
 	items := []azureclient.PriceItem{
-		{MeterName: "P1", RetailPrice: 0.60, CurrencyCode: "USD"},
-		{MeterName: "P15", RetailPrice: 28.57, CurrencyCode: "USD"},
-		{MeterName: "P80", RetailPrice: 3276.80, CurrencyCode: "USD"},
+		{MeterName: "P1 LRS Disk", RetailPrice: 0.60, CurrencyCode: "USD"},
+		{MeterName: "P15 LRS Disk", RetailPrice: 28.57, CurrencyCode: "USD"},
+		{MeterName: "P80 LRS Disk", RetailPrice: 3276.80, CurrencyCode: "USD"},
 	}
 
 	tests := []struct {

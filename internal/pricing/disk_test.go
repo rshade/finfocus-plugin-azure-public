@@ -196,10 +196,11 @@ func TestSelectDiskTierPrice(t *testing.T) {
 	t.Parallel()
 
 	items := []azureclient.PriceItem{
-		{MeterName: "P4", RetailPrice: 5.28, CurrencyCode: "USD"},
-		{MeterName: "P10", RetailPrice: 19.71, CurrencyCode: "USD"},
-		{MeterName: "P20", RetailPrice: 38.02, CurrencyCode: "USD"},
-		{MeterName: "P10 ZRS", RetailPrice: 24.64, CurrencyCode: "USD"},
+		{MeterName: "P4 LRS Disk", RetailPrice: 5.28, CurrencyCode: "USD"},
+		{MeterName: "P10 LRS Disk", RetailPrice: 19.71, CurrencyCode: "USD"},
+		{MeterName: "P10 LRS Disk Mount", RetailPrice: 0.91, CurrencyCode: "USD"},
+		{MeterName: "P20 LRS Disk", RetailPrice: 38.02, CurrencyCode: "USD"},
+		{MeterName: "P10 ZRS Disk", RetailPrice: 24.64, CurrencyCode: "USD"},
 	}
 
 	tests := []struct {

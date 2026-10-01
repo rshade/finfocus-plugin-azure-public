@@ -1,0 +1,2876 @@
+{
+  "api": "https://prices.azure.com/api/retail/prices",
+  "cases": [
+    {
+      "expected_monthly": 70.08,
+      "formula": "0.096 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_D2s_v3:eastus",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_D2s_v3"
+      },
+      "region": "eastus",
+      "request_hint": {
+        "provider": "azure",
+        "region": "eastus",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_D2s_v3",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Standard_D2s_v3",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-12-15T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "ae331802-83a5-4b9e-b287-85675f794e3d",
+          "meterName": "D2s v3",
+          "productId": "DZH318Z0BQ50",
+          "productName": "Virtual Machines DSv3 Series",
+          "retailPrice": 0.096,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z0BQ50/00VV",
+          "skuName": "D2s v3",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.096
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 87.6,
+      "formula": "0.12 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_D2s_v3:westeurope",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_D2s_v3"
+      },
+      "region": "westeurope",
+      "request_hint": {
+        "provider": "azure",
+        "region": "westeurope",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_D2s_v3",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "Standard_D2s_v3",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-06-17T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "EU West",
+          "meterId": "f052e8d7-f936-4165-af21-bf7c12c22216",
+          "meterName": "D2s v3",
+          "productId": "DZH318Z0BQ50",
+          "productName": "Virtual Machines DSv3 Series",
+          "retailPrice": 0.12,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z0BQ50/00V9",
+          "skuName": "D2s v3",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.12
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 94.17,
+      "formula": "0.129 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_D2s_v3:japaneast",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_D2s_v3"
+      },
+      "region": "japaneast",
+      "request_hint": {
+        "provider": "azure",
+        "region": "japaneast",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_D2s_v3",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "japaneast",
+          "armSkuName": "Standard_D2s_v3",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-07-21T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "JA East",
+          "meterId": "b52c5840-7fc1-4e18-a5cd-a10955a3f916",
+          "meterName": "D2s v3",
+          "productId": "DZH318Z0BQ50",
+          "productName": "Virtual Machines DSv3 Series",
+          "retailPrice": 0.129,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z0BQ50/00TZ",
+          "skuName": "D2s v3",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.129
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 140.16,
+      "formula": "0.192 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_D4s_v5:eastus",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_D4s_v5"
+      },
+      "region": "eastus",
+      "request_hint": {
+        "provider": "azure",
+        "region": "eastus",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_D4s_v5",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Standard_D4s_v5",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2021-11-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "db8c0962-f3f8-5b44-99aa-f3c7c1e668c8",
+          "meterName": "D4s v5",
+          "productId": "DZH318Z08M9W",
+          "productName": "Virtual Machines Dsv5 Series",
+          "retailPrice": 0.192,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z08M9W/004T",
+          "skuName": "Standard_D4s_v5",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.192
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 167.9,
+      "formula": "0.23 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_D4s_v5:westeurope",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_D4s_v5"
+      },
+      "region": "westeurope",
+      "request_hint": {
+        "provider": "azure",
+        "region": "westeurope",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_D4s_v5",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "Standard_D4s_v5",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2021-11-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "EU West",
+          "meterId": "1ab41620-5ffa-51b3-ac16-6416f9f747a9",
+          "meterName": "D4s v5",
+          "productId": "DZH318Z08M9W",
+          "productName": "Virtual Machines Dsv5 Series",
+          "retailPrice": 0.23,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z08M9W/008H",
+          "skuName": "Standard_D4s_v5",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.23
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 181.04,
+      "formula": "0.248 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_D4s_v5:japaneast",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_D4s_v5"
+      },
+      "region": "japaneast",
+      "request_hint": {
+        "provider": "azure",
+        "region": "japaneast",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_D4s_v5",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "japaneast",
+          "armSkuName": "Standard_D4s_v5",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2021-11-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "JA East",
+          "meterId": "a5a189c2-53b5-5cc2-8b62-6b0fdf6b96b1",
+          "meterName": "D4s v5",
+          "productId": "DZH318Z08M9W",
+          "productName": "Virtual Machines Dsv5 Series",
+          "retailPrice": 0.248,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z08M9W/00HQ",
+          "skuName": "Standard_D4s_v5",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.248
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 30.368,
+      "formula": "0.0416 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_B2s:eastus",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_B2s"
+      },
+      "region": "eastus",
+      "request_hint": {
+        "provider": "azure",
+        "region": "eastus",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_B2s",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Standard_B2s",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-10-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "2c57ed84-f939-4f5c-ba90-782349a367b8",
+          "meterName": "B2s",
+          "productId": "DZH318Z0BQ35",
+          "productName": "Virtual Machines BS Series",
+          "retailPrice": 0.0416,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z0BQ35/00J7",
+          "skuName": "B2s",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.0416
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 35.04,
+      "formula": "0.048 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_B2s:westeurope",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_B2s"
+      },
+      "region": "westeurope",
+      "request_hint": {
+        "provider": "azure",
+        "region": "westeurope",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_B2s",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "Standard_B2s",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-10-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "EU West",
+          "meterId": "15a6938e-e86b-4b1b-9a76-7cce5581553a",
+          "meterName": "B2s",
+          "productId": "DZH318Z0BQ35",
+          "productName": "Virtual Machines BS Series",
+          "retailPrice": 0.048,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z0BQ35/00KL",
+          "skuName": "B2s",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.048
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 39.712,
+      "formula": "0.0544 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_B2s:japaneast",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_B2s"
+      },
+      "region": "japaneast",
+      "request_hint": {
+        "provider": "azure",
+        "region": "japaneast",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_B2s",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "japaneast",
+          "armSkuName": "Standard_B2s",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-10-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "JA East",
+          "meterId": "fa90700b-ce3b-4f07-8877-c1245a20ab7a",
+          "meterName": "B2s",
+          "productId": "DZH318Z0BQ35",
+          "productName": "Virtual Machines BS Series",
+          "retailPrice": 0.0544,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z0BQ35/00LB",
+          "skuName": "B2s",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.0544
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 367.92,
+      "formula": "0.504 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_E8s_v5:eastus",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_E8s_v5"
+      },
+      "region": "eastus",
+      "request_hint": {
+        "provider": "azure",
+        "region": "eastus",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_E8s_v5",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Standard_E8s_v5",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2021-11-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "371c0fff-1e22-5840-9d73-28f2d99f975e",
+          "meterName": "E8s v5",
+          "productId": "DZH318Z096SR",
+          "productName": "Virtual Machines Esv5 Series",
+          "retailPrice": 0.504,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z096SR/0137",
+          "skuName": "E8s v5",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.504
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 443.84,
+      "formula": "0.608 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_E8s_v5:westeurope",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_E8s_v5"
+      },
+      "region": "westeurope",
+      "request_hint": {
+        "provider": "azure",
+        "region": "westeurope",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_E8s_v5",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "Standard_E8s_v5",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2021-11-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "EU West",
+          "meterId": "fa5034f6-f6fd-515a-84f3-904d5f3ae97f",
+          "meterName": "E8s v5",
+          "productId": "DZH318Z096SR",
+          "productName": "Virtual Machines Esv5 Series",
+          "retailPrice": 0.608,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z096SR/02F0",
+          "skuName": "E8s v5",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.608
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 443.84,
+      "formula": "0.608 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_E8s_v5:japaneast",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_E8s_v5"
+      },
+      "region": "japaneast",
+      "request_hint": {
+        "provider": "azure",
+        "region": "japaneast",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_E8s_v5",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "japaneast",
+          "armSkuName": "Standard_E8s_v5",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2021-11-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "JA East",
+          "meterId": "077d4394-1a41-5334-b9dc-bdadf7ff5519",
+          "meterName": "E8s v5",
+          "productId": "DZH318Z096SR",
+          "productName": "Virtual Machines Esv5 Series",
+          "retailPrice": 0.608,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z096SR/020F",
+          "skuName": "E8s v5",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.608
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 123.37,
+      "formula": "0.169 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_F4s_v2:eastus",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_F4s_v2"
+      },
+      "region": "eastus",
+      "request_hint": {
+        "provider": "azure",
+        "region": "eastus",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_F4s_v2",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Standard_F4s_v2",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-10-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "5e0e8e20-7a5c-46f7-81ee-4c1cddefd260",
+          "meterName": "F4s v2",
+          "productId": "DZH318Z0BQ4X",
+          "productName": "Virtual Machines FSv2 Series",
+          "retailPrice": 0.169,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z0BQ4X/006F",
+          "skuName": "F4s v2",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.169
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 141.62,
+      "formula": "0.194 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_F4s_v2:westeurope",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_F4s_v2"
+      },
+      "region": "westeurope",
+      "request_hint": {
+        "provider": "azure",
+        "region": "westeurope",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_F4s_v2",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "Standard_F4s_v2",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-10-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "EU West",
+          "meterId": "eab82944-9018-49ea-b57f-51e8f1d68719",
+          "meterName": "F4s v2",
+          "productId": "DZH318Z0BQ4X",
+          "productName": "Virtual Machines FSv2 Series",
+          "retailPrice": 0.194,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z0BQ4X/006H",
+          "skuName": "F4s v2",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.194
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 156.22,
+      "formula": "0.214 per hour x 730 h",
+      "id": "vm_ondemand_linux:Standard_F4s_v2:japaneast",
+      "kind": "vm_ondemand_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_F4s_v2"
+      },
+      "region": "japaneast",
+      "request_hint": {
+        "provider": "azure",
+        "region": "japaneast",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_F4s_v2",
+        "tags": {}
+      },
+      "rows": [
+        {
+          "armRegionName": "japaneast",
+          "armSkuName": "Standard_F4s_v2",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-10-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "JA East",
+          "meterId": "39ba7fae-e79b-407e-a16d-e12fc4b964ea",
+          "meterName": "F4s v2",
+          "productId": "DZH318Z0BQ4X",
+          "productName": "Virtual Machines FSv2 Series",
+          "retailPrice": 0.214,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z0BQ4X/00JT",
+          "skuName": "F4s v2",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.214
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 13.7357,
+      "formula": "0.018816 per hour x 730 h",
+      "id": "vm_spot_linux:Standard_D2s_v3:eastus",
+      "kind": "vm_spot_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_D2s_v3"
+      },
+      "region": "eastus",
+      "request_hint": {
+        "provider": "azure",
+        "region": "eastus",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_D2s_v3",
+        "tags": {
+          "priority": "Spot"
+        }
+      },
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Standard_D2s_v3",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2026-06-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "898b8731-56dd-5181-bb31-90ac59267863",
+          "meterName": "D2s v3 Spot",
+          "productId": "DZH318Z0BQ50",
+          "productName": "Virtual Machines DSv3 Series",
+          "retailPrice": 0.018816,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z0BQ50/0234",
+          "skuName": "D2s v3 Spot",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.018816
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 16.1885,
+      "formula": "0.022176 per hour x 730 h",
+      "id": "vm_spot_linux:Standard_D2s_v3:westeurope",
+      "kind": "vm_spot_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_D2s_v3"
+      },
+      "region": "westeurope",
+      "request_hint": {
+        "provider": "azure",
+        "region": "westeurope",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_D2s_v3",
+        "tags": {
+          "priority": "Spot"
+        }
+      },
+      "rows": [
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "Standard_D2s_v3",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2026-02-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "EU West",
+          "meterId": "feb87166-5659-592a-afdc-f56e7927f3f3",
+          "meterName": "D2s v3 Spot",
+          "productId": "DZH318Z0BQ50",
+          "productName": "Virtual Machines DSv3 Series",
+          "retailPrice": 0.022176,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z0BQ50/02P8",
+          "skuName": "D2s v3 Spot",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.022176
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 29.5876,
+      "formula": "0.040531 per hour x 730 h",
+      "id": "vm_spot_linux:Standard_D4s_v5:eastus",
+      "kind": "vm_spot_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_D4s_v5"
+      },
+      "region": "eastus",
+      "request_hint": {
+        "provider": "azure",
+        "region": "eastus",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_D4s_v5",
+        "tags": {
+          "priority": "Spot"
+        }
+      },
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Standard_D4s_v5",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2026-06-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "ea1d84e1-3804-5a61-9c27-4a3eaede5031",
+          "meterName": "D4s v5 Spot",
+          "productId": "DZH318Z08M9W",
+          "productName": "Virtual Machines Dsv5 Series",
+          "retailPrice": 0.040531,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z08M9W/004R",
+          "skuName": "Standard_D4s_v5 Spot",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.040531
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 31.0279,
+      "formula": "0.042504 per hour x 730 h",
+      "id": "vm_spot_linux:Standard_D4s_v5:westeurope",
+      "kind": "vm_spot_linux",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_D4s_v5"
+      },
+      "region": "westeurope",
+      "request_hint": {
+        "provider": "azure",
+        "region": "westeurope",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_D4s_v5",
+        "tags": {
+          "priority": "Spot"
+        }
+      },
+      "rows": [
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "Standard_D4s_v5",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2026-02-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "EU West",
+          "meterId": "4f399ad3-d7e8-5c30-aa2f-9e7a107f5a2b",
+          "meterName": "D4s v5 Spot",
+          "productId": "DZH318Z08M9W",
+          "productName": "Virtual Machines Dsv5 Series",
+          "retailPrice": 0.042504,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH313Z7MMC8",
+          "serviceName": "Virtual Machines",
+          "skuId": "DZH318Z08M9W/008K",
+          "skuName": "Standard_D4s_v5 Spot",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.042504
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": null,
+      "formula": null,
+      "id": "vm_ondemand_linux:Standard_NotARealSku:eastus",
+      "kind": "vm_ondemand_linux",
+      "notes": [
+        "no live row for this selection: the plugin must return an error, never a zero cost"
+      ],
+      "params": {
+        "hours": 730,
+        "sku": "Standard_NotARealSku"
+      },
+      "region": "eastus",
+      "request_hint": {
+        "provider": "azure",
+        "region": "eastus",
+        "resource_type": "compute/VirtualMachine",
+        "sku": "Standard_NotARealSku",
+        "tags": {}
+      },
+      "rows": [],
+      "status": "not_available"
+    },
+    {
+      "expected_monthly": 19.71,
+      "formula": "flat 19.71 per month (P10 LRS Disk)",
+      "id": "managed_disk:P10 LRS:eastus",
+      "kind": "managed_disk",
+      "notes": [
+        "disk meter only. 'Disk Mount' and operations meters are listed in rows and excluded from the total"
+      ],
+      "params": {
+        "redundancy": "LRS",
+        "tier": "P10"
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Premium_SSD_Managed_Disk_P10",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2018-05-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "93a6a529-4f49-47cb-9b1e-db9e5f23263f",
+          "meterName": "P10 LRS Disk",
+          "productId": "DZH318Z0BP04",
+          "productName": "Premium SSD Managed Disks",
+          "retailPrice": 19.71,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP04/0035",
+          "skuName": "P10 LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Month",
+          "unitPrice": 19.71
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Premium_SSD_Managed_Disk_P10",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2021-07-01T00:00:00Z",
+          "excluded": true,
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "e3f77356-fa69-5e14-970d-df18cf19d27b",
+          "meterName": "P10 LRS Disk Mount",
+          "productId": "DZH318Z0BP04",
+          "productName": "Premium SSD Managed Disks",
+          "retailPrice": 0.91,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP04/0035",
+          "skuName": "P10 LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Month",
+          "unitPrice": 0.91
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 135.17,
+      "formula": "flat 135.17 per month (P30 LRS Disk)",
+      "id": "managed_disk:P30 LRS:eastus",
+      "kind": "managed_disk",
+      "notes": [
+        "disk meter only. 'Disk Mount' and operations meters are listed in rows and excluded from the total"
+      ],
+      "params": {
+        "redundancy": "LRS",
+        "tier": "P30"
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Premium_SSD_Managed_Disks_P30",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2018-05-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "1c338583-0cf2-4ad8-9185-1a788af43d12",
+          "meterName": "P30 LRS Disk",
+          "productId": "DZH318Z0BP04",
+          "productName": "Premium SSD Managed Disks",
+          "retailPrice": 135.17,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP04/00CS",
+          "skuName": "P30 LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Month",
+          "unitPrice": 135.17
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Premium_SSD_Managed_Disks_P30",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2020-09-01T00:00:00Z",
+          "excluded": true,
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "93d4cff6-2b70-42b2-827c-5a7711406d1e",
+          "meterName": "P30 LRS Disk Mount",
+          "productId": "DZH318Z0BP04",
+          "productName": "Premium SSD Managed Disks",
+          "retailPrice": 6.57,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP04/00CS",
+          "skuName": "P30 LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Month",
+          "unitPrice": 6.57
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 9.6,
+      "formula": "flat 9.6 per month (E10 LRS Disk)",
+      "id": "managed_disk:E10 LRS:eastus",
+      "kind": "managed_disk",
+      "notes": [
+        "disk meter only. 'Disk Mount' and operations meters are listed in rows and excluded from the total"
+      ],
+      "params": {
+        "redundancy": "LRS",
+        "tier": "E10"
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2018-11-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "a97f31a2-0fb1-4d64-bb43-a2399dd31f0b",
+          "meterName": "E10 LRS Disk",
+          "productId": "DZH318Z0BP88",
+          "productName": "Standard SSD Managed Disks",
+          "retailPrice": 9.6,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP88/0013",
+          "skuName": "E10 LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Month",
+          "unitPrice": 9.6
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2021-07-01T00:00:00Z",
+          "excluded": true,
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "780ffb4a-f686-5d3b-bae1-4d88ebc7736a",
+          "meterName": "E10 LRS Disk Mount",
+          "productId": "DZH318Z0BP88",
+          "productName": "Standard SSD Managed Disks",
+          "retailPrice": 0.91,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP88/0013",
+          "skuName": "E10 LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Month",
+          "unitPrice": 0.91
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2018-11-01T00:00:00Z",
+          "excluded": true,
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "ce957933-8287-4f8b-83ee-53a5cbe056d9",
+          "meterName": "E10 LRS Disk Operations",
+          "productId": "DZH318Z0BP88",
+          "productName": "Standard SSD Managed Disks",
+          "retailPrice": 0.002,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP88/0013",
+          "skuName": "E10 LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "10K",
+          "unitPrice": 0.002
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 5.888,
+      "formula": "flat 5.888 per month (S10 LRS Disk)",
+      "id": "managed_disk:S10 LRS:eastus",
+      "kind": "managed_disk",
+      "notes": [
+        "disk meter only. 'Disk Mount' and operations meters are listed in rows and excluded from the total"
+      ],
+      "params": {
+        "redundancy": "LRS",
+        "tier": "S10"
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-10-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "ac8f32dc-f93c-404f-b0cb-b5d707762170",
+          "meterName": "S10 LRS Disk",
+          "productId": "DZH318Z0BP0L",
+          "productName": "Standard HDD Managed Disks",
+          "retailPrice": 5.888,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP0L/00C4",
+          "skuName": "S10 LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Month",
+          "unitPrice": 5.888
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-10-01T00:00:00Z",
+          "excluded": true,
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "82cd70ab-1aee-4b30-bc04-8b71e1204dbc",
+          "meterName": "S10 LRS Disk Operations",
+          "productId": "DZH318Z0BP0L",
+          "productName": "Standard HDD Managed Disks",
+          "retailPrice": 0.0005,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP0L/00C4",
+          "skuName": "S10 LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "10K",
+          "unitPrice": 0.0005
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 29.565,
+      "formula": "flat 29.565 per month (P10 ZRS Disk)",
+      "id": "managed_disk:P10 ZRS:eastus",
+      "kind": "managed_disk",
+      "notes": [
+        "disk meter only. 'Disk Mount' and operations meters are listed in rows and excluded from the total"
+      ],
+      "params": {
+        "redundancy": "ZRS",
+        "tier": "P10"
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Premium_SSD_Managed_Disk_P10",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2022-03-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "42e5b4b6-6705-5132-9eed-4cb4678122b3",
+          "meterName": "P10 ZRS Disk",
+          "productId": "DZH318Z0BP04",
+          "productName": "Premium SSD Managed Disks",
+          "retailPrice": 29.565,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP04/02BB",
+          "skuName": "P10 ZRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Month",
+          "unitPrice": 29.565
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Premium_SSD_Managed_Disk_P10",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2024-09-01T00:00:00Z",
+          "excluded": true,
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "aca8d282-47e8-538f-9eb4-d6796d67e08a",
+          "meterName": "P10 ZRS Disk Mount",
+          "productId": "DZH318Z0BP04",
+          "productName": "Premium SSD Managed Disks",
+          "retailPrice": 0.91,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP04/02BB",
+          "skuName": "P10 ZRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Month",
+          "unitPrice": 0.91
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 14.4,
+      "formula": "flat 14.4 per month (E10 ZRS Disk)",
+      "id": "managed_disk:E10 ZRS:eastus",
+      "kind": "managed_disk",
+      "notes": [
+        "disk meter only. 'Disk Mount' and operations meters are listed in rows and excluded from the total"
+      ],
+      "params": {
+        "redundancy": "ZRS",
+        "tier": "E10"
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2023-05-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "623e0634-1530-5095-b751-53dcdf556633",
+          "meterName": "E10 ZRS Disk",
+          "productId": "DZH318Z0BP88",
+          "productName": "Standard SSD Managed Disks",
+          "retailPrice": 14.4,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP88/018P",
+          "skuName": "E10 ZRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Month",
+          "unitPrice": 14.4
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2024-09-01T00:00:00Z",
+          "excluded": true,
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "e48881a3-ec5b-5e9b-bbe0-282ebdbbf6c4",
+          "meterName": "E10 ZRS Disk Operations",
+          "productId": "DZH318Z0BP88",
+          "productName": "Standard SSD Managed Disks",
+          "retailPrice": 0.002,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP88/018P",
+          "skuName": "E10 ZRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "10K",
+          "unitPrice": 0.002
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2024-09-01T00:00:00Z",
+          "excluded": true,
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "f559590e-df58-5ba6-8ddc-fffb3b93f1e0",
+          "meterName": "E10 ZRS Disk Mount",
+          "productId": "DZH318Z0BP88",
+          "productName": "Standard SSD Managed Disks",
+          "retailPrice": 10.944,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP88/018P",
+          "skuName": "E10 ZRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Month",
+          "unitPrice": 10.944
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": null,
+      "formula": null,
+      "id": "managed_disk:S10 ZRS:eastus",
+      "kind": "managed_disk",
+      "notes": [
+        "disk meter only. 'Disk Mount' and operations meters are listed in rows and excluded from the total",
+        "no live row for this selection: the plugin must return an error, never a zero cost"
+      ],
+      "params": {
+        "redundancy": "ZRS",
+        "tier": "S10"
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [],
+      "status": "not_available"
+    },
+    {
+      "expected_monthly": 21.68,
+      "formula": "flat 21.68 per month (P10 LRS Disk)",
+      "id": "managed_disk:P10 LRS:westeurope",
+      "kind": "managed_disk",
+      "notes": [
+        "disk meter only. 'Disk Mount' and operations meters are listed in rows and excluded from the total"
+      ],
+      "params": {
+        "redundancy": "LRS",
+        "tier": "P10"
+      },
+      "region": "westeurope",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "Premium_SSD_Managed_Disk_P10",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2018-05-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "EU West",
+          "meterId": "137d3f72-fe0e-4a78-b5d0-92d704aa3cac",
+          "meterName": "P10 LRS Disk",
+          "productId": "DZH318Z0BP04",
+          "productName": "Premium SSD Managed Disks",
+          "retailPrice": 21.68,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP04/0080",
+          "skuName": "P10 LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Month",
+          "unitPrice": 21.68
+        },
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "Premium_SSD_Managed_Disk_P10",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2021-07-01T00:00:00Z",
+          "excluded": true,
+          "isPrimaryMeterRegion": true,
+          "location": "EU West",
+          "meterId": "424d9eb6-243d-5adb-8047-6cea0d2d54bc",
+          "meterName": "P10 LRS Disk Mount",
+          "productId": "DZH318Z0BP04",
+          "productName": "Premium SSD Managed Disks",
+          "retailPrice": 1.183,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BP04/0080",
+          "skuName": "P10 LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Month",
+          "unitPrice": 1.183
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 2.08,
+      "formula": "100 GB x 0.0208 (tiered bands, data stored only)",
+      "id": "blob:Hot LRS:100gb:eastus",
+      "kind": "blob_storage",
+      "notes": [],
+      "params": {
+        "redundancy": "LRS",
+        "size_gb": 100,
+        "tier": "Hot"
+      },
+      "region": "eastus",
+      "request_hint": {
+        "provider": "azure",
+        "region": "eastus",
+        "resource_type": "storage/BlobStorage",
+        "sku": "Hot LRS",
+        "tags": {
+          "size_gb": "100"
+        }
+      },
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-02-03T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "272492b3-1c92-4a5f-bee9-52a8e10ca514",
+          "meterName": "Hot LRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.0208,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/006M",
+          "skuName": "Hot LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.0208
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-02-03T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "272492b3-1c92-4a5f-bee9-52a8e10ca514",
+          "meterName": "Hot LRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.019968,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/006M",
+          "skuName": "Hot LRS",
+          "tierMinimumUnits": 51200.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.019968
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-02-03T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "272492b3-1c92-4a5f-bee9-52a8e10ca514",
+          "meterName": "Hot LRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.019136,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/006M",
+          "skuName": "Hot LRS",
+          "tierMinimumUnits": 512000.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.019136
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 104.0,
+      "formula": "5000 GB x 0.0208 (tiered bands, data stored only)",
+      "id": "blob:Hot LRS:5000gb:eastus",
+      "kind": "blob_storage",
+      "notes": [],
+      "params": {
+        "redundancy": "LRS",
+        "size_gb": 5000,
+        "tier": "Hot"
+      },
+      "region": "eastus",
+      "request_hint": {
+        "provider": "azure",
+        "region": "eastus",
+        "resource_type": "storage/BlobStorage",
+        "sku": "Hot LRS",
+        "tags": {
+          "size_gb": "5000"
+        }
+      },
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-02-03T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "272492b3-1c92-4a5f-bee9-52a8e10ca514",
+          "meterName": "Hot LRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.0208,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/006M",
+          "skuName": "Hot LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.0208
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-02-03T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "272492b3-1c92-4a5f-bee9-52a8e10ca514",
+          "meterName": "Hot LRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.019968,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/006M",
+          "skuName": "Hot LRS",
+          "tierMinimumUnits": 51200.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.019968
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-02-03T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "272492b3-1c92-4a5f-bee9-52a8e10ca514",
+          "meterName": "Hot LRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.019136,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/006M",
+          "skuName": "Hot LRS",
+          "tierMinimumUnits": 512000.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.019136
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 1.52,
+      "formula": "100 GB x 0.0152 (tiered bands, data stored only)",
+      "id": "blob:Cool LRS:100gb:eastus",
+      "kind": "blob_storage",
+      "notes": [],
+      "params": {
+        "redundancy": "LRS",
+        "size_gb": 100,
+        "tier": "Cool"
+      },
+      "region": "eastus",
+      "request_hint": {
+        "provider": "azure",
+        "region": "eastus",
+        "resource_type": "storage/BlobStorage",
+        "sku": "Cool LRS",
+        "tags": {
+          "size_gb": "100"
+        }
+      },
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-02-03T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "5d16be88-bfc0-4f33-bb0a-826eb941c13f",
+          "meterName": "Cool LRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.0152,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/006D",
+          "skuName": "Cool LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.0152
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 2.6,
+      "formula": "100 GB x 0.026 (tiered bands, data stored only)",
+      "id": "blob:Hot ZRS:100gb:eastus",
+      "kind": "blob_storage",
+      "notes": [],
+      "params": {
+        "redundancy": "ZRS",
+        "size_gb": 100,
+        "tier": "Hot"
+      },
+      "region": "eastus",
+      "request_hint": {
+        "provider": "azure",
+        "region": "eastus",
+        "resource_type": "storage/BlobStorage",
+        "sku": "Hot ZRS",
+        "tags": {
+          "size_gb": "100"
+        }
+      },
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2018-07-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "da71cc90-624a-4006-8936-0718046ad8ab",
+          "meterName": "Hot ZRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.026,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/006T",
+          "skuName": "Hot ZRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.026
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2018-07-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "da71cc90-624a-4006-8936-0718046ad8ab",
+          "meterName": "Hot ZRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.02496,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/006T",
+          "skuName": "Hot ZRS",
+          "tierMinimumUnits": 51200.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.02496
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2018-07-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "da71cc90-624a-4006-8936-0718046ad8ab",
+          "meterName": "Hot ZRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.02392,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/006T",
+          "skuName": "Hot ZRS",
+          "tierMinimumUnits": 512000.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.02392
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 1240.6784,
+      "formula": "51200 GB x 0.0208 + 8800 GB x 0.019968 (tiered bands, data stored only)",
+      "id": "blob:Hot LRS:60000gb:eastus",
+      "kind": "blob_storage",
+      "notes": [
+        "size crosses a volume band: a plugin that bills every GB at the first band over-quotes"
+      ],
+      "params": {
+        "redundancy": "LRS",
+        "size_gb": 60000,
+        "tier": "Hot"
+      },
+      "region": "eastus",
+      "request_hint": {
+        "provider": "azure",
+        "region": "eastus",
+        "resource_type": "storage/BlobStorage",
+        "sku": "Hot LRS",
+        "tags": {
+          "size_gb": "60000"
+        }
+      },
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-02-03T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "272492b3-1c92-4a5f-bee9-52a8e10ca514",
+          "meterName": "Hot LRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.0208,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/006M",
+          "skuName": "Hot LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.0208
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-02-03T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "272492b3-1c92-4a5f-bee9-52a8e10ca514",
+          "meterName": "Hot LRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.019968,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/006M",
+          "skuName": "Hot LRS",
+          "tierMinimumUnits": 51200.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.019968
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-02-03T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "272492b3-1c92-4a5f-bee9-52a8e10ca514",
+          "meterName": "Hot LRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.019136,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/006M",
+          "skuName": "Hot LRS",
+          "tierMinimumUnits": 512000.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.019136
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 1.96,
+      "formula": "100 GB x 0.0196 (tiered bands, data stored only)",
+      "id": "blob:Hot LRS:100gb:westeurope",
+      "kind": "blob_storage",
+      "notes": [],
+      "params": {
+        "redundancy": "LRS",
+        "size_gb": 100,
+        "tier": "Hot"
+      },
+      "region": "westeurope",
+      "request_hint": {
+        "provider": "azure",
+        "region": "westeurope",
+        "resource_type": "storage/BlobStorage",
+        "sku": "Hot LRS",
+        "tags": {
+          "size_gb": "100"
+        }
+      },
+      "rows": [
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-02-03T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "EU West",
+          "meterId": "10e5ee74-8fd6-4972-909f-65a83f92f0ce",
+          "meterName": "Hot LRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.0196,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/00BJ",
+          "skuName": "Hot LRS",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.0196
+        },
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-02-03T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "EU West",
+          "meterId": "10e5ee74-8fd6-4972-909f-65a83f92f0ce",
+          "meterName": "Hot LRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.018816,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/00BJ",
+          "skuName": "Hot LRS",
+          "tierMinimumUnits": 51200.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.018816
+        },
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-02-03T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "EU West",
+          "meterId": "10e5ee74-8fd6-4972-909f-65a83f92f0ce",
+          "meterName": "Hot LRS Data Stored",
+          "productId": "DZH318Z0BPH7",
+          "productName": "General Block Blob v2",
+          "retailPrice": 0.018032,
+          "serviceFamily": "Storage",
+          "serviceId": "DZH317F1HKN0",
+          "serviceName": "Storage",
+          "skuId": "DZH318Z0BPH7/00BJ",
+          "skuName": "Hot LRS",
+          "tierMinimumUnits": 512000.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.018032
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 113.15,
+      "formula": "0.155 per hour x 730 h",
+      "id": "app_service_plan:P1 v3:linux:eastus",
+      "kind": "app_service_plan",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "os": "linux",
+        "sku": "P1 v3"
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Azure_App_Service_Premium_v3_Plan_Linux_P1_v3",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2020-10-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "cc850c00-f902-5960-a359-f3cd3abfccf5",
+          "meterName": "P1 v3 App",
+          "productId": "DZH318Z0DCR6",
+          "productName": "Azure App Service Premium v3 Plan - Linux",
+          "retailPrice": 0.155,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH317GT8G5N",
+          "serviceName": "Azure App Service",
+          "skuId": "DZH318Z0DCR6/001P",
+          "skuName": "P1 v3",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.155
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 229.95,
+      "formula": "0.315 per hour x 730 h",
+      "id": "app_service_plan:P1 v3:windows:eastus",
+      "kind": "app_service_plan",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "os": "windows",
+        "sku": "P1 v3"
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Standard_P1_v3_Windows",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2020-10-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "2545d537-cf1f-531f-8a7f-7cb10b409d66",
+          "meterName": "P1 v3 App",
+          "productId": "DZH318Z0DCR7",
+          "productName": "Azure App Service Premium v3 Plan",
+          "retailPrice": 0.315,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH317GT8G5N",
+          "serviceName": "Azure App Service",
+          "skuId": "DZH318Z0DCR7/001M",
+          "skuName": "P1 v3",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.315
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 226.3,
+      "formula": "0.31 per hour x 730 h",
+      "id": "app_service_plan:P2 v3:linux:eastus",
+      "kind": "app_service_plan",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "os": "linux",
+        "sku": "P2 v3"
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "Azure_App_Service_Premium_v3_Plan_Linux_P2_v3",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2020-10-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "9003fa3d-5892-5a94-b9de-b6b5c151b84e",
+          "meterName": "P2 v3 App",
+          "productId": "DZH318Z0DCR6",
+          "productName": "Azure App Service Premium v3 Plan - Linux",
+          "retailPrice": 0.31,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH317GT8G5N",
+          "serviceName": "Azure App Service",
+          "skuId": "DZH318Z0DCR6/001S",
+          "skuName": "P2 v3",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.31
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 129.94,
+      "formula": "0.178 per hour x 730 h",
+      "id": "app_service_plan:P1 v3:linux:westeurope",
+      "kind": "app_service_plan",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "os": "linux",
+        "sku": "P1 v3"
+      },
+      "region": "westeurope",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "Azure_App_Service_Premium_v3_Plan_Linux_P1_v3",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2020-10-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "EU West",
+          "meterId": "cc659186-8327-58c4-beb4-1900b2b64af2",
+          "meterName": "P1 v3 App",
+          "productId": "DZH318Z0DCR6",
+          "productName": "Azure App Service Premium v3 Plan - Linux",
+          "retailPrice": 0.178,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH317GT8G5N",
+          "serviceName": "Azure App Service",
+          "skuId": "DZH318Z0DCR6/000X",
+          "skuName": "P1 v3",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.178
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 73.0,
+      "formula": "0.1 per hour x 730 h",
+      "id": "aks_control_plane_standard:eastus",
+      "kind": "aks_control_plane",
+      "notes": [
+        "control plane only; node pools are priced as VMs and covered by the VM cases"
+      ],
+      "params": {
+        "hours": 730,
+        "tier": "Standard"
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2020-03-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "251a08e1-40d6-48e6-8368-4c3e5ee3bbff",
+          "meterName": "Standard Uptime SLA",
+          "productId": "DZH318Z0CQSH",
+          "productName": "Azure Kubernetes Service",
+          "retailPrice": 0.1,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH315HTQSK6",
+          "serviceName": "Azure Kubernetes Service",
+          "skuId": "DZH318Z0CQSH/0006",
+          "skuName": "Standard",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.1
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 73.0,
+      "formula": "0.1 per hour x 730 h",
+      "id": "aks_control_plane_standard:westeurope",
+      "kind": "aks_control_plane",
+      "notes": [
+        "control plane only; node pools are priced as VMs and covered by the VM cases"
+      ],
+      "params": {
+        "hours": 730,
+        "tier": "Standard"
+      },
+      "region": "westeurope",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2020-09-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "EU West",
+          "meterId": "251a08e1-40d6-48e6-8368-4c3e5ee3bbff",
+          "meterName": "Standard Uptime SLA",
+          "productId": "DZH318Z0CQSH",
+          "productName": "Azure Kubernetes Service",
+          "retailPrice": 0.1,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH315HTQSK6",
+          "serviceName": "Azure Kubernetes Service",
+          "skuId": "DZH318Z0CQSH/0013",
+          "skuName": "Standard",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.1
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": null,
+      "formula": null,
+      "id": "aks_control_plane_free:eastus",
+      "kind": "aks_control_plane",
+      "notes": [
+        "a 'FreeTierInfrastructureCost Uptime SLA' meter is live from 2026-10-01 at 0.05 per hour; whether it is billed to Free-tier clusters is not stated by the API. Check the Pricing Calculator before asserting 0 or 36.50"
+      ],
+      "params": {
+        "hours": 730,
+        "tier": "Free"
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "FreeTierInfrastructureCost",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2026-10-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "3558846b-fb83-5b2b-aebe-fdeed0bf8b65",
+          "meterName": "FreeTierInfrastructureCost Uptime SLA",
+          "productId": "DZH318Z0CQSH",
+          "productName": "Azure Kubernetes Service",
+          "retailPrice": 0.05,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH315HTQSK6",
+          "serviceName": "Azure Kubernetes Service",
+          "skuId": "DZH318Z0CQSH/04DJ",
+          "skuName": "FreeTierInfrastructureCost",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.05
+        }
+      ],
+      "status": "ambiguous"
+    },
+    {
+      "expected_monthly": 233.7368,
+      "formula": "0.304434 per hour x 730 h + 100 GB x 0.115",
+      "id": "sql_gp_gen5:2vcore:100gb:nozr:eastus",
+      "kind": "sql_database",
+      "notes": [
+        "General Purpose, provisioned, Gen5, single database, license included, no reserved capacity. IO operations and the free-offer 'Data Stored - Free' meter are not modelled"
+      ],
+      "params": {
+        "hours": 730,
+        "storage_gb": 100,
+        "vcores": 2,
+        "zone_redundant": false
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "SQLDB_GP_Compute_Gen5",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-06-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "d0fc12d4-91ca-4689-bf8f-9ccdf1b0a619",
+          "meterName": "vCore",
+          "productId": "DZH318Z0BPXL",
+          "productName": "SQL Database Single/Elastic Pool General Purpose - Compute Gen5",
+          "retailPrice": 0.152217,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH3180HX10K",
+          "serviceName": "SQL Database",
+          "skuId": "DZH318Z0BPXL/001M",
+          "skuName": "vCore",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.152217
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "SQLDB_GP_Compute_Gen5_2",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-06-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "d0fc12d4-91ca-4689-bf8f-9ccdf1b0a619",
+          "meterName": "vCore",
+          "productId": "DZH318Z0BPXL",
+          "productName": "SQL Database Single/Elastic Pool General Purpose - Compute Gen5",
+          "retailPrice": 0.304434,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH3180HX10K",
+          "serviceName": "SQL Database",
+          "skuId": "DZH318Z0BPXL/00BT",
+          "skuName": "2 vCore",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.304434
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2018-07-15T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "19b178e9-0b8b-4db7-962c-b9ccb95cb968",
+          "meterName": "General Purpose Data Stored",
+          "productId": "DZH318Z0BQDW",
+          "productName": "SQL Database Single/Elastic Pool General Purpose - Storage",
+          "retailPrice": 0.115,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH3180HX10K",
+          "serviceName": "SQL Database",
+          "skuId": "DZH318Z0BQDW/0005",
+          "skuName": "General Purpose",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.115
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 473.2236,
+      "formula": "0.608868 per hour x 730 h + 250 GB x 0.115",
+      "id": "sql_gp_gen5:4vcore:250gb:nozr:eastus",
+      "kind": "sql_database",
+      "notes": [
+        "General Purpose, provisioned, Gen5, single database, license included, no reserved capacity. IO operations and the free-offer 'Data Stored - Free' meter are not modelled"
+      ],
+      "params": {
+        "hours": 730,
+        "storage_gb": 250,
+        "vcores": 4,
+        "zone_redundant": false
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "SQLDB_GP_Compute_Gen5",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-06-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "d0fc12d4-91ca-4689-bf8f-9ccdf1b0a619",
+          "meterName": "vCore",
+          "productId": "DZH318Z0BPXL",
+          "productName": "SQL Database Single/Elastic Pool General Purpose - Compute Gen5",
+          "retailPrice": 0.152217,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH3180HX10K",
+          "serviceName": "SQL Database",
+          "skuId": "DZH318Z0BPXL/001M",
+          "skuName": "vCore",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.152217
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "SQLDB_GP_Compute_Gen5_4",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-06-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "d0fc12d4-91ca-4689-bf8f-9ccdf1b0a619",
+          "meterName": "vCore",
+          "productId": "DZH318Z0BPXL",
+          "productName": "SQL Database Single/Elastic Pool General Purpose - Compute Gen5",
+          "retailPrice": 0.608868,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH3180HX10K",
+          "serviceName": "SQL Database",
+          "skuId": "DZH318Z0BPXL/009M",
+          "skuName": "4 vCore",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.608868
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2018-07-15T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "19b178e9-0b8b-4db7-962c-b9ccb95cb968",
+          "meterName": "General Purpose Data Stored",
+          "productId": "DZH318Z0BQDW",
+          "productName": "SQL Database Single/Elastic Pool General Purpose - Storage",
+          "retailPrice": 0.115,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH3180HX10K",
+          "serviceName": "SQL Database",
+          "skuId": "DZH318Z0BQDW/0005",
+          "skuName": "General Purpose",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.115
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "candidates": {
+        "replacement": 156.3418,
+        "surcharge_on_top": 378.5786
+      },
+      "expected_monthly": null,
+      "formula": null,
+      "id": "sql_gp_gen5:2vcore:100gb:zr:eastus",
+      "kind": "sql_database",
+      "notes": [
+        "the 'Zone Redundancy vCore' meter (0.18266 per hour) is below the plain 2-vCore rate (0.304434), so it is probably a surcharge. Reading A, surcharge on top of base compute: 378.5786. Reading B, replacement rate: 156.3418. The API does not say which. Needs a Pricing Calculator value"
+      ],
+      "params": {
+        "hours": 730,
+        "storage_gb": 100,
+        "vcores": 2,
+        "zone_redundant": true
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "SQLDB_GP_Compute_Gen5_ZR",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-06-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "23edd1d1-db61-5d1d-98c4-1799a211f960",
+          "meterName": "Zone Redundancy vCore",
+          "productId": "DZH318Z0BPXL",
+          "productName": "SQL Database Single/Elastic Pool General Purpose - Compute Gen5",
+          "retailPrice": 0.09133,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH3180HX10K",
+          "serviceName": "SQL Database",
+          "skuId": "DZH318Z0BPXL/0B4X",
+          "skuName": "vCore ZR Zone Redundancy",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.09133
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "SQLDB_GP_Compute_Gen5_2",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-06-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "23edd1d1-db61-5d1d-98c4-1799a211f960",
+          "meterName": "Zone Redundancy vCore",
+          "productId": "DZH318Z0BPXL",
+          "productName": "SQL Database Single/Elastic Pool General Purpose - Compute Gen5",
+          "retailPrice": 0.18266,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH3180HX10K",
+          "serviceName": "SQL Database",
+          "skuId": "DZH318Z0BPXL/03T1",
+          "skuName": "2 vCore Zone Redundancy",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.18266
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2024-08-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "bbecf26c-5792-5c08-b9bd-f4d1e1166966",
+          "meterName": "General Purpose Zone Redundancy Data Stored",
+          "productId": "DZH318Z0BQDW",
+          "productName": "SQL Database Single/Elastic Pool General Purpose - Storage",
+          "retailPrice": 0.23,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH3180HX10K",
+          "serviceName": "SQL Database",
+          "skuId": "DZH318Z0BQDW/0033",
+          "skuName": "General Purpose Zone Redundancy",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.23
+        }
+      ],
+      "status": "ambiguous"
+    },
+    {
+      "expected_monthly": 1046.2688,
+      "formula": "1.339512 per hour x 730 h + 500 GB x 0.13685",
+      "id": "sql_gp_gen5:8vcore:500gb:nozr:westeurope",
+      "kind": "sql_database",
+      "notes": [
+        "General Purpose, provisioned, Gen5, single database, license included, no reserved capacity. IO operations and the free-offer 'Data Stored - Free' meter are not modelled"
+      ],
+      "params": {
+        "hours": 730,
+        "storage_gb": 500,
+        "vcores": 8,
+        "zone_redundant": false
+      },
+      "region": "westeurope",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "SQLDB_GP_Compute_Gen5",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-06-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "EU West",
+          "meterId": "1cd4ee5b-2b55-4dd9-b3d9-ae1b22af74b0",
+          "meterName": "vCore",
+          "productId": "DZH318Z0BPXL",
+          "productName": "SQL Database Single/Elastic Pool General Purpose - Compute Gen5",
+          "retailPrice": 0.167439,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH3180HX10K",
+          "serviceName": "SQL Database",
+          "skuId": "DZH318Z0BPXL/003F",
+          "skuName": "vCore",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 0.167439
+        },
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "SQLDB_GP_Compute_Gen5_8",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2025-06-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "EU West",
+          "meterId": "1cd4ee5b-2b55-4dd9-b3d9-ae1b22af74b0",
+          "meterName": "vCore",
+          "productId": "DZH318Z0BPXL",
+          "productName": "SQL Database Single/Elastic Pool General Purpose - Compute Gen5",
+          "retailPrice": 1.339512,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH3180HX10K",
+          "serviceName": "SQL Database",
+          "skuId": "DZH318Z0BPXL/003M",
+          "skuName": "8 vCore",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 Hour",
+          "unitPrice": 1.339512
+        },
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2018-08-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "EU West",
+          "meterId": "62abdcb7-13bf-4ab6-98af-d22be94f9081",
+          "meterName": "General Purpose Data Stored",
+          "productId": "DZH318Z0BQDW",
+          "productName": "SQL Database Single/Elastic Pool General Purpose - Storage",
+          "retailPrice": 0.13685,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH3180HX10K",
+          "serviceName": "SQL Database",
+          "skuId": "DZH318Z0BQDW/000R",
+          "skuName": "General Purpose",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB/Month",
+          "unitPrice": 0.13685
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 23.36,
+      "formula": "400/100 units x 0.008 per hour x 730 h",
+      "id": "cosmos_manual:400ru:eastus",
+      "kind": "cosmos_manual",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "ru_per_second": 400
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2016-04-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "65d4ded2-41ae-43a8-bb68-3c200e1ba864",
+          "meterName": "100 RU/s",
+          "productId": "DZH318Z0BPJH",
+          "productName": "Azure Cosmos DB",
+          "retailPrice": 0.008,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH317DL9CC7",
+          "serviceName": "Azure Cosmos DB",
+          "skuId": "DZH318Z0BPJH/0072",
+          "skuName": "RUs",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Hour",
+          "unitPrice": 0.008
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 584.0,
+      "formula": "10000/100 units x 0.008 per hour x 730 h",
+      "id": "cosmos_manual:10000ru:eastus",
+      "kind": "cosmos_manual",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "ru_per_second": 10000
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2016-04-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "65d4ded2-41ae-43a8-bb68-3c200e1ba864",
+          "meterName": "100 RU/s",
+          "productId": "DZH318Z0BPJH",
+          "productName": "Azure Cosmos DB",
+          "retailPrice": 0.008,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH317DL9CC7",
+          "serviceName": "Azure Cosmos DB",
+          "skuId": "DZH318Z0BPJH/0072",
+          "skuName": "RUs",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Hour",
+          "unitPrice": 0.008
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 350.4,
+      "formula": "4000/100 units x 0.012 per hour x 730 h",
+      "id": "cosmos_autoscale:4000ru:eastus",
+      "kind": "cosmos_autoscale",
+      "notes": [
+        "expected is the worst case at max RU/s; autoscale bills the hourly peak between 10% and 100% of max"
+      ],
+      "params": {
+        "hours": 730,
+        "ru_per_second": 4000
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2020-05-18T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "US East",
+          "meterId": "73a9758d-a043-46f4-804b-d4a4b0c063ff",
+          "meterName": "AP1 100 RUs",
+          "productId": "DZH318Z0CGSV",
+          "productName": "Azure Cosmos DB autoscale",
+          "retailPrice": 0.012,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH317DL9CC7",
+          "serviceName": "Azure Cosmos DB",
+          "skuId": "DZH318Z0CGSV/0027",
+          "skuName": "AP1",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Hour",
+          "unitPrice": 0.012
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 23.36,
+      "formula": "400/100 units x 0.008 per hour x 730 h",
+      "id": "cosmos_manual:400ru:westeurope",
+      "kind": "cosmos_manual",
+      "notes": [],
+      "params": {
+        "hours": 730,
+        "ru_per_second": 400
+      },
+      "region": "westeurope",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "westeurope",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2016-04-01T00:00:00Z",
+          "isPrimaryMeterRegion": true,
+          "location": "EU West",
+          "meterId": "a55b03b5-3098-4141-ae72-d6f5643c6171",
+          "meterName": "100 RU/s",
+          "productId": "DZH318Z0BPJH",
+          "productName": "Azure Cosmos DB",
+          "retailPrice": 0.008,
+          "serviceFamily": "Databases",
+          "serviceId": "DZH317DL9CC7",
+          "serviceName": "Azure Cosmos DB",
+          "skuId": "DZH318Z0BPJH/0028",
+          "skuName": "RUs",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1/Hour",
+          "unitPrice": 0.008
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 3.6,
+      "formula": "max(0, 3000000/10 - 100000) x 2e-06 + max(0, 600000 - 400000) x 1.6e-05",
+      "id": "functions_consumption:3000000exec:600000gbs:eastus",
+      "kind": "function_app",
+      "notes": [
+        "the first million executions and 400,000 GB-seconds are free grants (the tier-0 rows)"
+      ],
+      "params": {
+        "executions_per_month": 3000000,
+        "gb_seconds": 600000
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-01-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "4e5cd9e2-c20f-4d7f-acbe-58931b8b49ef",
+          "meterName": "Standard Total Executions",
+          "productId": "DZH318Z0BNWB",
+          "productName": "Functions",
+          "retailPrice": 0.0,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH319HJX2WX",
+          "serviceName": "Functions",
+          "skuId": "DZH318Z0BNWB/000B",
+          "skuName": "Standard",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "10",
+          "unitPrice": 0.0
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-01-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "4e5cd9e2-c20f-4d7f-acbe-58931b8b49ef",
+          "meterName": "Standard Total Executions",
+          "productId": "DZH318Z0BNWB",
+          "productName": "Functions",
+          "retailPrice": 2e-06,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH319HJX2WX",
+          "serviceName": "Functions",
+          "skuId": "DZH318Z0BNWB/000B",
+          "skuName": "Standard",
+          "tierMinimumUnits": 100000.0,
+          "type": "Consumption",
+          "unitOfMeasure": "10",
+          "unitPrice": 2e-06
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-01-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "2a384075-01d7-4f66-a84a-0eed3ca58876",
+          "meterName": "Standard Execution Time",
+          "productId": "DZH318Z0BNWB",
+          "productName": "Functions",
+          "retailPrice": 0.0,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH319HJX2WX",
+          "serviceName": "Functions",
+          "skuId": "DZH318Z0BNWB/000B",
+          "skuName": "Standard",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB Second",
+          "unitPrice": 0.0
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-01-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "2a384075-01d7-4f66-a84a-0eed3ca58876",
+          "meterName": "Standard Execution Time",
+          "productId": "DZH318Z0BNWB",
+          "productName": "Functions",
+          "retailPrice": 1.6e-05,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH319HJX2WX",
+          "serviceName": "Functions",
+          "skuId": "DZH318Z0BNWB/000B",
+          "skuName": "Standard",
+          "tierMinimumUnits": 400000.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB Second",
+          "unitPrice": 1.6e-05
+        }
+      ],
+      "status": "ok"
+    },
+    {
+      "expected_monthly": 0.0,
+      "formula": "max(0, 500000/10 - 100000) x 2e-06 + max(0, 100000 - 400000) x 1.6e-05",
+      "id": "functions_consumption:500000exec:100000gbs:eastus",
+      "kind": "function_app",
+      "notes": [
+        "the first million executions and 400,000 GB-seconds are free grants (the tier-0 rows)"
+      ],
+      "params": {
+        "executions_per_month": 500000,
+        "gb_seconds": 100000
+      },
+      "region": "eastus",
+      "request_hint": null,
+      "rows": [
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-01-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "4e5cd9e2-c20f-4d7f-acbe-58931b8b49ef",
+          "meterName": "Standard Total Executions",
+          "productId": "DZH318Z0BNWB",
+          "productName": "Functions",
+          "retailPrice": 0.0,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH319HJX2WX",
+          "serviceName": "Functions",
+          "skuId": "DZH318Z0BNWB/000B",
+          "skuName": "Standard",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "10",
+          "unitPrice": 0.0
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-01-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "4e5cd9e2-c20f-4d7f-acbe-58931b8b49ef",
+          "meterName": "Standard Total Executions",
+          "productId": "DZH318Z0BNWB",
+          "productName": "Functions",
+          "retailPrice": 2e-06,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH319HJX2WX",
+          "serviceName": "Functions",
+          "skuId": "DZH318Z0BNWB/000B",
+          "skuName": "Standard",
+          "tierMinimumUnits": 100000.0,
+          "type": "Consumption",
+          "unitOfMeasure": "10",
+          "unitPrice": 2e-06
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-01-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "2a384075-01d7-4f66-a84a-0eed3ca58876",
+          "meterName": "Standard Execution Time",
+          "productId": "DZH318Z0BNWB",
+          "productName": "Functions",
+          "retailPrice": 0.0,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH319HJX2WX",
+          "serviceName": "Functions",
+          "skuId": "DZH318Z0BNWB/000B",
+          "skuName": "Standard",
+          "tierMinimumUnits": 0.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB Second",
+          "unitPrice": 0.0
+        },
+        {
+          "armRegionName": "eastus",
+          "armSkuName": "",
+          "currencyCode": "USD",
+          "effectiveStartDate": "2017-01-01T00:00:00Z",
+          "isPrimaryMeterRegion": false,
+          "location": "US East",
+          "meterId": "2a384075-01d7-4f66-a84a-0eed3ca58876",
+          "meterName": "Standard Execution Time",
+          "productId": "DZH318Z0BNWB",
+          "productName": "Functions",
+          "retailPrice": 1.6e-05,
+          "serviceFamily": "Compute",
+          "serviceId": "DZH319HJX2WX",
+          "serviceName": "Functions",
+          "skuId": "DZH318Z0BNWB/000B",
+          "skuName": "Standard",
+          "tierMinimumUnits": 400000.0,
+          "type": "Consumption",
+          "unitOfMeasure": "1 GB Second",
+          "unitPrice": 1.6e-05
+        }
+      ],
+      "status": "ok"
+    }
+  ],
+  "currency": "USD",
+  "generated_at": "2026-10-01T23:15:36Z",
+  "hours_per_month": 730,
+  "tolerance_abs": 0.01,
+  "tolerance_pct": 0.5
+}
