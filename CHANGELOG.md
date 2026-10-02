@@ -1,26 +1,9 @@
 # Changelog
 
-<!-- markdownlint-disable MD024 -->
-
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
-
-### Added
-
-- Virtual Machine tag `pricing_model=spot` selects the Linux Spot meter when `priority` is empty. `pricing_model=consumption` stays on demand. `priority` still wins.
-- Storage account `capacity_gb` is an alias of `size_gb`. The quote says transaction meters are excluded.
-
-### Fixed
-
-- `actionlint` lints the workflow files. Release Please uses `GITHUB_TOKEN` when `RELEASE_PLEASE_TOKEN` is unset. Markdownlint checks the maintained guides and skips the frozen `specs/`, `.specify/`, and `.claude/` trees.
-
-### Documented
-
-- The shipped quotes and research notes cover `GetProjectedCost` (#59), `GetActualCost` (#60), the SQL and Cosmos spike (#51), carbon sources (#56), and Savings Plans (#57).
 
 ## [0.1.0] - 2026-10-01
 
