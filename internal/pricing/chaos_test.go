@@ -83,6 +83,13 @@ func TestChaos(t *testing.T) {
 		assertChaosError(t, items, err, requests, true, codes.Internal)
 	})
 
+	t.Run("HTTP404", func(t *testing.T) {
+		items, requests, err := chaosGetPrices(t, 2*time.Second, func(w http.ResponseWriter, _ *http.Request, _ int) {
+			http.NotFound(w, nil)
+		})
+		assertChaosError(t, items, err, requests, true, codes.NotFound)
+	})
+
 	t.Run("MalformedJSON", func(t *testing.T) {
 		items, requests, err := chaosGetPrices(t, 2*time.Second, func(w http.ResponseWriter, _ *http.Request, _ int) {
 			w.Header().Set("Content-Type", "application/json")

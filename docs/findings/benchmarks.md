@@ -21,14 +21,30 @@ The benchmark header names the CPU as AMD Ryzen AI 7 PRO 350 w/ Radeon 860M.
 
 ## Cache hit rate
 
-One warm-up call, then 16 goroutines and 8 repeats of that same query.
+One warm-up call, then 50 goroutines and 8 repeats of that same query.
 `Stats().Hits` and `Stats().Misses` include the warm-up. The ratio is
 `hits / (hits + misses)`. The test fails when that ratio is not greater
 than `0.80`, and when `hits + misses` is `0`. The ratio is computed. It is
 not a hardcoded fraction.
 
 The first real run passed because the existing cache already hits. The
-`0.80` assertion stayed.
+`0.80` assertion stayed. The worker count is 50.
+
+A cold `EstimateCost` loop disables the cache (`TTL` 0) and calls the
+in-process fixture every iteration. `MapDescriptorToQuery` does no I/O.
+
+```text
+go test -count=1 -bench 'BenchmarkEstimateCostCold|BenchmarkMapDescriptorToQuery|BenchmarkGetProjectedCostCacheHit' -benchtime 50ms -run '^$' ./internal/pricing/
+```
+
+```text
+BenchmarkGetProjectedCostCacheHit-8      19868      3051 ns/op    3763 B/op      31 allocs/op
+BenchmarkEstimateCostCold-8                230    229208 ns/op   32932 B/op     186 allocs/op
+BenchmarkMapDescriptorToQuery-8         186726       316.8 ns/op     120 B/op       2 allocs/op
+```
+
+The machine is the same AMD Ryzen AI 7 PRO 350 named above. These numbers
+are a local baseline, not a gate.
 
 Command:
 

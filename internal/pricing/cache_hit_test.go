@@ -24,7 +24,7 @@ const (
 	vmGoldenFixture = "testdata/retail/spot/standard_d2s_v3_eastus.json"
 	vmGoldenCost    = "testdata/golden/compute_virtual_machine.txt"
 
-	cacheHitWorkers = 16
+	cacheHitWorkers = 50
 	cacheHitRepeats = 8
 	cacheHitRateMin = 0.80
 )
@@ -167,6 +167,64 @@ func BenchmarkGetProjectedCostCacheHit(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		if _, err := calc.GetProjectedCost(context.Background(), req); err != nil {
 			b.Fatalf("GetProjectedCost() failed: %v", err)
+		}
+	}
+}
+
+// BenchmarkEstimateCostCold times EstimateCost with the cache disabled.
+// Every loop calls the in-process fixture. The number is a local baseline.
+func BenchmarkEstimateCostCold(b *testing.B) {
+	page := readRetailPage(b, vmGoldenFixture)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		resp := azureclient.PriceResponse{Items: page.Items, Count: len(page.Items)}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(resp)
+	}))
+	b.Cleanup(server.Close)
+
+	clientConfig := azureclient.DefaultConfig()
+	clientConfig.BaseURL = server.URL
+	clientConfig.RetryMax = 0
+	clientConfig.Timeout = 3 * time.Second
+	clientConfig.Logger = zerolog.Nop()
+	client, err := azureclient.NewClient(clientConfig)
+	if err != nil {
+		b.Fatalf("NewClient() failed: %v", err)
+	}
+	b.Cleanup(client.Close)
+
+	cacheConfig := azureclient.DefaultCacheConfig()
+	cacheConfig.TTL = 0
+	cacheConfig.Logger = zerolog.Nop()
+	cached, err := azureclient.NewCachedClient(client, cacheConfig)
+	if err != nil {
+		b.Fatalf("NewCachedClient() failed: %v", err)
+	}
+	b.Cleanup(func() { cached.Close() })
+
+	calc := NewCalculator(zerolog.Nop(), cached)
+	req := estimateVMRequest(b, "")
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := calc.EstimateCost(context.Background(), req); err != nil {
+			b.Fatalf("EstimateCost() failed: %v", err)
+		}
+	}
+}
+
+// BenchmarkMapDescriptorToQuery times descriptor mapping with no I/O.
+func BenchmarkMapDescriptorToQuery(b *testing.B) {
+	desc := &finfocusv1.ResourceDescriptor{
+		Provider:     "azure",
+		ResourceType: "compute/VirtualMachine",
+		Region:       "eastus",
+		Sku:          "Standard_B1s",
+	}
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		if _, err := MapDescriptorToQuery(desc); err != nil {
+			b.Fatal(err)
 		}
 	}
 }
