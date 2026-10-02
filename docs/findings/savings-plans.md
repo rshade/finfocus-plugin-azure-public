@@ -377,4 +377,5 @@ This is the rule the plugin applies.
 `GetProjectedCost` still returns one price. Nothing in the RPC returns the
 savings-plan terms, the reservation hourly rate, or the fraction. Putting
 those values in `metadata` or `cost_breakdown` would be the wrong shape.
-The missing repeated alternative-price list is the spec change in AZ-6.4.
+The missing repeated alternative-price list is
+[spec issue 588](https://github.com/rshade/finfocus-spec/issues/588).

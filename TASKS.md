@@ -401,7 +401,7 @@ marked "not answerable from the public API".
 
 #### AZ-2.13 — Multi-pricing model comparison [Issue #45]
 
-**Status:** BLOCKED, GetProjectedCostResponse has no repeated price list. go test -count=1 ./internal/estimation/ -run TestSavingsFraction, ok github.com/rshade/finfocus-plugin-azure-public/internal/estimation 0.003s
+**Status:** BLOCKED, GetProjectedCostResponse has no repeated price list. The savings math is not called from an RPC. Spec proposal: [spec issue 588](https://github.com/rshade/finfocus-spec/issues/588)
 
 **Description**: For a query, return Consumption, 1-Year Reserved and 3-Year Reserved
 prices side by side, plus Savings Plans if AZ-2.12 shows they are available. The
@@ -440,7 +440,7 @@ landed; tests pass.
 
 #### AZ-2.15 — Regional price comparison [Issue #47]
 
-**Status:** BLOCKED, GetProjectedCostResponse has no repeated region list. go test -count=1 ./internal/pricing/ -run TestSortRegionPrices, ok github.com/rshade/finfocus-plugin-azure-public/internal/pricing 0.011s
+**Status:** BLOCKED, GetProjectedCostResponse has no repeated region list. SortRegionPrices is not called from an RPC. Spec proposal: [spec issue 589](https://github.com/rshade/finfocus-spec/issues/589)
 
 **Description**: For a SKU, query the Retail Prices API across regions and return the
 prices sorted, so a user sees that one region costs more than another. The issue prefers
@@ -836,6 +836,8 @@ advisory, never summed into the primary cost.
 
 **Acceptance Criteria**: two issue URLs (or links to existing issues) in the status line
 and in the Not delivered register. The pure functions stay.
+
+**Status:** DONE, spec v0.7.0 `costsource.proto` has one `unit_price` (line 371) and one `cost_per_month` (line 375) on `GetProjectedCostResponse`, and one `cost_monthly` (line 1233) on `EstimateCostResponse`. No `PriceOption` or `RegionPrice` message exists. Issue search before filing found no match. Filed [spec issue 588](https://github.com/rshade/finfocus-spec/issues/588) and [spec issue 589](https://github.com/rshade/finfocus-spec/issues/589). Break check: a matching open issue would have been linked instead of filing a new one. `SavingsFraction`, `ReservationHourly`, and `SortRegionPrices` are not called from an RPC. AZ-2.13 and AZ-2.15 stay BLOCKED. Not delivered until those fields exist.
 
 #### AZ-6.5 — FOCUS record in production [Issue #46]
 

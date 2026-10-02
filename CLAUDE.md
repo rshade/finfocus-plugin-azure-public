@@ -401,11 +401,11 @@ not return those rows. `ReservationHourly` treats a Reservation
 `retailPrice` as the term total and divides by 8760 or 26280. The production
 client does not request the preview API. `GetProjectedCost` still returns
 one price. The extra prices are not delivered until the spec has a repeated
-list.
+list. The proposals are spec issues 588 and 589.
 
 `SortRegionPrices` orders Linux on-demand VM rows from saved pages. A miss
 is `Found: false` and a zero price that is not a cost. The RPC still prices
-one region.
+one region. A repeated region list is spec issue 589.
 
 Carbon is findings only, in `docs/findings/carbon.md`. No estimator is wired.
 
