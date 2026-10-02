@@ -17,4 +17,6 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v5.0.0
         with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          # RELEASE_PLEASE_TOKEN is optional. An empty secret fails the action,
+          # so the always-present GITHUB_TOKEN is the fallback.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}

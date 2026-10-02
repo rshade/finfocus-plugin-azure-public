@@ -54,7 +54,7 @@ jobs:
           install_args: actionlint
 
       - name: Run actionlint
-        run: actionlint .github/workflows/
+        run: actionlint .github/workflows/*.yml
 
   build:
     name: Build
