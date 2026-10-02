@@ -38,6 +38,7 @@ const (
 
 	taskProjected = "AZ-2.1"
 	taskActual    = "AZ-2.2"
+	taskEstimate  = "AZ-6.7"
 
 	blobDataStoredMeter = "data stored"
 )

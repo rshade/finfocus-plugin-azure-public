@@ -869,6 +869,8 @@ register. Run the gRPC `DryRun` test over every supported type, not only Cosmos.
 
 **Acceptance Criteria**: a table-driven gRPC test covers every type in `mapper.go`.
 
+**Status:** DONE, `go test -count=1 -run 'TestEstimateCostEveryMappedTypeOverGRPC|TestDryRunOverGRPCDoesNotCallHTTP' ./internal/pricing/` passed. Every mapped type is priced or returns NotFound from an empty price list, and DryRun over gRPC covers each type. Break check: blob `EstimateCost` was Unimplemented before the shared quote.
+
 #### AZ-6.8 — Cosmos serverless storage and the AKS Free tier [Issues #51, #49]
 
 **Description**: Serverless Cosmos accounts with data are under-quoted because the storage

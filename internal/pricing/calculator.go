@@ -101,7 +101,8 @@ func (c *Calculator) Supports(
 }
 
 // EstimateCost estimates monthly cost from Azure Retail Prices data.
-// Supports VM and Managed Disk resource types via resource-type routing.
+// Virtual machines and managed disks keep their attribute parsers.
+// Every other mapped type uses the same quote as GetProjectedCost.
 // The request must contain the appropriate attributes for the resource type.
 // Returns InvalidArgument for missing required fields, Unimplemented for
 // unsupported resource types, and mapped gRPC status codes for Azure API
@@ -119,13 +120,19 @@ func (c *Calculator) EstimateCost(
 		Str("resource_type", resourceType).
 		Msg("handling EstimateCost request")
 
-	// Route by resource type: disk → VM → backward compat (empty) → reject
+	// Route by resource type: disk, VM (empty type included), then the shared quote.
 	switch {
 	case isManagedDiskResourceType(lowerType):
 		return c.estimateDiskCost(ctx, req, resourceType)
 	case resourceType == "" || isVirtualMachineResourceType(lowerType):
 		return c.estimateVMCost(ctx, req, resourceType)
 	default:
+		if _, classErr := classifyResource(&finfocusv1.ResourceDescriptor{
+			Provider:     providerAzure,
+			ResourceType: resourceType,
+		}); classErr == nil {
+			return c.estimateQuotedCost(ctx, req, resourceType)
+		}
 		err := status.Errorf(codes.Unimplemented, "unsupported resource type: %s", resourceType)
 		log.Warn().
 			Str("resource_type", resourceType).
@@ -133,6 +140,67 @@ func (c *Calculator) EstimateCost(
 			Err(err).
 			Msg("EstimateCost validation failed")
 		return nil, err
+	}
+}
+
+// estimateQuotedCost prices a mapped type through quoteResource.
+func (c *Calculator) estimateQuotedCost(
+	ctx context.Context,
+	req *finfocusv1.EstimateCostRequest,
+	resourceType string,
+) (*finfocusv1.EstimateCostResponse, error) {
+	log := logging.RequestLogger(ctx, c.logger)
+	resource := descriptorFromEstimate(req, resourceType)
+	quote, err := c.quoteResource(ctx, resource, taskEstimate)
+	if err != nil {
+		log.Warn().
+			Str("resource_type", resourceType).
+			Str("result_status", "error").
+			Err(err).
+			Msg("EstimateCost pricing failed")
+		return nil, err
+	}
+
+	category := projectedPricingCategory(resource)
+	if category == finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_DYNAMIC {
+		log.Warn().
+			Str("resource_type", resourceType).
+			Msg("spot interruption risk is unknown; score left at 0")
+	}
+
+	log.Info().
+		Str("region", quote.region).
+		Str("sku", quote.sku).
+		Str("resource_type", resourceType).
+		Float64("cost_monthly", quote.monthly).
+		Str("currency", quote.currency).
+		Str("result_status", "success").
+		Msg("EstimateCost completed")
+
+	return pluginsdk.NewEstimateCostResponse(
+		pluginsdk.WithEstimateCost(quote.currency, quote.monthly),
+		pluginsdk.WithPricingCategory(category),
+	), nil
+}
+
+func descriptorFromEstimate(
+	req *finfocusv1.EstimateCostRequest,
+	resourceType string,
+) *finfocusv1.ResourceDescriptor {
+	attributes := map[string]any{}
+	if req != nil && req.GetAttributes() != nil {
+		attributes = req.GetAttributes().AsMap()
+	}
+	tags := make(map[string]string, len(attributes))
+	for key, value := range attributes {
+		tags[key] = fmt.Sprint(value)
+	}
+	return &finfocusv1.ResourceDescriptor{
+		Provider:     providerAzure,
+		ResourceType: resourceType,
+		Region:       firstNonEmptyMapValue(attributes, "location", "region"),
+		Sku:          firstNonEmptyMapValue(attributes, "sku", "vmSize", "armSkuName", "disk_type", "diskType"),
+		Tags:         tags,
 	}
 }
 
