@@ -121,16 +121,15 @@ func (c *Calculator) EstimateCost(
 		Msg("handling EstimateCost request")
 
 	// Route by resource type: disk, VM (empty type included), then the shared quote.
+	// The shared quote classifies the descriptor after attributes are copied,
+	// so a native WebApp can see kind=FunctionApp.
 	switch {
 	case isManagedDiskResourceType(lowerType):
 		return c.estimateDiskCost(ctx, req, resourceType)
 	case resourceType == "" || isVirtualMachineResourceType(lowerType):
 		return c.estimateVMCost(ctx, req, resourceType)
 	default:
-		if _, classErr := classifyResource(&finfocusv1.ResourceDescriptor{
-			Provider:     providerAzure,
-			ResourceType: resourceType,
-		}); classErr == nil {
+		if _, classErr := classifyResource(descriptorFromEstimate(req, resourceType)); classErr == nil {
 			return c.estimateQuotedCost(ctx, req, resourceType)
 		}
 		err := status.Errorf(codes.Unimplemented, "unsupported resource type: %s", resourceType)
@@ -619,10 +618,13 @@ func estimateQueryFromRequest(req *finfocusv1.EstimateCostRequest) (azureclient.
 // isVirtualMachineResourceType checks whether the lowercased resource type
 // refers to compute/virtualmachine as a full segment (not a prefix of e.g.
 // "compute/virtualmachinescaleset").
+func isWindowsVirtualMachineResourceType(lower string) bool {
+	return resourceSegment(lower, "compute/windowsvirtualmachine")
+}
+
 func isVirtualMachineResourceType(lower string) bool {
 	return resourceSegment(lower, "compute/virtualmachine") ||
 		resourceSegment(lower, "compute/linuxvirtualmachine") ||
-		resourceSegment(lower, "compute/windowsvirtualmachine") ||
 		tokenSuffix(lower, "compute", "virtualmachine")
 }
 

@@ -22,9 +22,11 @@ import (
 const (
 	specBillingPerHour    = "per_hour"
 	specBillingPerGBMonth = "per_gb_month"
+	specBillingPerMonth   = "per_month"
 	specBillingPerSecond  = "per_second"
 	specUnitHour          = "hour"
 	specUnitGBMonth       = "GB-month"
+	specUnitMonth         = "Month"
 	specSourceRetail      = "azure-retail-prices"
 )
 
@@ -336,9 +338,9 @@ func addComputeStorageWants(t *testing.T, fx pricingSpecFX, wants map[string]pri
 	wants["compute/VirtualMachine"] = hourlySpec(fx.vmItem, map[string]string{
 		"compute": fx.vmItem.UnitOfMeasure,
 	})
-	wants["storage/ManagedDisk"] = gbMonthSpec(fx.diskItem, map[string]string{
+	wants["storage/ManagedDisk"] = monthSpec(fx.diskItem, map[string]string{
 		"storage": fx.diskItem.UnitOfMeasure,
-	}, fx.diskItem.RetailPrice*pluginsdk.HoursPerMonth)
+	})
 	wants["storage/BlobStorage"] = gbMonthSpec(fx.blobItem, map[string]string{
 		"storage": fx.blobItem.UnitOfMeasure,
 	}, fx.blobItem.RetailPrice*100)
@@ -446,6 +448,19 @@ func hourlySpec(item azureclient.PriceItem, hints map[string]string) pricingSpec
 		rate:        item.RetailPrice,
 		hints:       hints,
 		reject:      []float64{item.RetailPrice * pluginsdk.HoursPerMonth},
+	}
+}
+
+func monthSpec(item azureclient.PriceItem, hints map[string]string) pricingSpecWant {
+	return pricingSpecWant{
+		billingMode: specBillingPerMonth,
+		unit:        specUnitMonth,
+		rate:        item.RetailPrice,
+		hints:       hints,
+		reject: []float64{
+			item.RetailPrice * pluginsdk.HoursPerMonth,
+			item.RetailPrice * 100,
+		},
 	}
 }
 

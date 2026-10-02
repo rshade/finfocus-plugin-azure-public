@@ -576,6 +576,8 @@ func classifyResource(resource *finfocusv1.ResourceDescriptor) (string, error) {
 
 	lower := strings.ToLower(resourceType)
 	switch {
+	case isWindowsVirtualMachineResourceType(lower):
+		return "", status.Errorf(codes.Unimplemented, "Windows virtual machine meters are not quoted")
 	case isVirtualMachineResourceType(lower):
 		return kindVM, nil
 	case isManagedDiskResourceType(lower):
