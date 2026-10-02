@@ -196,6 +196,18 @@ type PriceItem struct {
 	// UnitPrice is the price per unit of measure.
 	// For most resources, this equals RetailPrice.
 	UnitPrice float64 `json:"unitPrice"`
+
+	// SavingsPlan holds nested term prices from the preview Retail Prices API.
+	// The stable API omits the key. priceType SavingsPlan does not return these rows.
+	SavingsPlan []SavingsPlanPrice `json:"savingsPlan,omitempty"`
+}
+
+// SavingsPlanPrice is one term inside a preview Consumption meter's savingsPlan array.
+// The object does not repeat unitOfMeasure. The parent meter supplies the unit.
+type SavingsPlanPrice struct {
+	Term        string  `json:"term"`
+	RetailPrice float64 `json:"retailPrice"`
+	UnitPrice   float64 `json:"unitPrice"`
 }
 
 // PriceResponse represents the envelope returned by the Azure Retail Prices API.

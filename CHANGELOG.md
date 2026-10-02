@@ -27,3 +27,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Blob Storage and Storage Accounts bill capacity across volume bands. A size past the first `tierMinimumUnits` uses the next band's rate for the remainder.
 - Cosmos DB provisioned quotes omit storage when `size_gb` is absent. The scale pricing model does the same.
 - `EstimateCost` honours Virtual Machine `priority=Spot` and returns pricing category Dynamic. The interruption score stays 0 because no risk source is available.
+- The Retail Prices client keeps a preview `savingsPlan` array on a Consumption meter. `ReservationHourly` treats a Reservation `retailPrice` as the term total (8,760 hours for one year, 26,280 for three). No RPC returns those extra prices.

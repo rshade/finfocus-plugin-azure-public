@@ -7,6 +7,7 @@ package estimation
 import (
 	"fmt"
 	"math"
+	"strings"
 )
 
 // HoursPerMonth is the industry-standard average number of hours in a month
@@ -16,6 +17,10 @@ const HoursPerMonth = 730
 // HoursPerYear is the number of hours in a non-leap year (365 * 24 = 8760),
 // used for annualizing hourly cloud pricing rates.
 const HoursPerYear = 8760
+
+// threeYearReservationHours is HoursPerYear times 3. A three-year
+// Reservation retailPrice is a term total over that many hours.
+const threeYearReservationHours = HoursPerYear * 3
 
 // centsFactor is the multiplier for converting dollars to cents (two decimal
 // places) used by roundCurrency.
@@ -59,4 +64,23 @@ func SavingsFraction(onDemand, other float64) (float64, error) {
 		return 0, fmt.Errorf("other must be >= 0, got %v", other)
 	}
 	return (onDemand - other) / onDemand, nil
+}
+
+// ReservationHourly converts a Reservation retailPrice into an hourly rate.
+// The row's unitOfMeasure says 1 Hour, and the price is the term total.
+// 1 Year divides by 8760. 3 Years divides by 26280.
+func ReservationHourly(retail float64, term string) (float64, error) {
+	if retail < 0 || math.IsNaN(retail) || math.IsInf(retail, 0) {
+		return 0, fmt.Errorf("retail price must be >= 0, got %v", retail)
+	}
+	var hours float64
+	switch strings.TrimSpace(term) {
+	case "1 Year":
+		hours = HoursPerYear
+	case "3 Years":
+		hours = threeYearReservationHours
+	default:
+		return 0, fmt.Errorf("unsupported reservation term %q", term)
+	}
+	return retail / hours, nil
 }

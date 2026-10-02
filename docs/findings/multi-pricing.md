@@ -48,11 +48,13 @@ The hourly Consumption price beside those rows is 0.0804, also
 `unitOfMeasure` `1 Hour`, on the Linux meter `D2als v7` in `eastus` in
 `internal/pricing/testdata/retail/savingsplan/eastus_standard_d2als_v7_nofilter_preview.json`.
 
-The savings percentage is not answerable from the public API until the
-reservation unit is known. Those Reservation rows are labeled `1 Hour`, and
-the response has no second field that says whether 416 and 803 are an hourly
-rate or a term total. This note does not print a percentage for 416 or 803.
-`SavingsFraction` is not applied to those Reservation prices.
+Those Reservation rows are labeled `1 Hour`, and the response has no second
+field that says whether 416 and 803 are an hourly rate or a term total. The
+plugin treats them as term totals. `ReservationHourly` divides 416 by 8760
+and 803 by 26280, then `SavingsFraction` can compare each hourly rate with
+the Linux on-demand rate 0.0804. `GetProjectedCost` still returns one price.
+The repeated alternative-price list that would carry the term, the hourly
+rate, and the fraction is the spec change in AZ-6.4.
 
 ## Savings Plans are not a price type
 

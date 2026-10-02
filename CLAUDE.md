@@ -395,9 +395,13 @@ Production passes an empty id, logs the validation error, and leaves
 `FocusRecord` nil.
 
 `estimation.SavingsFraction` returns `(onDemand-other)/onDemand` with no
-rounding. It is not wired to an RPC. `GetProjectedCost` still returns one
-price. Savings plan rates are a nested `savingsPlan` array on preview
-Consumption meters, not `priceType eq 'SavingsPlan'`.
+rounding. `PriceItem.SavingsPlan` keeps the nested `savingsPlan` array when
+a preview Consumption body includes it. `priceType eq 'SavingsPlan'` does
+not return those rows. `ReservationHourly` treats a Reservation
+`retailPrice` as the term total and divides by 8760 or 26280. The production
+client does not request the preview API. `GetProjectedCost` still returns
+one price. The extra prices are not delivered until the spec has a repeated
+list.
 
 `SortRegionPrices` orders Linux on-demand VM rows from saved pages. A miss
 is `Found: false` and a zero price that is not a cost. The RPC still prices
