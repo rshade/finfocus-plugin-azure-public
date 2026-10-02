@@ -99,11 +99,8 @@ func focusServiceCategory(resourceType string, tags map[string]string) (finfocus
 }
 
 func focusPricingCategory(resource *finfocusv1.ResourceDescriptor) finfocusv1.FocusPricingCategory {
-	if resource == nil {
-		return finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD
-	}
-	priority := strings.TrimSpace(resource.GetTags()["priority"])
-	if strings.EqualFold(priority, vmPrioritySpot) {
+	spot, err := descriptorSpot(resource)
+	if err == nil && spot {
 		return finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_DYNAMIC
 	}
 	return finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD

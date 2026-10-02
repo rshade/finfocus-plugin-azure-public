@@ -125,6 +125,63 @@ func TestGetProjectedCostSpotVMFromFixture(t *testing.T) {
 	}
 }
 
+func TestPricingModelSpotAlias(t *testing.T) {
+	t.Parallel()
+
+	loaded := loadSpotRetailFixture(t)
+	onDemand := fixtureVMItem(t, loaded.Items, false)
+	spot := fixtureVMItem(t, loaded.Items, true)
+	calc := newPricingCalc(t, loaded.Items)
+	region := loaded.Items[0].ArmRegionName
+	sku := loaded.Items[0].ArmSkuName
+
+	spotReq := vmProjectedRequest(region, sku, "")
+	spotReq.Resource.Tags = map[string]string{"pricing_model": "spot"}
+	resp, err := calc.GetProjectedCost(context.Background(), spotReq)
+	if err != nil {
+		t.Fatalf("pricing_model=spot failed: %v", err)
+	}
+	want := spot.RetailPrice * pluginsdk.HoursPerMonth
+	if math.Abs(resp.GetCostPerMonth()-want) > 1e-9 {
+		t.Fatalf("cost_per_month = %v, want spot %v", resp.GetCostPerMonth(), want)
+	}
+	if resp.GetPricingCategory() != finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_DYNAMIC {
+		t.Fatalf("pricing_category = %s, want DYNAMIC", resp.GetPricingCategory())
+	}
+
+	demandReq := vmProjectedRequest(region, sku, "")
+	demandReq.Resource.Tags = map[string]string{"pricing_model": "consumption"}
+	resp, err = calc.GetProjectedCost(context.Background(), demandReq)
+	if err != nil {
+		t.Fatalf("pricing_model=consumption failed: %v", err)
+	}
+	want = onDemand.RetailPrice * pluginsdk.HoursPerMonth
+	if math.Abs(resp.GetCostPerMonth()-want) > 1e-9 {
+		t.Fatalf("cost_per_month = %v, want on-demand %v", resp.GetCostPerMonth(), want)
+	}
+
+	priorityWins := vmProjectedRequest(region, sku, "Spot")
+	priorityWins.Resource.Tags["pricing_model"] = "consumption"
+	resp, err = calc.GetProjectedCost(context.Background(), priorityWins)
+	if err != nil {
+		t.Fatalf("priority over pricing_model failed: %v", err)
+	}
+	want = spot.RetailPrice * pluginsdk.HoursPerMonth
+	if math.Abs(resp.GetCostPerMonth()-want) > 1e-9 {
+		t.Fatalf("priority cost_per_month = %v, want spot %v", resp.GetCostPerMonth(), want)
+	}
+
+	bad := vmProjectedRequest(region, sku, "")
+	bad.Resource.Tags = map[string]string{"pricing_model": "reserved"}
+	_, err = calc.GetProjectedCost(context.Background(), bad)
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("code = %s, want InvalidArgument (err=%v)", status.Code(err), err)
+	}
+	if !strings.Contains(status.Convert(err).Message(), "reserved") {
+		t.Fatalf("message %q does not name reserved", status.Convert(err).Message())
+	}
+}
+
 func TestGetProjectedCostSpotOverGRPC(t *testing.T) {
 	t.Parallel()
 
@@ -235,7 +292,7 @@ func TestEstimateCostSpotD2sV3Eastus(t *testing.T) {
 	}
 }
 
-func estimateVMRequest(t *testing.T, priority string) *finfocusv1.EstimateCostRequest {
+func estimateVMRequest(t testing.TB, priority string) *finfocusv1.EstimateCostRequest {
 	t.Helper()
 
 	attrs := map[string]any{

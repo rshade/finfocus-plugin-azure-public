@@ -102,7 +102,7 @@ func (c *Calculator) quoteStorageAccount(
 		monthly:   monthly,
 		currency:  currency,
 		billingDetail: fmt.Sprintf(
-			"Storage account %s %.0f GB-month in %s",
+			"Storage account %s %.0f GB-month in %s, transactions excluded",
 			sku,
 			sizeGB,
 			region,

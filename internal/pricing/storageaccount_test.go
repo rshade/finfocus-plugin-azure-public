@@ -68,6 +68,13 @@ func TestGetProjectedCostStorageAccountHotLRSFromFixture(t *testing.T) {
 			},
 		},
 		{
+			name:         "capacity_gb alias",
+			resourceType: "storage/StorageAccount",
+			region:       "eastus",
+			sku:          "Hot LRS",
+			tags:         map[string]string{"capacity_gb": "100"},
+		},
+		{
 			name:         "access_tier tag",
 			resourceType: "storage/StorageAccount",
 			region:       "eastus",

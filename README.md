@@ -169,7 +169,11 @@ kill -SIGTERM $PID  # Graceful shutdown, exit code 0
 
 Resource type matching is case-insensitive. Spot is a Virtual Machine with
 tag `priority=Spot`, or the same `priority` attribute on `EstimateCost`.
-The response category is Dynamic. Any other priority value is rejected.
+When priority is empty, `pricing_model=spot` selects the same row and
+`pricing_model=consumption` stays on demand. The response category is
+Dynamic. Any other priority or pricing_model value is rejected. A storage
+account accepts `capacity_gb` as an alias of `size_gb`. The quote is
+capacity only. Transaction meters are not included.
 Standard Load Balancer bills the included rules meter. A regional page with
 no rows is read again at price region `Global`. Omitted `rule_count` uses
 that meter once. Gateway and cross-region meters are not quoted. NAT

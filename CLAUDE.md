@@ -219,7 +219,7 @@ Behavior notes:
 - Mapped types other than virtual machines and managed disks use the same quote as `GetProjectedCost`
 - Missing `location/region` or `vmSize/sku` returns `codes.InvalidArgument`
 - Cache hits are served from `CachedClient` with no outbound API request
-- VM `EstimateCost` reads attribute `priority`. `Spot` uses the Linux Spot row and pricing category Dynamic. An empty priority stays the on-demand row and Standard. Any other value is InvalidArgument.
+- VM `EstimateCost` reads attribute `priority`. `Spot` uses the Linux Spot row and pricing category Dynamic. An empty priority stays the on-demand row and Standard. Any other value is InvalidArgument. When priority is empty, `pricing_model=spot` selects Spot and `pricing_model=consumption` stays on demand.
 - `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.0`). A value without the `v` prefix is rejected by the SDK
 
 ### Managed Disk Cost Estimation
@@ -269,8 +269,8 @@ and Disk Operations are separate meters. `armSkuName` is not the filter.
 `General Block Blob v2`. The SKU is `{Tier} {Redundancy}` (`Hot LRS`), or
 tags `tier` / `access_tier` plus `redundancy`. The meter is that SKU, a
 space, then `Data Stored`, unit `1 GB/Month`. Monthly cost is
-`retailPrice * size_gb`
-across marginal `tierMinimumUnits` bands. Each GB uses the band it falls
+`retailPrice * size_gb` (`capacity_gb` is an alias)
+across marginal `tierMinimumUnits` bands. Transaction meters are not included. Each GB uses the band it falls
 in. The first band is the list rate. It is not multiplied by 730. The query
 leaves `ArmSkuName` empty. A missing meter is `NotFound` and names the tier
 and redundancy.

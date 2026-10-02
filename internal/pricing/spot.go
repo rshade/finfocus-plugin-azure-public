@@ -11,23 +11,28 @@ import (
 	"github.com/rshade/finfocus-plugin-azure-public/internal/azureclient"
 )
 
-const vmPrioritySpot = "Spot"
+const (
+	vmPrioritySpot = "Spot"
+	formattedNil   = "<nil>"
+)
 
-// descriptorSpot reports whether the descriptor tag priority selects Spot.
-// An empty priority is on-demand. Any other non-empty value is InvalidArgument
-// and the message names that value.
+// descriptorSpot reports whether the descriptor selects Spot.
+// priority wins. An empty priority falls through to pricing_model.
+// pricing_model spot selects Spot. pricing_model consumption is on-demand.
+// Any other non-empty value is InvalidArgument and the message names it.
 func descriptorSpot(resource *finfocusv1.ResourceDescriptor) (bool, error) {
 	if resource == nil {
 		return false, nil
 	}
-	return prioritySpot(resource.GetTags()["priority"])
+	tags := resource.GetTags()
+	return spotFromFields(tags["priority"], tags["pricing_model"])
 }
 
 // prioritySpot reports whether raw selects Spot. An empty value is on-demand.
 // Any other non-empty value is InvalidArgument and the message names it.
 func prioritySpot(raw string) (bool, error) {
 	priority := strings.TrimSpace(raw)
-	if priority == "" || priority == "<nil>" {
+	if priority == "" || priority == formattedNil {
 		return false, nil
 	}
 	if strings.EqualFold(priority, vmPrioritySpot) {
@@ -36,17 +41,38 @@ func prioritySpot(raw string) (bool, error) {
 	return false, status.Errorf(codes.InvalidArgument, "unsupported priority %q", priority)
 }
 
-// estimateSpot reads the EstimateCost attribute priority. The same values as
-// the descriptor tag apply: empty is on-demand, Spot is Spot.
+// estimateSpot reads EstimateCost attributes priority and pricing_model.
+// priority wins. The same values as the descriptor tags apply.
 func estimateSpot(req *finfocusv1.EstimateCostRequest) (bool, error) {
 	if req == nil || req.GetAttributes() == nil {
 		return false, nil
 	}
-	raw, ok := req.GetAttributes().AsMap()["priority"]
-	if !ok || raw == nil {
+	attrs := req.GetAttributes().AsMap()
+	return spotFromFields(attrString(attrs["priority"]), attrString(attrs["pricing_model"]))
+}
+
+func spotFromFields(priorityRaw, modelRaw string) (bool, error) {
+	if strings.TrimSpace(priorityRaw) != "" && priorityRaw != formattedNil {
+		return prioritySpot(priorityRaw)
+	}
+	model := strings.TrimSpace(modelRaw)
+	if model == "" || model == formattedNil {
 		return false, nil
 	}
-	return prioritySpot(fmt.Sprint(raw))
+	if strings.EqualFold(model, vmPrioritySpot) {
+		return true, nil
+	}
+	if strings.EqualFold(model, "consumption") {
+		return false, nil
+	}
+	return false, status.Errorf(codes.InvalidArgument, "unsupported pricing_model %q", model)
+}
+
+func attrString(raw any) string {
+	if raw == nil {
+		return ""
+	}
+	return fmt.Sprint(raw)
 }
 
 // selectVMItem picks the non-Windows on-demand or Spot row.

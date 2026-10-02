@@ -77,8 +77,10 @@ func (c *Calculator) GetPluginInfo(
 // to map the resource descriptor to an Azure pricing query. Returns
 // Supported:true if the mapping succeeds, or Supported:false with a reason
 // describing why the resource cannot be priced.
-// A Virtual Machine with tag priority=Spot is supported. The quote uses the
-// Linux Spot meter and pricing category Dynamic. Any other priority is not.
+// A Virtual Machine with tag priority=Spot is supported. Tag
+// pricing_model=spot is the same choice when priority is empty. The quote
+// uses the Linux Spot meter and pricing category Dynamic. Any other
+// priority or pricing_model value is not.
 func (c *Calculator) Supports(
 	ctx context.Context,
 	req *finfocusv1.SupportsRequest,
@@ -641,7 +643,7 @@ func firstNonEmptyMapValue(values map[string]any, keys ...string) string {
 	for _, key := range keys {
 		if raw, ok := values[key]; ok {
 			text := strings.TrimSpace(fmt.Sprintf("%v", raw))
-			if text != "" && text != "<nil>" {
+			if text != "" && text != formattedNil {
 				return text
 			}
 		}

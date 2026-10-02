@@ -661,7 +661,7 @@ func descriptorCurrency(resource *finfocusv1.ResourceDescriptor) string {
 }
 
 func descriptorSizeGB(resource *finfocusv1.ResourceDescriptor) (float64, bool, error) {
-	raw := firstNonEmptyTag(resource.GetTags(), "size_gb", "sizeGb", "diskSizeGb")
+	raw := firstNonEmptyTag(resource.GetTags(), "size_gb", "sizeGb", "diskSizeGb", "capacity_gb")
 	if raw == "" {
 		return 0, false, nil
 	}
