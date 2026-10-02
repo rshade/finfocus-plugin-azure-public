@@ -962,6 +962,8 @@ resource's cost with the oracle.
 **Acceptance Criteria**: pasted CLI output per resource, a table of token forms accepted and
 rejected, and every rejected real token either fixed or in the Not delivered register.
 
+**Status:** DONE, `finfocus cost projected --pulumi-json testdata/pulumi/azure-plan.json --output json` exited 0. Both token families priced the ten types. The monthly total was 994.51764 USD. A scale set and a NAT gateway were declined. Break check: `TestSupportsRealPulumiTokens` failed on `unsupported provider: azure-native` before that provider was accepted.
+
 ## Issue Index
 
 ### Legend

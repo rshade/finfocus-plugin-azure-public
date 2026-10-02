@@ -420,5 +420,6 @@ func aksStatus(err error) error {
 }
 
 func isAKSResourceType(lower string) bool {
-	return resourceSegment(lower, aksResourceSegment)
+	return resourceSegment(lower, aksResourceSegment) ||
+		tokenSuffix(lower, "containerservice", "managedcluster")
 }

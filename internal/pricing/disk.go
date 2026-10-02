@@ -109,17 +109,9 @@ func tierForSize(prefix string, sizeGB float64) (string, error) {
 // storage/manageddisk as a segment (case-insensitive), consistent with the
 // isVirtualMachineResourceType pattern.
 func isManagedDiskResourceType(lower string) bool {
-	const segment = "storage/manageddisk"
-	idx := strings.Index(lower, segment)
-	if idx < 0 {
-		return false
-	}
-	end := idx + len(segment)
-	if end == len(lower) {
-		return true
-	}
-	next := lower[end]
-	return next == ':' || next == '/' || next == ' '
+	return resourceSegment(lower, "storage/manageddisk") ||
+		resourceSegment(lower, "compute/manageddisk") ||
+		tokenSuffix(lower, "compute", "disk")
 }
 
 // selectDiskTierPrice filters Azure price items by the target tier's meter name

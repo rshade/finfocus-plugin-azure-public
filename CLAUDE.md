@@ -174,7 +174,7 @@ query, err := pricing.MapDescriptorToQuery(desc)
 | `network/LoadBalancer` | Load Balancer |
 
 **Behavior**:
-- Case-insensitive provider and resource type matching
+- Providers `azure` and `azure-native` are accepted. Resource type matching is case-insensitive and includes type tokens such as `azure:compute/linuxVirtualMachine:LinuxVirtualMachine`, `azure:compute/managedDisk:ManagedDisk`, `azure:storage/account:Account`, `azure:storage/blob:Blob`, `azure:appservice/servicePlan:ServicePlan`, `azure:mssql/database:Database`, `azure-native:compute:VirtualMachine`, `azure-native:compute:Disk`, `azure-native:storage:StorageAccount`, `azure-native:web:AppServicePlan`, `azure-native:web:WebApp` with `kind=FunctionApp`, `azure-native:containerservice:ManagedCluster`, `azure-native:sql:Database`, `azure-native:documentdb:DatabaseAccount`, and `azure-native:network:LoadBalancer`
 - Tag fallback: `Tags["region"]` and `Tags["sku"]` when primary fields empty
 - Primary fields always take precedence over tags
 - Default currency: USD
@@ -386,7 +386,8 @@ row. sku `Free`, `Free Tier`, and `RUm` are not selected. Components are
 
 `GetProjectedCost` prices `network/LoadBalancer`, including classic
 `azure:lb/loadBalancer:LoadBalancer` and
-`azure-native:network/loadBalancer:LoadBalancer`. The service is
+`azure-native:network/loadBalancer:LoadBalancer` and
+`azure-native:network:LoadBalancer`. The service is
 `Load Balancer`. `ArmSkuName` stays empty. An empty name means `Standard`.
 The query uses the resource region, then price region `Global` when that
 page has no included-rules meter. A live query on 2026-10-01 returned no

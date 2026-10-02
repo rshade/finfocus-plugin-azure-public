@@ -606,5 +606,6 @@ func cosmosStatus(err error) error {
 // isCosmosAccountResourceType reports whether lower contains cosmosdb/account,
 // including Pulumi azure:cosmosdb/account:Account.
 func isCosmosAccountResourceType(lower string) bool {
-	return resourceSegment(lower, cosmosAccountSegment)
+	return resourceSegment(lower, cosmosAccountSegment) ||
+		tokenSuffix(lower, "documentdb", "databaseaccount")
 }

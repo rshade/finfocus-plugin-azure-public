@@ -124,7 +124,9 @@ func (c *Calculator) quoteStorageAccount(
 // storage/storageaccount segment, including a Pulumi type such as
 // azure:storage/storageAccount:StorageAccount.
 func isStorageAccountResourceType(lower string) bool {
-	return resourceSegment(lower, storageAccountResourceSegment)
+	return resourceSegment(lower, storageAccountResourceSegment) ||
+		resourceSegment(lower, "storage/account") ||
+		tokenSuffix(lower, "storage", "storageaccount")
 }
 
 // storageAccountSKU resolves "{Tier} {Redundancy}". Sku and Tags["sku"] win.

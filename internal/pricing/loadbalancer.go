@@ -330,5 +330,7 @@ func loadBalancerStatus(err error) error {
 }
 
 func isLoadBalancerResourceType(lower string) bool {
-	return resourceSegment(lower, loadBalancerSegment) || resourceSegment(lower, loadBalancerPulumiLB)
+	return resourceSegment(lower, loadBalancerSegment) ||
+		resourceSegment(lower, loadBalancerPulumiLB) ||
+		tokenSuffix(lower, "network", "loadbalancer")
 }
