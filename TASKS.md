@@ -422,7 +422,7 @@ savings percentage computed and tested; the decision on the response shape recor
 
 #### AZ-2.14 — FOCUS alignment [Issue #46]
 
-**Status:** REOPENED, met in tests only: production emits no `FocusRecord` because the billing account id is empty. See AZ-6.5.
+**Status:** DONE via AZ-6.5. A configured billing account id returns a FocusRecord that passes validation. An empty setting leaves FocusRecord nil. The request still has no field. Spec proposal: [spec issue 590](https://github.com/rshade/finfocus-spec/issues/590).
 
 **Description**: The issue asks to align response fields with FOCUS 1.3 column names.
 The spec has moved: v0.7.0 adds FOCUS 1.4 columns and a FOCUS record builder in
@@ -848,6 +848,8 @@ carrier, file the issue. Do not invent an account id.
 
 **Acceptance Criteria**: a gRPC test with an id returns a record that passes
 `ValidateFocusRecord`, and a test without one proves the documented fallback.
+
+**Status:** DONE, `go test -count=1 -run 'TestGetActualCostFocusRecordOverGRPC|TestGetActualCostOmitsFocusRecordWithoutAccountOverGRPC' ./internal/pricing/` passed. `SetBillingAccountID` feeds the record. The environment variable `FINFOCUS_BILLING_ACCOUNT_ID` sets it in the process. Empty leaves FocusRecord nil and logs why. Break check: the test failed to compile (`SetBillingAccountID` undefined) before the setter existed. The request has no field. Spec proposal: [spec issue 590](https://github.com/rshade/finfocus-spec/issues/590). No account id is invented.
 
 #### AZ-6.6 — A real gRPC load test [Issue #54]
 

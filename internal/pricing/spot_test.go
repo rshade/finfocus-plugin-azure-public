@@ -6,6 +6,7 @@ import (
 	"math"
 	"net"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -289,7 +290,7 @@ func TestSelectVMItemEmptyProductNamePricesItem(t *testing.T) {
 	if err != nil {
 		t.Fatalf("selectVMItem() error = %v", err)
 	}
-	if got != single {
+	if !reflect.DeepEqual(got, single) {
 		t.Fatalf("selectVMItem() = %+v, want %+v", got, single)
 	}
 
