@@ -650,7 +650,7 @@ fails a case whose estimate is outside the tolerance when a value is supplied.
 
 #### AZ-3.9 — Performance benchmarking and load testing [Issue #54]
 
-**Status:** REOPENED, the test calls the Calculator in process, the task asks for a gRPC load test. See AZ-6.6.
+**Status:** DONE via AZ-6.6. `TestCacheHitRateOverGRPC` uses a real gRPC server. 128 hits, 1 miss, ratio 0.992248.
 
 **Description**: Go benchmarks for the estimation path with a mocked client, and a
 concurrent gRPC load test that checks the cache hit rate exceeds 80% for repeated
@@ -858,6 +858,8 @@ goroutines. Assert the cache hit rate and that no request fails.
 
 **Acceptance Criteria**: the test goes through the network stack, and a break check
 (for example disabling the cache) makes it fail.
+
+**Status:** DONE, `go test -count=1 -run 'TestCacheHitRateOverGRPC$' ./internal/pricing/` passed. 128 hits, 1 miss, ratio 0.992248. No request failed. Break check: cache TTL 0 recorded 0 hits and 129 misses and the test failed, then the hour TTL was restored.
 
 #### AZ-6.7 — EstimateCost and DryRun for every type [Issue #43]
 
