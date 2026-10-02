@@ -922,6 +922,8 @@ names the case. Never invent or copy a value, and never fill the file yourself.
 the report lists which rows were empty. Status is BLOCKED-ON-INPUT for any type with no filled
 row.
 
+**Status:** BLOCKED-ON-INPUT, `go test -count=1 -run 'TestCalculatorAccuracy$|TestParseCalculatorOwnerValues' ./internal/pricing/` passed. All 22 rows in `calculator-values.csv` have an empty `owner_monthly_usd`. Each skip names the case and `owner_monthly_usd`. The file was not edited. Break check: parsing an empty cell as 0 failed `TestParseCalculatorOwnerValues`.
+
 #### AZ-6.13 — Whole-branch review and report
 
 **Description**: review the whole run branch, fix Critical and Important findings in new

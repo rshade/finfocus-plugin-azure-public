@@ -1,13 +1,17 @@
 package pricing
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
+	"errors"
 	"fmt"
+	"io"
 	"math"
+	"os"
 	"strconv"
+	"strings"
 	"testing"
-
-	finfocusv1 "github.com/rshade/finfocus-spec/sdk/go/proto/finfocus/v1"
 )
 
 // calculatorAccuracyTolerance is 5 percent of the owner-supplied monthly cost.
@@ -17,150 +21,133 @@ const calculatorAccuracyTolerance = 0.05
 func TestCalculatorAccuracy(t *testing.T) {
 	t.Parallel()
 
-	// ownerMonthly is owner-supplied. Leave it nil.
-	// An empty field is not zero. Do not write a number here.
-	// Do not copy the golden monthly cost into this field.
-	tests := []struct {
-		name         string
-		fixtures     []string
-		request      func(t *testing.T) *finfocusv1.GetProjectedCostRequest
-		ownerMonthly *float64
-	}{
-		{
-			name:     "compute/VirtualMachine",
-			fixtures: []string{"testdata/retail/spot/standard_d2s_v3_eastus.json"},
-			request: func(t *testing.T) *finfocusv1.GetProjectedCostRequest {
-				t.Helper()
-				loaded := loadRetailFixture(t, "testdata/retail/spot/standard_d2s_v3_eastus.json")
-				return vmProjectedRequest(loaded.Items[0].ArmRegionName, loaded.Items[0].ArmSkuName, "")
-			},
-			ownerMonthly: nil, // owner-supplied
-		},
-		{
-			name:     "storage/ManagedDisk",
-			fixtures: []string{"testdata/retail/disk/premium_ssd_lrs_eastus.json"},
-			request: func(t *testing.T) *finfocusv1.GetProjectedCostRequest {
-				t.Helper()
-				return &finfocusv1.GetProjectedCostRequest{
-					Resource: &finfocusv1.ResourceDescriptor{
-						Provider:     "azure",
-						ResourceType: "azure:storage/managedDisk:ManagedDisk",
-						Region:       "eastus",
-						Sku:          "Premium_SSD_LRS",
-						Tags:         map[string]string{"size_gb": "100"},
-					},
-				}
-			},
-			ownerMonthly: nil, // owner-supplied
-		},
-		{
-			name:     "storage/BlobStorage",
-			fixtures: []string{"testdata/retail/blob/hot_lrs_eastus.json"},
-			request: func(t *testing.T) *finfocusv1.GetProjectedCostRequest {
-				t.Helper()
-				return &finfocusv1.GetProjectedCostRequest{
-					Resource: &finfocusv1.ResourceDescriptor{
-						Provider:     "azure",
-						ResourceType: "storage/BlobStorage",
-						Region:       "eastus",
-						Sku:          "Hot LRS",
-						Tags:         map[string]string{"size_gb": "100"},
-					},
-				}
-			},
-			ownerMonthly: nil, // owner-supplied
-		},
-		{
-			name:     "storage/StorageAccount",
-			fixtures: []string{"testdata/retail/storageaccount/general_block_blob_v2_eastus.json"},
-			request: func(t *testing.T) *finfocusv1.GetProjectedCostRequest {
-				t.Helper()
-				return storageAccountRequest(
-					"storage/StorageAccount",
-					"eastus",
-					"Hot LRS",
-					map[string]string{"size_gb": "100"},
-				)
-			},
-			ownerMonthly: nil, // owner-supplied
-		},
-		{
-			name:     "web/AppServicePlan",
-			fixtures: []string{"testdata/retail/appservice/eastus_consumption.json"},
-			request: func(t *testing.T) *finfocusv1.GetProjectedCostRequest {
-				t.Helper()
-				return pricedRequest("web/AppServicePlan", "P1v3", nil)
-			},
-			ownerMonthly: nil, // owner-supplied
-		},
-		{
-			name:     "web/FunctionApp",
-			fixtures: []string{"testdata/retail/functions/eastus_consumption.json"},
-			request: func(t *testing.T) *finfocusv1.GetProjectedCostRequest {
-				t.Helper()
-				return pricedRequest("web/FunctionApp", "Standard", map[string]string{
-					"executions": strconv.Itoa(testFreeExecutions + testExecutionsPerPrice),
-					"gb_seconds": strconv.Itoa(testFreeGBSeconds + 1),
-				})
-			},
-			ownerMonthly: nil, // owner-supplied
-		},
-		{
-			name:     "containerservice/KubernetesCluster",
-			fixtures: []string{"testdata/retail/aks/eastus_consumption.json"},
-			request: func(t *testing.T) *finfocusv1.GetProjectedCostRequest {
-				t.Helper()
-				return aksRequest(aksCanonicalType, "Standard", nil)
-			},
-			ownerMonthly: nil, // owner-supplied
-		},
-		{
-			name: "sql/Database",
-			fixtures: []string{
-				"testdata/retail/sqldb/gp_gen5_compute_eastus.json",
-				"testdata/retail/sqldb/gp_storage_eastus.json",
-			},
-			request: func(t *testing.T) *finfocusv1.GetProjectedCostRequest {
-				t.Helper()
-				return sqlProjectedRequest(
-					sqlTestCanonicalType,
-					"eastus",
-					"GP_Gen5_2",
-					map[string]string{"size_gb": "100"},
-				)
-			},
-			ownerMonthly: nil, // owner-supplied
-		},
-		{
-			name:     "cosmosdb/Account",
-			fixtures: []string{"testdata/retail/cosmosdb/eastus_consumption.json"},
-			request: func(t *testing.T) *finfocusv1.GetProjectedCostRequest {
-				t.Helper()
-				return cosmosProjectedRequest(
-					cosmosTestCanonical,
-					"eastus",
-					map[string]string{"ru_per_second": "400", "size_gb": "10"},
-				)
-			},
-			ownerMonthly: nil, // owner-supplied
-		},
+	rows := loadCalculatorOwnerRows(t)
+	if len(rows) == 0 {
+		t.Fatal("calculator-values.csv has no data rows")
+	}
+	byID := make(map[string]oracleCase, len(rows))
+	for _, item := range loadOracleCases(t) {
+		byID[item.ID] = item
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, row := range rows {
+		t.Run(row.id, func(t *testing.T) {
 			t.Parallel()
-
-			owner := skipEmptyOwnerCalculatorCost(t, tt.name, tt.ownerMonthly)
-			calc := newGoldenCalc(t, tt.fixtures...)
-			resp, err := dialPricingClient(t, calc).GetProjectedCost(context.Background(), tt.request(t))
-			if err != nil {
-				t.Fatalf("%s GetProjectedCost() failed: %v", tt.name, err)
-			}
-			if msg := calculatorMonthlyMismatch(resp.GetCostPerMonth(), owner); msg != "" {
-				t.Fatalf("%s %s", tt.name, msg)
-			}
+			compareCalculatorOwnerRow(t, row, byID[row.id], row.id == byID[row.id].ID)
 		})
 	}
+}
+
+func TestParseCalculatorOwnerValues(t *testing.T) {
+	t.Parallel()
+
+	raw := "case_id,calculator_configuration,owner_monthly_usd,read_on,notes\n" +
+		"filled:case,\"quoted config\",12.5,,\n" +
+		"empty:case,\"quoted config\",,,\n"
+	rows, err := parseCalculatorOwnerValues(strings.NewReader(raw))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("rows = %d, want 2", len(rows))
+	}
+	if rows[0].id != "filled:case" || rows[0].owner == nil || *rows[0].owner != 12.5 {
+		t.Fatalf("filled row = %+v", rows[0])
+	}
+	if rows[1].id != "empty:case" || rows[1].owner != nil {
+		t.Fatalf("empty owner cell must stay unset, got %+v", rows[1])
+	}
+}
+
+const calculatorValuesPath = "testdata/oracle/calculator-values.csv"
+
+type calculatorOwnerRow struct {
+	id    string
+	owner *float64
+}
+
+func compareCalculatorOwnerRow(t *testing.T, row calculatorOwnerRow, item oracleCase, found bool) {
+	t.Helper()
+	if row.owner == nil {
+		t.Skipf("%s: owner value not supplied: owner_monthly_usd", row.id)
+	}
+	if !found {
+		t.Fatalf("%s: no oracle case for calculator row", row.id)
+	}
+	req, err := oracleProjectedRequest(item)
+	if err != nil {
+		t.Fatalf("%s: %v", row.id, err)
+	}
+	calc := newPricingCalc(t, item.Rows)
+	resp, err := dialPricingClient(t, calc).GetProjectedCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("%s GetProjectedCost() failed: %v", row.id, err)
+	}
+	plugin := resp.GetCostPerMonth()
+	if item.Expected != nil && math.Abs(plugin-*item.Expected) > oracleTolerance(*item.Expected) {
+		t.Logf(
+			"%s: calculator %v disagrees with oracle %v; calculator wins",
+			row.id,
+			*row.owner,
+			*item.Expected,
+		)
+	}
+	if msg := calculatorMonthlyMismatch(plugin, *row.owner); msg != "" {
+		t.Fatalf("%s %s", row.id, msg)
+	}
+}
+
+func loadCalculatorOwnerRows(t *testing.T) []calculatorOwnerRow {
+	t.Helper()
+
+	raw, err := os.ReadFile(calculatorValuesPath)
+	if err != nil {
+		t.Fatalf("read calculator values: %v", err)
+	}
+	rows, err := parseCalculatorOwnerValues(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatalf("parse calculator values: %v", err)
+	}
+	return rows
+}
+
+func parseCalculatorOwnerValues(r io.Reader) ([]calculatorOwnerRow, error) {
+	records, err := csv.NewReader(r).ReadAll()
+	if err != nil {
+		return nil, err
+	}
+	if len(records) == 0 {
+		return nil, errors.New("calculator values: empty file")
+	}
+	header := records[0]
+	if len(header) < 3 ||
+		strings.TrimSpace(header[0]) != "case_id" ||
+		strings.TrimSpace(header[2]) != "owner_monthly_usd" {
+		return nil, fmt.Errorf("calculator values: header %q", header)
+	}
+	rows := make([]calculatorOwnerRow, 0, len(records)-1)
+	for i, record := range records[1:] {
+		if len(record) < 3 {
+			return nil, fmt.Errorf("calculator row %d has %d columns", i+1, len(record))
+		}
+		id := strings.TrimSpace(record[0])
+		if id == "" {
+			return nil, fmt.Errorf("calculator row %d has an empty case id", i+1)
+		}
+		raw := strings.TrimSpace(record[2])
+		row := calculatorOwnerRow{id: id}
+		if raw == "" {
+			rows = append(rows, row)
+			continue
+		}
+		value, parseErr := strconv.ParseFloat(raw, 64)
+		if parseErr != nil {
+			return nil, fmt.Errorf("calculator case %s: owner_monthly_usd %q: %w", id, raw, parseErr)
+		}
+		row.owner = &value
+		rows = append(rows, row)
+	}
+	return rows, nil
 }
 
 func TestCalculatorAccuracyOutsideBandFails(t *testing.T) {
@@ -190,14 +177,6 @@ func TestCalculatorAccuracyInsideBandPasses(t *testing.T) {
 	if msg := calculatorMonthlyMismatch(105, 100); msg != "" {
 		t.Fatalf("plugin 105 owner 100 is exactly 5 percent and must pass: %s", msg)
 	}
-}
-
-func skipEmptyOwnerCalculatorCost(t *testing.T, name string, ownerMonthly *float64) float64 {
-	t.Helper()
-	if ownerMonthly == nil {
-		t.Skipf("%s: owner value not supplied: owner_monthly_usd", name)
-	}
-	return *ownerMonthly
 }
 
 func calculatorMonthlyMismatch(plugin, owner float64) string {
