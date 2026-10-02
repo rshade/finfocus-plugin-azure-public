@@ -196,6 +196,17 @@ full EstimateCost pipeline end-to-end:
 go test -v -tags=integration -timeout=5m ./examples/...
 ```
 
+Refresh the four live golden snapshots (two virtual machines and two
+managed disks) and review the diff before committing it:
+
+```bash
+go test -tags=integration -update-golden -count=1 -timeout 8m ./... -run TestUpdateGoldenFromLiveAPI
+```
+
+`TestGoldenLiveSnapshots` replays those snapshots. A monthly cost that
+moves by more than 0.01 fails the test. The procedure is also in
+`internal/pricing/testdata/golden/README.md`.
+
 Tests include rate-limiting delays (12s between API calls) and use ±25%
 tolerance on reference prices to absorb Azure pricing changes. If tests
 fail due to price drift, update the reference constants in

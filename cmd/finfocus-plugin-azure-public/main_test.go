@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"flag"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -56,6 +57,9 @@ func buildTestBinary(t *testing.T) string {
 
 // TestMain handles test setup and cleanup.
 func TestMain(m *testing.M) {
+	if flag.Lookup("update-golden") == nil {
+		flag.Bool("update-golden", false, "accepted so go test ./... can pass -update-golden")
+	}
 	code := m.Run()
 	// Cleanup test binary
 	if testBinaryPath != "" {

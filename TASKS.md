@@ -608,7 +608,7 @@ cat .github/workflows/release-please.yml | grep -E "on:.*push.*main|release-plea
 
 #### AZ-3.7 — Regression test suite with golden pricing data [Issue #52]
 
-**Status:** DONE, `go test -count=1 ./internal/pricing/ -run TestGolden`, ok github.com/rshade/finfocus-plugin-azure-public/internal/pricing 0.027s
+**Status:** DONE, `go test -count=1 -run 'TestGolden$|TestGoldenLiveSnapshots|TestGoldenLiveToleranceBounds' ./internal/pricing/` passed. `TestUpdateGoldenFromLiveAPI` skips unless `-tags=integration -update-golden`. The live snapshots, captured 2026-10-02, are Standard_B1s eastus 7.592, Standard_D2s_v3 eastus 70.08, Standard_LRS 128 GB 5.888, and Premium_SSD_LRS 256 GB 38.012142.
 
 **Description**: Golden-file tests: recorded Azure API responses as inputs and expected
 `EstimateCost` outputs as snapshots, with a documented update procedure for when prices
@@ -978,13 +978,12 @@ rejected, and every rejected real token either fixed or in the Not delivered reg
 
 ### Open issues
 
-Closed on `main` by earlier commits: #42, #50, #51, #54, #55, #56, #57, #59, #60, #61.
-This change closes #45 and #47. #46 stays open.
+Closed on `main` by earlier commits: #42, #45, #47, #50, #51, #54, #55, #56, #57, #59, #60, #61.
+This change closes #52. #46 stays open.
 
 | # | Title | Why it stays open |
 | --- | --- | --- |
 | [#53](https://github.com/rshade/finfocus-plugin-azure-public/issues/53) | Pricing accuracy vs the Azure Pricing Calculator | **AZ-3.8** BLOCKED-ON-INPUT. Every `owner_monthly_usd` cell is empty. |
-| [#52](https://github.com/rshade/finfocus-plugin-azure-public/issues/52) | Golden pricing regression suite | **AZ-3.7** has golden cases. The issue also asks for `-update-golden`. |
 | [#49](https://github.com/rshade/finfocus-plugin-azure-public/issues/49) | AKS cluster cost estimation | **AZ-2.6** quotes AKS. Free tier uses the live 0.05 USD per hour meter. |
 | [#48](https://github.com/rshade/finfocus-plugin-azure-public/issues/48) | App Service and Functions cost estimation | **AZ-2.5** quotes plans and Consumption. `EP1` and Flex are `InvalidArgument`. |
 | [#46](https://github.com/rshade/finfocus-plugin-azure-public/issues/46) | FOCUS 1.3 column alignment | **AZ-2.14** emits a record. `charge_type` has no proto field. `commitment_discount_type` stays empty. |
@@ -992,7 +991,7 @@ This change closes #45 and #47. #46 stays open.
 | [#43](https://github.com/rshade/finfocus-plugin-azure-public/issues/43) | DryRun validation RPC | **AZ-2.10** validates and does not call Azure. `DryRunResponse` has no filter field. |
 
 **Summary** (updated 2026-10-02):
-- Seven issues stay open. The reasons are in the table.
+- Six issues stay open. The reasons are in the table.
 - Standard Load Balancer rules are quoted. NAT Gateway, virtual machine scale
   sets, Cache for Redis, and database servers for PostgreSQL and MySQL have
   no issue and are not priced.

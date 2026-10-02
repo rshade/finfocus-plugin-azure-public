@@ -75,7 +75,7 @@ testing, validation, and documentation.
 
 **Testing & Validation:**
 
-- [ ] [#52](https://github.com/rshade/finfocus-plugin-azure-public/issues/52)
+- [x] [#52](https://github.com/rshade/finfocus-plugin-azure-public/issues/52)
   Implement regression test suite with golden pricing data [M]
 - [ ] [#53](https://github.com/rshade/finfocus-plugin-azure-public/issues/53)
   Implement pricing accuracy validation against Azure Pricing Calculator [S]
@@ -302,19 +302,19 @@ The following features violate architectural constraints defined in
 | Pre-release: Azure Client | Complete | 5/5 (100%) |
 | Pre-release: Caching Layer | Complete | 4/4 (100%) |
 | v0.1.0 - Core Estimation | Active | 8/8 (100%) |
-| v0.2.0 - Quality & Testing | Active | 2/4 (50%) |
+| v0.2.0 - Quality & Testing | Active | 3/4 (75%) |
 | v0.3.0 - Extended Services | Active | 2/6 (33%) |
 
 <!-- markdownlint-enable MD013 -->
 
-**Completed Issues**: #1-#20, #42, #45, #47, #50, #51, #54-#57, #59-#61
+**Completed Issues**: #1-#20, #42, #45, #47, #50-#52, #54-#57, #59-#61
 
-**Checklist still open here**: 43, 44, 46, 48, 49, 52, and 53.
+**Checklist still open here**: 43, 44, 46, 48, 49, and 53.
 Item 43 has no filter field on `DryRunResponse`. Item 44 returns one
 pricing spec. Item 46 has no `charge_type` field, and
 `commitment_discount_type` stays empty. Item 48 rejects `EP1` and Flex.
-Item 49 prices AKS Free from the 0.05 USD per hour meter. Item 52 has
-golden cases and no `-update-golden` flag. Item 53 waits on owner values.
+Item 49 prices AKS Free from the 0.05 USD per hour meter. Item 53 waits
+on owner values.
 
 The counts in the table follow the milestone checklists. The
 priced-now list is the working tree. GitHub milestones were not

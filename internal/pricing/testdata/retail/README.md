@@ -458,7 +458,9 @@ The live product is `Blob Storage`, skuName `Hot LRS`, and higher
 full live API page.
 
 Refresh means replacing the stored number after a deliberate fixture update.
-Do not edit the quote so a stale number passes.
+Do not edit the quote so a stale number passes. A separate live snapshot
+for two virtual machines and two managed disks is refreshed with
+`-update-golden`. See `../golden/README.md`.
 
 ## Refresh
 
