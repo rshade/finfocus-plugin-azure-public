@@ -466,5 +466,11 @@ func dryRunDescriptors() map[string]*finfocusv1.ResourceDescriptor {
 			Region:       "eastus",
 			Tags:         map[string]string{"ru_per_second": "400", "size_gb": "10"},
 		},
+		"network/LoadBalancer": {
+			Provider:     "azure",
+			ResourceType: "network/LoadBalancer",
+			Region:       "eastus",
+			Sku:          "Standard",
+		},
 	}
 }

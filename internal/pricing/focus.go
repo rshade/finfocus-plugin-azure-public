@@ -85,6 +85,8 @@ func focusServiceCategory(resourceType string) (finfocusv1.FocusServiceCategory,
 	case isSQLDatabaseResourceType(lower) ||
 		isCosmosAccountResourceType(lower):
 		return finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_DATABASE, nil
+	case isLoadBalancerResourceType(lower):
+		return finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_NETWORK, nil
 	default:
 		return finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_UNSPECIFIED,
 			fmt.Errorf("unsupported resource type: %s: %w", resourceType, ErrUnsupportedResourceType)

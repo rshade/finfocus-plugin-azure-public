@@ -437,7 +437,7 @@ func TestSupports_UnsupportedType_ReturnsFalse(t *testing.T) {
 	req := &finfocusv1.SupportsRequest{
 		Resource: &finfocusv1.ResourceDescriptor{
 			Provider:     "azure",
-			ResourceType: "network/LoadBalancer",
+			ResourceType: "custom/Widget",
 			Sku:          "Standard",
 			Region:       "eastus",
 		},
@@ -451,7 +451,7 @@ func TestSupports_UnsupportedType_ReturnsFalse(t *testing.T) {
 		t.Error("expected supported=false for unsupported type, got true")
 	}
 
-	if !strings.Contains(resp.GetReason(), "network/LoadBalancer") {
+	if !strings.Contains(resp.GetReason(), "custom/Widget") {
 		t.Errorf("expected reason to contain type name, got: %s", resp.GetReason())
 	}
 }
@@ -771,7 +771,7 @@ func TestEstimateCost_UnsupportedResourceType_ReturnsUnimplemented(t *testing.T)
 	t.Parallel()
 
 	calc := NewCalculator(zerolog.Nop())
-	req := newEstimateCostRequest(t, "network/LoadBalancer", map[string]any{
+	req := newEstimateCostRequest(t, "custom/Widget", map[string]any{
 		"location": "eastus",
 		"vmSize":   "Standard_B1s",
 	})
