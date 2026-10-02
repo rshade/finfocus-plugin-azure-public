@@ -931,6 +931,8 @@ commits, then write `superpowers-run-report.md` with the Not delivered register.
 
 **Acceptance Criteria**: report follows section 8 of the prompt.
 
+**Status:** DONE, `go test -count=1 -run 'TestWindowsVMQuoteIsNotLinuxPrice|TestEstimateCostNativeFunctionWebApp|TestFocusNativeFunctionWebApp|TestGetPricingSpecEverySupportedType$' ./internal/pricing/` passed after the branch review. `superpowers-run-report.md` follows section 8. The ambiguous oracle judge was left as its instructions require. Break check: `TestWindowsVMQuoteIsNotLinuxPrice` returned a Linux month before that token was rejected.
+
 #### AZ-6.14 — Oracle comparison gate (run this right after AZ-6.1)
 
 **Status:** DONE, `go test -count=1 -run TestOracleComparison ./internal/pricing/` passed, 51 cases in `.superpowers/oracle-results.md`. Break check: doubling `unit * pluginsdk.HoursPerMonth` in the VM quote failed 19 cases, then restored. `git diff -- internal/pricing/testdata/oracle/` empty. Ambiguous AKS free chose 36.50. Ambiguous SQL zone redundancy returned NotFound because the fixture has no base compute row. Spot `EstimateCost` was fixed in AZ-6.2: an empty priority stays on demand, priority Spot is the Linux Spot row, the category is Dynamic, and the score stays 0.
