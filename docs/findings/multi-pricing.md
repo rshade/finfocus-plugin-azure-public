@@ -76,6 +76,12 @@ the projected-cost response. This task does not invent that field, and it does
 not put three prices, savings percents, or term labels into `metadata` or
 `cost_breakdown`.
 
+The proposal for that list is
+[spec issue 588](https://github.com/rshade/finfocus-spec/issues/588).
+The proposal for a per-region list is
+[spec issue 589](https://github.com/rshade/finfocus-spec/issues/589).
+Neither list is summed into the primary cost.
+
 Checked `GetProjectedCostResponse` in FinFocus spec v0.7.0,
 `../finfocus-spec/sdk/go/proto/finfocus/v1/costsource.pb.go` (module
 `github.com/rshade/finfocus-spec` v0.7.0). The message has one `unit_price`

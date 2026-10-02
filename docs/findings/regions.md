@@ -7,7 +7,9 @@ not call it. Quote selection, DryRun, and GetPricingSpec are unchanged.
 
 ## RPC
 
-The RPC exposure is `BLOCKED`.
+The RPC exposure is `BLOCKED`. The proposal for a repeated region list is
+[spec issue 589](https://github.com/rshade/finfocus-spec/issues/589).
+`SortRegionPrices` stays a pure helper. No RPC returns the list.
 
 `GetProjectedCostResponse` is
 `../finfocus-spec/sdk/go/proto/finfocus/v1/costsource.pb.go` lines 1485-1672.
