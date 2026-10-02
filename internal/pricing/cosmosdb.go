@@ -567,7 +567,11 @@ func cosmosSamePrice(items []azureclient.PriceItem) (azureclient.PriceItem, erro
 func cosmosBillingDetail(spec cosmosRequest) string {
 	switch spec.model {
 	case cosmosModelServerless:
-		return fmt.Sprintf("Cosmos DB serverless %g request units in %s", spec.requestUnits, spec.region)
+		return fmt.Sprintf(
+			"Cosmos DB serverless %g request units in %s. Serverless publishes no storage meter.",
+			spec.requestUnits,
+			spec.region,
+		)
 	case cosmosModelAutoscale:
 		return fmt.Sprintf("Cosmos DB autoscale %g RU/s%s in %s", spec.ru, cosmosSizeDetail(spec), spec.region)
 	default:

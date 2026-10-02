@@ -880,6 +880,8 @@ hour is effective from 2026-10-01: confirm it against the live API and handle it
 
 **Acceptance Criteria**: live queries pasted, tests updated, behaviour documented.
 
+**Status:** DONE, `go test -count=1 -run 'TestGetProjectedCostCosmosServerlessOmitsStorageMeter|TestGetProjectedCostAKSFreeOpenMeter' ./internal/pricing/` passed. Live AKS filter on service `Azure Kubernetes Service` and meter `FreeTierInfrastructureCost Uptime SLA` returned one open row at 0.05 USD per hour, effective 2026-10-01, month 36.50. Live Cosmos filter on that request-unit product returned only meter `1M RUs` at 0.25 USD per `1M`. The quote note says that product publishes no storage meter. Not delivered: a storage component for that product, because the live API has none.
+
 #### AZ-6.9 — Load Balancer (stretch AZ-2.9)
 
 **Description**: Load Balancer pricing is Global-only (an `armRegionName` of eastus returns
