@@ -3,6 +3,8 @@ package pricing
 import (
 	"context"
 	"math"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -45,6 +47,14 @@ func TestSupportsRealPulumiTokens(t *testing.T) {
 			sku:      "Standard_B1s",
 			want:     true,
 			wantKind: kindVM,
+		},
+		{
+			name:      "windows virtual machine is not the linux meter",
+			provider:  "azure",
+			typ:       "azure:compute/windowsVirtualMachine:WindowsVirtualMachine",
+			sku:       "Standard_D2s_v3",
+			want:      false,
+			wantError: codes.Unimplemented,
 		},
 		{
 			name:     "classic managed disk",
@@ -280,6 +290,85 @@ func TestAzureNativeVMQuoteMatchesAzure(t *testing.T) {
 	wantMonthly := 0.0104 * pluginsdk.HoursPerMonth
 	if math.Abs(resp.GetCostPerMonth()-wantMonthly) > 1e-9 {
 		t.Fatalf("cost_per_month = %v, want %v", resp.GetCostPerMonth(), wantMonthly)
+	}
+}
+
+func TestWindowsVMQuoteIsNotLinuxPrice(t *testing.T) {
+	t.Parallel()
+
+	calc := newPricingCalc(t, []azureclient.PriceItem{
+		{
+			ArmRegionName: "eastus",
+			ArmSkuName:    "Standard_D2s_v3",
+			ProductName:   "Virtual Machines Dsv3 Series",
+			SkuName:       "D2s v3",
+			MeterName:     "D2s v3",
+			CurrencyCode:  "USD",
+			RetailPrice:   0.096,
+			UnitOfMeasure: "1 Hour",
+		},
+		{
+			ArmRegionName: "eastus",
+			ArmSkuName:    "Standard_D2s_v3",
+			ProductName:   "Virtual Machines Dsv3 Series Windows",
+			SkuName:       "D2s v3",
+			MeterName:     "D2s v3",
+			CurrencyCode:  "USD",
+			RetailPrice:   0.188,
+			UnitOfMeasure: "1 Hour",
+		},
+	})
+	_, err := calc.GetProjectedCost(context.Background(), &finfocusv1.GetProjectedCostRequest{
+		Resource: &finfocusv1.ResourceDescriptor{
+			Provider:     "azure",
+			ResourceType: "azure:compute/windowsVirtualMachine:WindowsVirtualMachine",
+			Region:       "eastus",
+			Sku:          "Standard_D2s_v3",
+		},
+	})
+	if status.Code(err) != codes.Unimplemented {
+		t.Fatalf("code = %s, want Unimplemented (%v)", status.Code(err), err)
+	}
+	if !strings.Contains(status.Convert(err).Message(), "not quoted") {
+		t.Fatalf("message = %q, want it to say the meter is not quoted", status.Convert(err).Message())
+	}
+	_, err = calc.EstimateCost(context.Background(), newEstimateCostRequest(t,
+		"azure:compute/windowsVirtualMachine:WindowsVirtualMachine",
+		map[string]any{
+			"location": "eastus",
+			"vmSize":   "Standard_D2s_v3",
+		},
+	))
+	if status.Code(err) != codes.Unimplemented {
+		t.Fatalf("EstimateCost code = %s, want Unimplemented (%v)", status.Code(err), err)
+	}
+}
+
+func TestEstimateCostNativeFunctionWebApp(t *testing.T) {
+	t.Parallel()
+
+	loaded := loadRetailFixture(t, functionsFixturePath)
+	execItem := fixturePositiveMeter(t, loaded.Items, "Functions", "Standard Total Executions", "10")
+	gbItem := fixturePositiveMeter(t, loaded.Items, "Functions", "Standard Execution Time", "1 GB Second")
+	executions := testFreeExecutions + testExecutionsPerPrice
+	gbSeconds := testFreeGBSeconds + 1
+	want := (float64(executions-testFreeExecutions) / testExecutionsPerPrice * execItem.RetailPrice) +
+		float64(gbSeconds-testFreeGBSeconds)*gbItem.RetailPrice
+	calc := newPricingCalc(t, loaded.Items)
+	resp, err := calc.EstimateCost(context.Background(), newEstimateCostRequest(t,
+		"azure-native:web:WebApp",
+		map[string]any{
+			"location":   "eastus",
+			"kind":       "FunctionApp",
+			"executions": strconv.Itoa(executions),
+			"gb_seconds": strconv.Itoa(gbSeconds),
+		},
+	))
+	if err != nil {
+		t.Fatalf("EstimateCost() failed: %v", err)
+	}
+	if math.Abs(resp.GetCostMonthly()-want) > 1e-9 {
+		t.Fatalf("cost_monthly = %v, want %v", resp.GetCostMonthly(), want)
 	}
 }
 

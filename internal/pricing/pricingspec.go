@@ -13,10 +13,12 @@ const (
 	pricingSpecTask       = "AZ-2.11"
 	billingModePerHour    = "per_hour"
 	billingModePerGBMonth = "per_gb_month"
+	billingModePerMonth   = "per_month"
 	billingModePerSecond  = "per_second"
 	billingModePerRU      = "per_ru"
 	specUnitHourName      = "hour"
 	specUnitGBMonthName   = "GB-month"
+	specUnitMonthName     = "Month"
 	providerAzure         = "azure"
 	providerAzureNative   = "azure-native"
 )
@@ -92,6 +94,9 @@ func specRate(meters []quoteMeter) (string, string, float64) {
 	if stored, ok := firstMatchingMeter(meters, isStorageMeter); ok {
 		return billingModePerGBMonth, specUnitGBMonthName, stored.price
 	}
+	if monthly, ok := firstMatchingMeter(meters, isMonthMeter); ok {
+		return billingModePerMonth, specUnitMonthName, monthly.price
+	}
 	if len(meters) > 0 {
 		return billingModePerRU, meters[0].unit, meters[0].price
 	}
@@ -133,7 +138,16 @@ func isHourMeter(meter quoteMeter) bool {
 }
 
 func isStorageMeter(meter quoteMeter) bool {
-	return meter.key == breakdownStorage || strings.EqualFold(strings.TrimSpace(meter.unit), storageUnitGBMonth)
+	return strings.EqualFold(strings.TrimSpace(meter.unit), storageUnitGBMonth)
+}
+
+func isMonthMeter(meter quoteMeter) bool {
+	switch strings.ToLower(strings.TrimSpace(meter.unit)) {
+	case "1/month", "1 month":
+		return true
+	default:
+		return false
+	}
 }
 
 func metricHints(meters []quoteMeter) []*finfocusv1.UsageMetricHint {

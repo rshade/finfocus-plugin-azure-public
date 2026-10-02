@@ -25,7 +25,11 @@ func buildFocusRecord(
 		resourceType = resource.GetResourceType()
 	}
 
-	category, err := focusServiceCategory(resourceType)
+	var tags map[string]string
+	if resource != nil {
+		tags = resource.GetTags()
+	}
+	category, err := focusServiceCategory(resourceType, tags)
 	if err != nil {
 		return nil, err
 	}
@@ -70,12 +74,13 @@ func buildFocusRecord(
 	return builder.Build()
 }
 
-func focusServiceCategory(resourceType string) (finfocusv1.FocusServiceCategory, error) {
+func focusServiceCategory(resourceType string, tags map[string]string) (finfocusv1.FocusServiceCategory, error) {
 	lower := strings.ToLower(strings.TrimSpace(resourceType))
 	switch {
 	case isVirtualMachineResourceType(lower) ||
 		isAppServicePlanResourceType(lower) ||
 		isFunctionAppResourceType(lower) ||
+		isNativeFunctionWebApp(lower, tags) ||
 		isAKSResourceType(lower):
 		return finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE, nil
 	case isManagedDiskResourceType(lower) ||

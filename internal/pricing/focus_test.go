@@ -243,6 +243,44 @@ func TestFocusSpotPricingCategory(t *testing.T) {
 	}
 }
 
+func TestFocusNativeFunctionWebApp(t *testing.T) {
+	t.Parallel()
+
+	record, err := buildFocusRecord(
+		&finfocusv1.ResourceDescriptor{
+			Provider:     "azure-native",
+			ResourceType: "azure-native:web:WebApp",
+			Region:       "eastus",
+			Tags:         map[string]string{"kind": "FunctionApp"},
+		},
+		focusQuote(1.8, "USD", "function detail"),
+		focusWindow(pluginsdk.HoursPerMonth),
+		"ba-focus-test",
+		"fn-native",
+	)
+	if err != nil {
+		t.Fatalf("buildFocusRecord() failed: %v", err)
+	}
+	if record.GetServiceCategory() != finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE {
+		t.Fatalf("category = %s, want COMPUTE", record.GetServiceCategory())
+	}
+
+	bare, err := buildFocusRecord(
+		&finfocusv1.ResourceDescriptor{
+			Provider:     "azure-native",
+			ResourceType: "azure-native:web:WebApp",
+			Region:       "eastus",
+		},
+		focusQuote(1.8, "USD", "site detail"),
+		focusWindow(pluginsdk.HoursPerMonth),
+		"ba-focus-test",
+		"site",
+	)
+	if err == nil || bare != nil {
+		t.Fatalf("bare web app record = %v, err = %v, want an error and no record", bare, err)
+	}
+}
+
 func TestFocusUnknownType(t *testing.T) {
 	t.Parallel()
 
