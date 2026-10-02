@@ -22,10 +22,16 @@ reject an empty `billing_account_id`. `Build` in
 `../finfocus-spec/sdk/go/pluginsdk/focus_builder.go` lines 575-581 calls
 that validation.
 
-Production calls `buildFocusRecord` with an empty billing account id.
-`Build` returns an error that names `billing_account_id`. That error is
-logged at warn and `FocusRecord` stays nil. The scaled actual cost is the
-same value as before. No billing account id, invoice id, or tag is invented.
+The request has no billing-account field. Tags are filters, not an account
+id. `SetBillingAccountID` stores an operator-supplied process setting, read
+at startup from `FINFOCUS_BILLING_ACCOUNT_ID`. When that setting is empty,
+`Build` returns an error that names `billing_account_id`, the error is
+logged at warn, and `FocusRecord` stays nil. When it is set, `GetActualCost`
+returns a record that passes `ValidateFocusRecord`. The scaled actual cost
+is the same value either way. No billing account id, invoice id, or tag is
+invented. The process setting cannot vary per request. The request field is
+proposed in
+[spec issue 590](https://github.com/rshade/finfocus-spec/issues/590).
 
 ## Issue #46 columns
 

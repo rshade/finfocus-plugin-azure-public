@@ -107,9 +107,9 @@ func (c *Calculator) GetActualCost(
 		ts = timestamppb.New(window.start)
 	}
 
-	// The request has no billing account id. Build fails that required field,
-	// so FocusRecord stays nil and the scaled cost is unchanged.
-	record, focusErr := buildFocusRecord(resource, quote, window, "", req.GetResourceId())
+	// The request has no billing account field. The process setting is the
+	// only id. Empty fails validation, so FocusRecord stays nil.
+	record, focusErr := buildFocusRecord(resource, quote, window, c.billingAccountID, req.GetResourceId())
 	if focusErr != nil {
 		log.Warn().Err(focusErr).Msg("leaving FocusRecord unset")
 		record = nil

@@ -390,9 +390,10 @@ successful `GetProjectedCost` fills is marked supported.
 `GetActualCost` is the projected monthly cost times `hours / 730`. The
 default window is 730 hours. The source string carries
 `azure-retail-prices[confidence:HIGH|MEDIUM|LOW]`. A FOCUS record is built
-only when the caller of `buildFocusRecord` passes a billing account id.
-Production passes an empty id, logs the validation error, and leaves
-`FocusRecord` nil.
+only when `SetBillingAccountID` has a non-empty id. The process reads
+`FINFOCUS_BILLING_ACCOUNT_ID`. The request has no field for it. An empty
+setting logs the validation error and leaves `FocusRecord` nil. The request
+field is spec issue 590.
 
 `estimation.SavingsFraction` returns `(onDemand-other)/onDemand` with no
 rounding. `PriceItem.SavingsPlan` keeps the nested `savingsPlan` array when
@@ -419,6 +420,7 @@ Carbon is findings only, in `docs/findings/carbon.md`. No estimator is wired.
 | `FINFOCUS_LOG_LEVEL` | info | Log level (debug, info, warn, error) |
 | `FINFOCUS_CACHE_TTL` | 24h | Cache TTL duration (e.g., "10s", "1h", "0s" to disable) |
 | `SKIP_INTEGRATION` | (unset) | Set to "true" to skip integration tests |
+| `FINFOCUS_BILLING_ACCOUNT_ID` | (unset) | FOCUS billing account id. Empty leaves the actual-cost record unset |
 
 <!-- markdownlint-enable MD013 -->
 

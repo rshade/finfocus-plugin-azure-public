@@ -22,8 +22,9 @@ const defaultServiceName = "Virtual Machines"
 type Calculator struct {
 	finfocusv1.UnimplementedCostSourceServiceServer
 
-	logger       zerolog.Logger
-	cachedClient *azureclient.CachedClient
+	logger           zerolog.Logger
+	cachedClient     *azureclient.CachedClient
+	billingAccountID string
 }
 
 // NewCalculator creates a new instance of Calculator with the provided logger.
@@ -37,6 +38,16 @@ func NewCalculator(logger zerolog.Logger, cachedClient ...*azureclient.CachedCli
 		logger:       logger,
 		cachedClient: cc,
 	}
+}
+
+// SetBillingAccountID stores the operator-supplied FOCUS billing account id.
+// GetActualCostRequest has no field for it. An empty id leaves FocusRecord
+// nil. The value is not read from Azure and is not invented.
+func (c *Calculator) SetBillingAccountID(id string) {
+	if c == nil {
+		return
+	}
+	c.billingAccountID = strings.TrimSpace(id)
 }
 
 // Name returns the name of the plugin for the SDK.

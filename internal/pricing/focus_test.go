@@ -14,6 +14,75 @@ import (
 	"github.com/rshade/finfocus-plugin-azure-public/internal/azureclient"
 )
 
+func TestGetActualCostFocusRecordOverGRPC(t *testing.T) {
+	t.Parallel()
+
+	const accountID = "ba-focus-test"
+	calc := focusActualCalc(t)
+	calc.SetBillingAccountID(accountID)
+	client := dialPricingClient(t, calc)
+
+	resp, err := client.GetActualCost(context.Background(), focusActualRequest())
+	if err != nil {
+		t.Fatalf("GetActualCost() failed: %v", err)
+	}
+	record := resp.GetResults()[0].GetFocusRecord()
+	if record == nil {
+		t.Fatal("FocusRecord = nil, want a record when the plugin has a billing account id")
+	}
+	if err := pluginsdk.ValidateFocusRecord(record); err != nil {
+		t.Fatalf("ValidateFocusRecord() = %v", err)
+	}
+	if record.GetBillingAccountId() != accountID {
+		t.Fatalf("billing account id = %q, want %q", record.GetBillingAccountId(), accountID)
+	}
+}
+
+func TestGetActualCostOmitsFocusRecordWithoutAccountOverGRPC(t *testing.T) {
+	t.Parallel()
+
+	client := dialPricingClient(t, focusActualCalc(t))
+	resp, err := client.GetActualCost(context.Background(), focusActualRequest())
+	if err != nil {
+		t.Fatalf("GetActualCost() failed: %v", err)
+	}
+	result := resp.GetResults()[0]
+	if result.GetFocusRecord() != nil {
+		t.Fatal("FocusRecord = non-nil, want nil when no billing account id is configured")
+	}
+	if !strings.Contains(result.GetSource(), "confidence:") {
+		t.Fatalf("source = %q, want the confidence fallback", result.GetSource())
+	}
+}
+
+func focusActualCalc(t *testing.T) *Calculator {
+	t.Helper()
+	return newPricingCalc(t, []azureclient.PriceItem{{
+		RetailPrice:   0.0104,
+		UnitPrice:     0.0104,
+		CurrencyCode:  "USD",
+		ArmRegionName: "eastus",
+		ArmSkuName:    "Standard_B1s",
+		MeterName:     "B1s",
+		ProductName:   "Virtual Machines BS Series",
+		UnitOfMeasure: "1 Hour",
+		Type:          "Consumption",
+	}})
+}
+
+func focusActualRequest() *finfocusv1.GetActualCostRequest {
+	start := time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
+	return &finfocusv1.GetActualCostRequest{
+		ResourceId: "vm-1",
+		Tags: map[string]string{
+			"region": "eastus",
+			"sku":    "Standard_B1s",
+		},
+		Start: timestamppb.New(start),
+		End:   timestamppb.New(start.Add(24 * time.Hour)),
+	}
+}
+
 func TestFocusEmptyBillingAccountID(t *testing.T) {
 	t.Parallel()
 

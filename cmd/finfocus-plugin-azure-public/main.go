@@ -102,6 +102,8 @@ func run() error {
 
 	// Create plugin instance with logger and cache-aware client.
 	azurePlugin := pricing.NewCalculator(logger, cachedClient)
+	// Optional. The RPC request cannot carry a billing account id.
+	azurePlugin.SetBillingAccountID(os.Getenv("FINFOCUS_BILLING_ACCOUNT_ID"))
 
 	// Setup context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
