@@ -126,7 +126,7 @@ func run() error {
 			Name:        "finfocus-plugin-azure-public",
 			Version:     version,
 			SpecVersion: pluginsdk.SpecVersion,
-			Providers:   []string{"azure"},
+			Providers:   []string{"azure", "azure-native"},
 			Metadata: map[string]string{
 				"type": "public-pricing-fallback",
 			},

@@ -53,7 +53,7 @@ var canonicalResourceTypes = map[string]string{
 // azureclient PriceQuery suitable for the Azure Retail Prices API.
 //
 // Validation is performed before mapping:
-//   - Provider must be "azure" (case-insensitive)
+//   - Provider must be "azure" or "azure-native" (case-insensitive)
 //   - ResourceType must match a supported type (case-insensitive)
 //   - Region must be resolvable (primary field or Tags["region"])
 //   - SKU must be resolvable (primary field or Tags["sku"]), except a function
@@ -94,14 +94,14 @@ func MapDescriptorToQuery(desc *finfocusv1.ResourceDescriptor) (*azureclient.Pri
 		return nil, fmt.Errorf("%w: descriptor is nil", ErrMissingRequiredFields)
 	}
 
-	// Validate provider (case-insensitive).
-	if !strings.EqualFold(desc.GetProvider(), "azure") {
+	// Validate provider (case-insensitive). Core copies azure-native from the token prefix.
+	if !acceptedAzureProvider(desc.GetProvider()) {
 		return nil, fmt.Errorf("unsupported provider: %s: %w", desc.GetProvider(), ErrUnsupportedResourceType)
 	}
 
 	// Look up resource type (case-insensitive).
 	normalizedType := strings.ToLower(strings.TrimSpace(desc.GetResourceType()))
-	mapped, ok := resolveMappedResource(normalizedType)
+	mapped, ok := resolveMappedResource(normalizedType, desc.GetTags())
 	if !ok {
 		return nil, fmt.Errorf("unsupported resource type: %s: %w", desc.GetResourceType(), ErrUnsupportedResourceType)
 	}
@@ -160,9 +160,10 @@ type mappedResource struct {
 	loadBalancer   bool
 }
 
-func resolveMappedResource(normalizedType string) (mappedResource, bool) {
+func resolveMappedResource(normalizedType string, tags map[string]string) (mappedResource, bool) {
 	serviceName, ok := resourceTypeToService[normalizedType]
 	mapped := mappedResource{serviceName: serviceName}
+	mapped, ok = matchDirectSegments(mapped, ok, normalizedType)
 	if isStorageAccountResourceType(normalizedType) {
 		mapped.storageAccount = true
 		if !ok {
@@ -170,7 +171,7 @@ func resolveMappedResource(normalizedType string) (mappedResource, bool) {
 			ok = true
 		}
 	}
-	if isFunctionAppResourceType(normalizedType) {
+	if isFunctionAppResourceType(normalizedType) || isNativeFunctionWebApp(normalizedType, tags) {
 		mapped.functionApp = true
 		if !ok {
 			mapped.serviceName = functionsServiceName
@@ -206,6 +207,22 @@ func resolveMappedResource(normalizedType string) (mappedResource, bool) {
 		}
 	}
 	return markLoadBalancer(mapped, ok, normalizedType)
+}
+
+func matchDirectSegments(mapped mappedResource, ok bool, normalizedType string) (mappedResource, bool) {
+	if isVirtualMachineResourceType(normalizedType) {
+		mapped.serviceName = defaultServiceName
+		ok = true
+	}
+	if isManagedDiskResourceType(normalizedType) {
+		mapped.serviceName = managedDisksService
+		ok = true
+	}
+	if isBlobStorageResourceType(normalizedType) {
+		mapped.serviceName = storageServiceName
+		ok = true
+	}
+	return mapped, ok
 }
 
 func markLoadBalancer(mapped mappedResource, ok bool, normalizedType string) (mappedResource, bool) {

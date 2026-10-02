@@ -18,6 +18,9 @@ Retail Prices API. Neither call reads billed spend, and neither call needs
 credentials. Confidence is recorded in `Source`. A FOCUS record is attached
 only when `FINFOCUS_BILLING_ACCOUNT_ID` is set.
 
+Providers `azure` and `azure-native` are accepted. A plan fixture with one
+resource for each priced type is in `testdata/pulumi/azure-plan.json`.
+
 ## Getting Started
 
 ### Prerequisites

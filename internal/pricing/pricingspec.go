@@ -18,6 +18,7 @@ const (
 	specUnitHourName      = "hour"
 	specUnitGBMonthName   = "GB-month"
 	providerAzure         = "azure"
+	providerAzureNative   = "azure-native"
 )
 
 // GetPricingSpec returns one PricingSpec for the requested resource.

@@ -1,0 +1,212 @@
+{
+  "steps": [
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure:compute/linuxVirtualMachine:LinuxVirtualMachine::vm",
+      "type": "azure:compute/linuxVirtualMachine:LinuxVirtualMachine",
+      "inputs": {
+        "location": "eastus",
+        "vmSize": "Standard_B1s"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure-native:compute:VirtualMachine::vm-native",
+      "type": "azure-native:compute:VirtualMachine",
+      "inputs": {
+        "location": "eastus",
+        "vmSize": "Standard_B1s"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure:compute/managedDisk:ManagedDisk::disk",
+      "type": "azure:compute/managedDisk:ManagedDisk",
+      "inputs": {
+        "location": "eastus",
+        "sku": "Premium_SSD_LRS",
+        "size_gb": "128"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure-native:compute:Disk::disk-native",
+      "type": "azure-native:compute:Disk",
+      "inputs": {
+        "location": "eastus",
+        "sku": "Premium_SSD_LRS",
+        "size_gb": "128"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure:storage/blob:Blob::blob",
+      "type": "azure:storage/blob:Blob",
+      "inputs": {
+        "location": "eastus",
+        "sku": "Hot LRS",
+        "size_gb": "100"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure-native:storage:Blob::blob-native",
+      "type": "azure-native:storage:Blob",
+      "inputs": {
+        "location": "eastus",
+        "sku": "Hot LRS",
+        "size_gb": "100"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure:storage/account:Account::account",
+      "type": "azure:storage/account:Account",
+      "inputs": {
+        "location": "eastus",
+        "sku": "Hot LRS",
+        "size_gb": "100"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure-native:storage:StorageAccount::account-native",
+      "type": "azure-native:storage:StorageAccount",
+      "inputs": {
+        "location": "eastus",
+        "sku": "Hot LRS",
+        "size_gb": "100"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure:appservice/servicePlan:ServicePlan::plan",
+      "type": "azure:appservice/servicePlan:ServicePlan",
+      "inputs": {
+        "location": "eastus",
+        "sku": "P1v3"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure-native:web:AppServicePlan::plan-native",
+      "type": "azure-native:web:AppServicePlan",
+      "inputs": {
+        "location": "eastus",
+        "sku": "P1v3"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure:appservice/functionApp:FunctionApp::fn",
+      "type": "azure:appservice/functionApp:FunctionApp",
+      "inputs": {
+        "location": "eastus",
+        "executions": "2000000",
+        "gb_seconds": "500000"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure-native:web:WebApp::fn-native",
+      "type": "azure-native:web:WebApp",
+      "inputs": {
+        "location": "eastus",
+        "kind": "FunctionApp",
+        "executions": "2000000",
+        "gb_seconds": "500000"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure:containerservice/kubernetesCluster:KubernetesCluster::aks",
+      "type": "azure:containerservice/kubernetesCluster:KubernetesCluster",
+      "inputs": {
+        "location": "eastus",
+        "tier": "Standard"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure-native:containerservice:ManagedCluster::aks-native",
+      "type": "azure-native:containerservice:ManagedCluster",
+      "inputs": {
+        "location": "eastus",
+        "tier": "Standard"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure:mssql/database:Database::sql",
+      "type": "azure:mssql/database:Database",
+      "inputs": {
+        "location": "eastus",
+        "sku": "GP_Gen5_2",
+        "size_gb": "100"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure-native:sql:Database::sql-native",
+      "type": "azure-native:sql:Database",
+      "inputs": {
+        "location": "eastus",
+        "sku": "GP_Gen5_2",
+        "size_gb": "100"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure:cosmosdb/account:Account::cosmos",
+      "type": "azure:cosmosdb/account:Account",
+      "inputs": {
+        "location": "eastus",
+        "ru_per_second": "400",
+        "size_gb": "10"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure-native:documentdb:DatabaseAccount::cosmos-native",
+      "type": "azure-native:documentdb:DatabaseAccount",
+      "inputs": {
+        "location": "eastus",
+        "ru_per_second": "400",
+        "size_gb": "10"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure:lb/loadBalancer:LoadBalancer::lb",
+      "type": "azure:lb/loadBalancer:LoadBalancer",
+      "inputs": {
+        "location": "eastus"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure-native:network:LoadBalancer::lb-native",
+      "type": "azure-native:network:LoadBalancer",
+      "inputs": {
+        "location": "eastus"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure-native:compute:VirtualMachineScaleSet::vmss",
+      "type": "azure-native:compute:VirtualMachineScaleSet",
+      "inputs": {
+        "location": "eastus",
+        "vmSize": "Standard_B1s"
+      }
+    },
+    {
+      "op": "create",
+      "urn": "urn:pulumi:dev::prices::azure-native:network:NatGateway::nat",
+      "type": "azure-native:network:NatGateway",
+      "inputs": {
+        "location": "eastus"
+      }
+    }
+  ]
+}

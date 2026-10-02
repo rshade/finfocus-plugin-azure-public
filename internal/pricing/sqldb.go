@@ -419,14 +419,20 @@ func sqlStatus(err error) error {
 // segment, including Pulumi azure:sql/database:Database. A longer prefix such
 // as sql/databaseextra does not match, and neither does mysql/database.
 func isSQLDatabaseResourceType(lower string) bool {
-	idx := strings.Index(lower, sqlDatabaseSegment)
+	return boundedSegment(lower, sqlDatabaseSegment) ||
+		boundedSegment(lower, "mssql/database") ||
+		tokenSuffix(lower, "sql", "database")
+}
+
+func boundedSegment(lower, segment string) bool {
+	idx := strings.Index(lower, segment)
 	if idx < 0 {
 		return false
 	}
 	if idx > 0 && !sqlSegmentSep(lower[idx-1]) {
 		return false
 	}
-	return resourceSegment(lower, sqlDatabaseSegment)
+	return resourceSegment(lower, segment)
 }
 
 func sqlSegmentSep(b byte) bool {

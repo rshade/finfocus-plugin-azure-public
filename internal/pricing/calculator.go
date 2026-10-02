@@ -69,7 +69,7 @@ func (c *Calculator) GetPluginInfo(
 		Name:        "azure-public",
 		Version:     "0.1.0",
 		SpecVersion: pluginsdk.SpecVersion,
-		Providers:   []string{"azure"},
+		Providers:   []string{providerAzure, providerAzureNative},
 	}, nil
 }
 
@@ -620,18 +620,10 @@ func estimateQueryFromRequest(req *finfocusv1.EstimateCostRequest) (azureclient.
 // refers to compute/virtualmachine as a full segment (not a prefix of e.g.
 // "compute/virtualmachinescaleset").
 func isVirtualMachineResourceType(lower string) bool {
-	const segment = "compute/virtualmachine"
-	idx := strings.Index(lower, segment)
-	if idx < 0 {
-		return false
-	}
-	end := idx + len(segment)
-	if end == len(lower) {
-		return true
-	}
-	// Next char must be a segment separator, not a continuation letter/digit.
-	next := lower[end]
-	return next == ':' || next == '/' || next == ' '
+	return resourceSegment(lower, "compute/virtualmachine") ||
+		resourceSegment(lower, "compute/linuxvirtualmachine") ||
+		resourceSegment(lower, "compute/windowsvirtualmachine") ||
+		tokenSuffix(lower, "compute", "virtualmachine")
 }
 
 func firstNonEmptyTag(tags map[string]string, keys ...string) string {

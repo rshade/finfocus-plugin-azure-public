@@ -565,7 +565,7 @@ func classifyResource(resource *finfocusv1.ResourceDescriptor) (string, error) {
 	if provider == "" {
 		return "", missingFieldsError([]string{"provider"})
 	}
-	if !strings.EqualFold(provider, "azure") {
+	if !acceptedAzureProvider(provider) {
 		return "", status.Errorf(codes.InvalidArgument, "unsupported provider: %s", provider)
 	}
 
@@ -586,7 +586,7 @@ func classifyResource(resource *finfocusv1.ResourceDescriptor) (string, error) {
 		return kindStorageAccount, nil
 	case isAppServicePlanResourceType(lower):
 		return kindAppServicePlan, nil
-	case isFunctionAppResourceType(lower):
+	case isFunctionAppResourceType(lower) || isNativeFunctionWebApp(lower, resource.GetTags()):
 		return kindFunctionApp, nil
 	case isAKSResourceType(lower):
 		return kindAKS, nil
@@ -602,10 +602,25 @@ func classifyResource(resource *finfocusv1.ResourceDescriptor) (string, error) {
 }
 
 func isBlobStorageResourceType(lower string) bool {
-	if resourceSegment(lower, "storage/blobstorage") {
+	return resourceSegment(lower, "storage/blobstorage") ||
+		resourceSegment(lower, "storage/blob") ||
+		tokenSuffix(lower, "storage", "blob")
+}
+
+// acceptedAzureProvider reports whether core's provider is this plugin's cloud.
+// azure-native is the Pulumi token prefix. The priced cloud is still Azure.
+func acceptedAzureProvider(provider string) bool {
+	switch strings.ToLower(strings.TrimSpace(provider)) {
+	case providerAzure, providerAzureNative:
 		return true
+	default:
+		return false
 	}
-	return resourceSegment(lower, "storage/blob")
+}
+
+// tokenSuffix reports whether lower ends in :module:name, the Azure Native token shape.
+func tokenSuffix(lower, module, name string) bool {
+	return strings.HasSuffix(lower, ":"+module+":"+name)
 }
 
 func resourceSegment(lower, segment string) bool {

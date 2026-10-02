@@ -15,7 +15,8 @@
   "specification":  {
     "specVersion":  "1.0",
     "supportedProviders":  [
-      "azure"
+      "azure",
+      "azure-native"
     ],
     "capabilities":  [
       "projected_cost",

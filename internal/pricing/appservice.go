@@ -256,7 +256,9 @@ func (c *Calculator) fetchServicePrices(
 // or the Pulumi appservice/plan segment.
 func isAppServicePlanResourceType(lower string) bool {
 	return resourceSegment(lower, appServicePlanSegment) ||
-		resourceSegment(lower, appServicePulumiPlanSegment)
+		resourceSegment(lower, appServicePulumiPlanSegment) ||
+		resourceSegment(lower, "appservice/serviceplan") ||
+		tokenSuffix(lower, "web", "appserviceplan")
 }
 
 // isFunctionAppResourceType reports whether lower contains web/functionapp or
@@ -264,6 +266,15 @@ func isAppServicePlanResourceType(lower string) bool {
 func isFunctionAppResourceType(lower string) bool {
 	return resourceSegment(lower, functionAppSegment) ||
 		resourceSegment(lower, functionAppPulumiSegment)
+}
+
+// isNativeFunctionWebApp reports an Azure Native WebApp whose kind is a function app.
+// A WebApp without that kind is a site, not this quote.
+func isNativeFunctionWebApp(lower string, tags map[string]string) bool {
+	if !tokenSuffix(lower, "web", "webapp") {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(tags["kind"]), "FunctionApp")
 }
 
 func functionQuoteKind(model, sku string) (string, error) {
