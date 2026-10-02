@@ -51,7 +51,7 @@ func (c *Calculator) quoteAKS(
 ) (monthlyQuote, error) {
 	region := descriptorRegion(resource)
 	if region == "" {
-		return monthlyQuote{}, missingFieldsError([]string{"region"})
+		return monthlyQuote{}, missingFieldsError([]string{missingFieldRegion})
 	}
 	meter, tierLabel, err := aksControlPlane(resource)
 	if err != nil {

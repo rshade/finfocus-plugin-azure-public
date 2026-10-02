@@ -290,6 +290,7 @@ func focusCategoryCases() map[string]finfocusv1.FocusServiceCategory {
 		"compute/VirtualMachine":             finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE,
 		"containerservice/KubernetesCluster": finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE,
 		"cosmosdb/Account":                   finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_DATABASE,
+		"network/LoadBalancer":               finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_NETWORK,
 		"sql/Database":                       finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_DATABASE,
 		"storage/BlobStorage":                finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_STORAGE,
 		"storage/ManagedDisk":                finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_STORAGE,

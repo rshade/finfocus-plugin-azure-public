@@ -37,17 +37,18 @@ type pricingSpecWant struct {
 }
 
 type pricingSpecFX struct {
-	vmB1s      []azureclient.PriceItem
-	vm         []azureclient.PriceItem
-	disk       []azureclient.PriceItem
-	blob       []azureclient.PriceItem
-	storage    []azureclient.PriceItem
-	app        []azureclient.PriceItem
-	functions  []azureclient.PriceItem
-	aks        []azureclient.PriceItem
-	sqlCompute []azureclient.PriceItem
-	sqlStorage []azureclient.PriceItem
-	cosmos     []azureclient.PriceItem
+	vmB1s        []azureclient.PriceItem
+	vm           []azureclient.PriceItem
+	disk         []azureclient.PriceItem
+	blob         []azureclient.PriceItem
+	storage      []azureclient.PriceItem
+	app          []azureclient.PriceItem
+	functions    []azureclient.PriceItem
+	aks          []azureclient.PriceItem
+	sqlCompute   []azureclient.PriceItem
+	sqlStorage   []azureclient.PriceItem
+	cosmos       []azureclient.PriceItem
+	loadBalancer []azureclient.PriceItem
 
 	vmItem         azureclient.PriceItem
 	diskItem       azureclient.PriceItem
@@ -64,6 +65,7 @@ type pricingSpecFX struct {
 	sqlStorageItem azureclient.PriceItem
 	cosmosRU       azureclient.PriceItem
 	cosmosStored   azureclient.PriceItem
+	lbItem         azureclient.PriceItem
 }
 
 func TestGetPricingSpecEverySupportedType(t *testing.T) {
@@ -348,7 +350,7 @@ func addComputeStorageWants(t *testing.T, fx pricingSpecFX, wants map[string]pri
 func addPlatformWants(t *testing.T, fx pricingSpecFX, wants map[string]pricingSpecWant) {
 	t.Helper()
 
-	requireUSD(t, fx.appItem, fx.execItem, fx.gbItem, fx.aksItem, fx.nodeItem)
+	requireUSD(t, fx.appItem, fx.execItem, fx.gbItem, fx.aksItem, fx.nodeItem, fx.lbItem)
 	if fx.appItem.UnitOfMeasure != "1 Hour" ||
 		fx.aksItem.UnitOfMeasure != "1 Hour" ||
 		fx.nodeItem.UnitOfMeasure != "1 Hour" {
@@ -379,6 +381,9 @@ func addPlatformWants(t *testing.T, fx pricingSpecFX, wants map[string]pricingSp
 		},
 		reject: []float64{0, fx.execItem.RetailPrice, fx.gbItem.RetailPrice * pluginsdk.HoursPerMonth},
 	}
+	wants["network/LoadBalancer"] = hourlySpec(fx.lbItem, map[string]string{
+		"rules": fx.lbItem.UnitOfMeasure,
+	})
 	wants["containerservice/KubernetesCluster"] = pricingSpecWant{
 		billingMode: specBillingPerHour,
 		unit:        specUnitHour,
@@ -478,6 +483,7 @@ func loadPricingSpecFX(t *testing.T) pricingSpecFX {
 	aks := loadRetailFixture(t, aksFixturePath)
 	sqlCompute, sqlStorage := loadSQLFixtures(t)
 	cosmos := loadRetailFixture(t, cosmosTestFile)
+	loadBalancer := loadRetailFixture(t, loadBalancerFixturePath)
 
 	vmItem := azureclient.PriceItem{
 		CurrencyCode:  "USD",
@@ -522,21 +528,22 @@ func loadPricingSpecFX(t *testing.T) pricingSpecFX {
 			{MeterName: "Hot LRS Write Operations", RetailPrice: 0.0001, CurrencyCode: "USD", UnitOfMeasure: "10K"},
 			blobItem,
 		},
-		storage:     storage.Items,
-		app:         app.Items,
-		functions:   functions.Items,
-		aks:         aks.Items,
-		sqlCompute:  sqlCompute.Items,
-		sqlStorage:  sqlStorage.Items,
-		cosmos:      cosmos.Items,
-		vmItem:      vmItem,
-		diskItem:    diskItem,
-		blobItem:    blobItem,
-		storageItem: fixtureStorageBaseItem(t, storage.Items, "Hot LRS"),
-		appItem:     fixtureAppPlan(t, app.Items, "P1v3", false),
-		execItem:    fixturePositiveMeter(t, functions.Items, "Functions", "Standard Total Executions", "10"),
-		gbItem:      fixturePositiveMeter(t, functions.Items, "Functions", "Standard Execution Time", "1 GB Second"),
-		vcpuItem:    fixturePositiveMeter(t, functions.Items, "Premium Functions", "Premium vCPU Duration", "1 Hour"),
+		storage:      storage.Items,
+		app:          app.Items,
+		functions:    functions.Items,
+		aks:          aks.Items,
+		sqlCompute:   sqlCompute.Items,
+		sqlStorage:   sqlStorage.Items,
+		cosmos:       cosmos.Items,
+		loadBalancer: loadBalancer.Items,
+		vmItem:       vmItem,
+		diskItem:     diskItem,
+		blobItem:     blobItem,
+		storageItem:  fixtureStorageBaseItem(t, storage.Items, "Hot LRS"),
+		appItem:      fixtureAppPlan(t, app.Items, "P1v3", false),
+		execItem:     fixturePositiveMeter(t, functions.Items, "Functions", "Standard Total Executions", "10"),
+		gbItem:       fixturePositiveMeter(t, functions.Items, "Functions", "Standard Execution Time", "1 GB Second"),
+		vcpuItem:     fixturePositiveMeter(t, functions.Items, "Premium Functions", "Premium vCPU Duration", "1 Hour"),
 		memoryItem: fixturePositiveMeter(
 			t, functions.Items, "Premium Functions", "Premium Memory Duration", "1 GiB Hour",
 		),
@@ -563,6 +570,9 @@ func loadPricingSpecFX(t *testing.T) pricingSpecFX {
 		),
 		cosmosStored: requireCosmosItem(
 			t, cosmos.Items, cosmosTestProduct, cosmosTestSKURU, cosmosTestMeterStored, cosmosTestUnitGBMonth,
+		),
+		lbItem: requireLoadBalancerMeter(
+			t, loadBalancer.Items, loadBalancerMeterIncluded, appServiceUnitHour,
 		),
 	}
 }
@@ -615,6 +625,10 @@ func pricingSpecItems(filter string, fx pricingSpecFX) []azureclient.PriceItem {
 		return fx.sqlStorage
 	case strings.Contains(filter, "Azure Cosmos DB"):
 		return fx.cosmos
+	case strings.Contains(filter, "Load Balancer") && strings.Contains(filter, "armRegionName eq 'Global'"):
+		return fx.loadBalancer
+	case strings.Contains(filter, "Load Balancer"):
+		return []azureclient.PriceItem{}
 	default:
 		return nil
 	}

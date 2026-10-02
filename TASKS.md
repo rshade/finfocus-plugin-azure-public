@@ -890,6 +890,8 @@ estimate with the usage assumptions stated, or record why not.
 
 **Acceptance Criteria**: live-verified query, an honest status, no silent zero.
 
+**Status:** DONE, `go test -count=1 -run 'TestGetProjectedCostLoadBalancer|TestGetPricingSpecEverySupportedType' ./internal/pricing/` passed. Live filter `serviceName eq 'Load Balancer' and armRegionName eq 'eastus'` returned no rows. The same service filter at price region `Global` returned the Standard included rules meter at 0.025 USD per hour. Omitted `rule_count` bills that meter once, 18.25 for 730 hours, and the quote says so. `rule_count` 0 has no hourly charge. Gateway is `InvalidArgument`. Not delivered: Gateway and cross-region meters. Break check: skipping the `Global` retry made the regional case `NotFound`.
+
 #### AZ-6.10 — Test hygiene
 
 **Description**: remove the stale "GetProjectedCost not implemented yet" skip in

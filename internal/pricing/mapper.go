@@ -30,6 +30,7 @@ var resourceTypeToService = map[string]string{
 	aksResourceSegment:            aksServiceName,
 	sqlDatabaseSegment:            sqlServiceName,
 	cosmosAccountSegment:          cosmosServiceName,
+	loadBalancerSegment:           loadBalancerServiceName,
 }
 
 // canonicalResourceTypes maps normalized keys back to their display form.
@@ -45,6 +46,7 @@ var canonicalResourceTypes = map[string]string{
 	aksResourceSegment:            canonicalKubernetesCluster,
 	sqlDatabaseSegment:            canonicalSQLDatabase,
 	cosmosAccountSegment:          canonicalCosmosAccount,
+	loadBalancerSegment:           canonicalLoadBalancer,
 }
 
 // MapDescriptorToQuery translates a finfocus ResourceDescriptor into an
@@ -79,6 +81,10 @@ var canonicalResourceTypes = map[string]string{
 // Cosmos DB accounts match cosmosdb/account, including Pulumi
 // azure:cosmosdb/account:Account. ArmSkuName and ProductName stay empty.
 // Throughput is not an ARM SKU. Region is required. Sku may be empty.
+//
+// Load balancers match network/loadbalancer and the classic lb/loadbalancer
+// token. ArmSkuName stays empty. Region is required. Sku may be empty and
+// then means Standard. The price query may fall back to Global.
 //
 // Returns ErrUnsupportedResourceType for unknown providers or resource types.
 // Returns ErrMissingRequiredFields naming all missing fields in a single error.
@@ -136,7 +142,8 @@ func MapDescriptorToQuery(desc *finfocusv1.ResourceDescriptor) (*azureclient.Pri
 		query.ArmSkuName = ""
 		query.ProductName = generalBlockBlobV2Product
 	}
-	if mapped.appServicePlan || mapped.functionApp || mapped.aks || mapped.sqlDatabase || mapped.cosmos {
+	if mapped.appServicePlan || mapped.functionApp || mapped.aks ||
+		mapped.sqlDatabase || mapped.cosmos || mapped.loadBalancer {
 		query.ArmSkuName = ""
 	}
 	return query, nil
@@ -150,6 +157,7 @@ type mappedResource struct {
 	aks            bool
 	sqlDatabase    bool
 	cosmos         bool
+	loadBalancer   bool
 }
 
 func resolveMappedResource(normalizedType string) (mappedResource, bool) {
@@ -197,11 +205,23 @@ func resolveMappedResource(normalizedType string) (mappedResource, bool) {
 			ok = true
 		}
 	}
+	return markLoadBalancer(mapped, ok, normalizedType)
+}
+
+func markLoadBalancer(mapped mappedResource, ok bool, normalizedType string) (mappedResource, bool) {
+	if !isLoadBalancerResourceType(normalizedType) {
+		return mapped, ok
+	}
+	mapped.loadBalancer = true
+	if !ok {
+		mapped.serviceName = loadBalancerServiceName
+		ok = true
+	}
 	return mapped, ok
 }
 
 func missingMappedSKU(mapped mappedResource, sku string, tags map[string]string) []string {
-	if sku != "" || mapped.functionApp || mapped.cosmos {
+	if sku != "" || mapped.functionApp || mapped.cosmos || mapped.loadBalancer {
 		return nil
 	}
 	if mapped.sqlDatabase {

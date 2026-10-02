@@ -243,7 +243,7 @@ func (c *Calculator) fetchServicePrices(
 ) (azureclient.CachedResult, error) {
 	region := descriptorRegion(resource)
 	if region == "" {
-		return azureclient.CachedResult{}, missingFieldsError([]string{"region"})
+		return azureclient.CachedResult{}, missingFieldsError([]string{missingFieldRegion})
 	}
 	return c.fetchPrices(ctx, azureclient.PriceQuery{
 		ArmRegionName: region,

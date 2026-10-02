@@ -296,16 +296,6 @@ func TestMapDescriptorToQuery_UnsupportedResourceType(t *testing.T) {
 		wantContains string
 	}{
 		{
-			name: "unknown type network/LoadBalancer",
-			desc: &finfocusv1.ResourceDescriptor{
-				Provider:     "azure",
-				ResourceType: "network/LoadBalancer",
-				Sku:          "Standard",
-				Region:       "eastus",
-			},
-			wantContains: "network/LoadBalancer",
-		},
-		{
 			name: "completely unknown type custom/Widget",
 			desc: &finfocusv1.ResourceDescriptor{
 				Provider:     "azure",
@@ -391,6 +381,7 @@ func TestSupportedResourceTypes(t *testing.T) {
 		"compute/VirtualMachine",
 		"containerservice/KubernetesCluster",
 		"cosmosdb/Account",
+		"network/LoadBalancer",
 		"sql/Database",
 		"storage/BlobStorage",
 		"storage/ManagedDisk",

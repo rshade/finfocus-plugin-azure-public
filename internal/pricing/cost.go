@@ -41,6 +41,7 @@ const (
 	taskEstimate  = "AZ-6.7"
 
 	blobDataStoredMeter = "data stored"
+	missingFieldRegion  = "region"
 )
 
 // monthlyQuote is a priced resource on a monthly basis, plus the unit price
@@ -243,6 +244,8 @@ func (c *Calculator) quoteResource(
 		return c.quoteSQLDatabase(ctx, resource, taskID)
 	case kindCosmosDB:
 		return c.quoteCosmosDB(ctx, resource, taskID)
+	case kindLoadBalancer:
+		return c.quoteLoadBalancer(ctx, resource, taskID)
 	default:
 		return monthlyQuote{}, status.Errorf(
 			codes.Unimplemented,
@@ -591,6 +594,8 @@ func classifyResource(resource *finfocusv1.ResourceDescriptor) (string, error) {
 		return kindSQLDatabase, nil
 	case isCosmosAccountResourceType(lower):
 		return kindCosmosDB, nil
+	case isLoadBalancerResourceType(lower):
+		return kindLoadBalancer, nil
 	default:
 		return "", status.Errorf(codes.Unimplemented, "unsupported resource type: %s", resourceType)
 	}

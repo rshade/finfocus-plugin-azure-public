@@ -171,6 +171,7 @@ query, err := pricing.MapDescriptorToQuery(desc)
 | `containerservice/KubernetesCluster` | Azure Kubernetes Service |
 | `sql/Database` | SQL Database |
 | `cosmosdb/Account` | Azure Cosmos DB |
+| `network/LoadBalancer` | Load Balancer |
 
 **Behavior**:
 - Case-insensitive provider and resource type matching
@@ -380,6 +381,23 @@ product `Azure Cosmos DB autoscale`, then applies the same `/ 100 * 730`
 rule. When `size_gb` is set, storage stays the provisioned `Data Stored`
 row. sku `Free`, `Free Tier`, and `RUm` are not selected. Components are
 `ru` and, when storage was requested, `storage`.
+
+### Load Balancer Cost Estimation
+
+`GetProjectedCost` prices `network/LoadBalancer`, including classic
+`azure:lb/loadBalancer:LoadBalancer` and
+`azure-native:network/loadBalancer:LoadBalancer`. The service is
+`Load Balancer`. `ArmSkuName` stays empty. An empty name means `Standard`.
+The query uses the resource region, then price region `Global` when that
+page has no included-rules meter. A live query on 2026-10-01 returned no
+rows for one public region and, at `Global`, meter
+`Standard Included LB Rules and Outbound Rules` at 0.025 USD per hour.
+Monthly cost for that meter is `retailPrice * 730`. Omitted `rule_count`
+uses it once, which covers up to 5 load-balancing and outbound rules.
+`rule_count` 0 has no hourly charge. A higher count adds meter
+`Standard Overage LB Rules and Outbound Rules`. `data_processed_gb` adds
+meter `Standard Data Processed` only when set. Inbound NAT rules are not
+counted. Gateway and cross-region meters are `InvalidArgument`.
 
 ### Other cost RPCs
 
