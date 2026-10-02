@@ -195,7 +195,7 @@ func TestCalculatorAccuracyInsideBandPasses(t *testing.T) {
 func skipEmptyOwnerCalculatorCost(t *testing.T, name string, ownerMonthly *float64) float64 {
 	t.Helper()
 	if ownerMonthly == nil {
-		t.Skipf("%s: owner-supplied calculator monthly cost is empty", name)
+		t.Skipf("%s: owner value not supplied: owner_monthly_usd", name)
 	}
 	return *ownerMonthly
 }

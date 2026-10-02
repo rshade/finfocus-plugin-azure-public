@@ -902,6 +902,8 @@ owner value is missing.
 **Acceptance Criteria**: `go test -v ./... | grep SKIP` shows only skips with a stated
 input requirement or `-short`.
 
+**Status:** DONE, `go test -count=1 -v ./...` passed. The only skips are the nine accuracy cases. Each says `owner value not supplied: owner_monthly_usd` and names the case. `TestProjectedCostSupported` prices a virtual machine. Break check: a Windows product name made that test `NotFound`. `newTestClient` and `newTestCachedClient` document the clients they build.
+
 #### AZ-6.11 — Documentation matches the code
 
 **Description**: update `ROADMAP.md`, `CONTEXT.md`, `IMPLEMENTATION_SUMMARY.md`,
