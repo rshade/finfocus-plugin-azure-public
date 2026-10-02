@@ -2,69 +2,65 @@
 
 <!-- markdownlint-disable MD013 MD060 MD031 MD032 MD029 -->
 
-**Current branch**: `020-vm-cost-estimation` | **Target**: v0.1.0 |
-**Updated**: 2026-09-30 (spec v0.7.0)
+**Current branch**: `run/grok-20261001` | **Target**: v0.1.0 |
+**Updated**: 2026-10-01 (spec v0.7.0). `main` is unchanged. No release tag.
 
 ## Current State Summary
 
 ### Build & Test Status
 
-- **Build**: ✅ PASS (`go build ./...`)
-- **Tests**: ✅ PASS (`go test ./...` — all 6 packages)
-- **Linting**: golangci-lint reported 2 findings on 2026-09-30: `goconst` for the "USD" literal in `internal/pricing/calculator.go` and an unused `nolint` directive in `internal/azureclient/logger.go`. Re-run `make lint` for the current state.
-- **Go version**: 1.27.1 (bumped during the 2026-09-30 toolchain rollout; uncommitted)
-- **Spec version**: finfocus-spec v0.7.0 (bumped during the same rollout; uncommitted). `aws-public` is also on v0.7.0 now.
+- **Build**: passing at the AZ-6.10 commit (`go build ./...`)
+- **Tests**: `go test -count=1 -v ./...` passed after AZ-6.10. The only skips are nine accuracy cases. Each names `owner_monthly_usd`.
+- **Linting**: the 2026-09-30 note of two findings is obsolete. Re-run `make lint` for a fresh result.
+- **Go version**: 1.27.1, committed
+- **Spec version**: `github.com/rshade/finfocus-spec` v0.7.0, committed
 
 ### RPC Implementation Status
 
 | RPC | Status | Notes |
-|-----|--------|-------|
-| `Supports` | ✅ Complete | Maps resource types via `MapDescriptorToQuery()` |
-| `EstimateCost` | ✅ Complete | Full VM pricing estimation |
-| `GetProjectedCost` | ⚠️ Partial | Falls through to Unimplemented on validation failure |
-| `GetActualCost` | ⚠️ Partial | Falls through to Unimplemented on validation failure |
-| `GetPricingSpec` | ✅ Complete | Provides SDK discovery |
-| `GetRecommendations` | ✅ Stub | Returns unimplemented |
-| `DismissRecommendation` | ✅ Stub | Returns unimplemented |
-| `GetBudgets` | ✅ Stub | Returns unimplemented |
-| `DryRun` | ✅ Stub | Returns unimplemented |
+| --- | --- | --- |
+| `Supports` | Complete | Maps resource types |
+| `EstimateCost` | Complete | Every mapped type. Virtual machines and managed disks keep their parsers. |
+| `GetProjectedCost` | Complete | Monthly retail quote |
+| `GetActualCost` | Complete | Monthly quote times hours over 730. A running-cost estimate, not billed spend. |
+| `GetPricingSpec` | Complete | One spec for the quoted resource |
+| `GetRecommendations` | Stub | Embedded unimplemented server |
+| `DismissRecommendation` | Stub | Embedded unimplemented server |
+| `GetBudgets` | Stub | Embedded unimplemented server |
+| `DryRun` | Complete | Validates a descriptor and does not call the API |
 
 ### Resource Type Coverage
 
-**Supported today** (3 types, all in the `resourceTypeToService` table in `internal/pricing/mapper.go`):
-- `compute/VirtualMachine` (Azure service: Virtual Machines)
-- `storage/ManagedDisk` (Azure service: Managed Disks)
-- `storage/BlobStorage` (Azure service: Storage)
+Mapped types (ten):
 
-**v0.1.0 scope is all the resource types, not these three.** Also in scope (owner
-decision, 2026-09-30): Spot VMs (#42), Storage Accounts (#50), App Service and
-Azure Functions (#48), AKS (#49), and SQL Database and Cosmos DB (#51, which starts
-as a spike and ends as working estimation). Tasks AZ-2.3 to AZ-2.8.
+- `compute/VirtualMachine` (Spot is `priority=Spot`)
+- `storage/ManagedDisk`
+- `storage/BlobStorage`
+- `storage/StorageAccount`
+- `web/AppServicePlan`
+- `web/FunctionApp`
+- `containerservice/KubernetesCluster`
+- `sql/Database` (`GP_Gen5` provisioned)
+- `cosmosdb/Account`
+- `network/LoadBalancer` (Standard rules)
 
-**Stretch, only after everything in scope is verified** (parity with
-`aws-public`, no issue yet): Load Balancer, NAT Gateway, VM Scale Sets, Azure Cache
-for Redis, Database for PostgreSQL and MySQL. Task AZ-2.9.
+Not priced: NAT Gateway, virtual machine scale sets, Cache for Redis, and database servers for PostgreSQL and MySQL. Gateway and cross-region load balancer meters are not quoted.
 
-**Every other open issue is also in scope**: DryRun (#43), GetPricingSpec (#44),
-multi-pricing comparison (#45), FOCUS alignment (#46), regional comparison (#47),
-the test and validation issues #52 to #55, and the two research spikes #56 and #57.
-Nothing in the current tracker is deferred. See the Issue Index.
+Not returned on an RPC: a repeated price list ([spec issue 588](https://github.com/rshade/finfocus-spec/issues/588)) and a repeated region list ([spec issue 589](https://github.com/rshade/finfocus-spec/issues/589)). A FOCUS record is attached only when `FINFOCUS_BILLING_ACCOUNT_ID` is set. A per-request billing account id is [spec issue 590](https://github.com/rshade/finfocus-spec/issues/590).
 
 ### Release Infrastructure
 
-- ❌ No `.goreleaser.yaml` (AWS plugin has one)
-- ❌ No release workflow (AWS plugin uses `release-please.yml` + `release.yml`)
-- ❌ No release-please config
-- ❌ No version tags (GitHub: no releases)
-- ❌ Not registered in finfocus core (`internal/registry/registry.json`)
+- `.goreleaser.yaml` is present (AZ-3.3)
+- Release workflow files are present
+- release-please configuration is present
+- No version tag in this run (AZ-5.1 is SKIPPED)
+- The core registry file was not edited
 
 ### File Evidence
 
-- Uncommitted file: `specs/001-go-module-init/plan.md`
-- Main entry: `cmd/finfocus-plugin-azure-public/main.go` (runs pluginsdk.Serve)
-- Pricing logic: `internal/pricing/calculator.go` (402 lines, well-structured)
-- Mapper: `internal/pricing/mapper.go` (113 lines, validates resources)
-- Azure client: `internal/azureclient/client.go` + cache + retry logic (production-ready)
+- Entry point: `cmd/finfocus-plugin-azure-public/main.go`
+- Pricing: `internal/pricing`
+- Client and cache: `internal/azureclient`
 
 ## Dependency-Ordered Phases to v0.1.0
 
@@ -333,13 +329,9 @@ tests pass.
 
 #### AZ-2.9 — Stretch: aws-public parity types
 
-**Status:** DONE, no stretch types landed, network/LoadBalancer stopped because contains(serviceName, 'Load Balancer') returned 48 Consumption rows and no single meter is the price (Standard and Global each publish included rules, overage rules, and data processed; Gateway publishes Gateway and Gateway Chain hourly meters)
+**Status:** DONE via AZ-6.9 for Standard rules. The other stretch types stay unpriced: NAT Gateway, virtual machine scale sets, Cache for Redis, and database servers for PostgreSQL and MySQL. Not delivered: Gateway and cross-region meters.
 
-**Description**: Only after AZ-2.1 to AZ-2.8 are verified. In priority order: Load
-Balancer, NAT Gateway, Virtual Machine Scale Sets (reuse the VM estimator), Azure Cache
-for Redis, Azure Database for PostgreSQL and MySQL flexible servers. The same method as
-above. Stop at any boundary with everything verified. Partial and correct beats
-complete and unverified.
+**Description**: Standard Load Balancer rules are quoted in AZ-6.9. The remaining stretch types stay unpriced: NAT Gateway, virtual machine scale sets, Cache for Redis, and database servers for PostgreSQL and MySQL.
 
 **Files**: `internal/pricing/`, tests and fixtures.
 
@@ -477,6 +469,8 @@ source or marked unanswerable.
 ---
 
 ### Phase 3: Quality Gates & Release Infrastructure (AZ-3.x)
+
+This phase is the release-plan quality-gate list. AZ-3.1 and AZ-3.2 are DONE in the status lines below. The January plan in `IMPLEMENTATION_SUMMARY.md` uses Phase 3 for the caching layer, which is a different list.
 
 **Rationale**: Ensure production readiness and establish release pipeline.
 
@@ -652,9 +646,7 @@ fails a case whose estimate is outside the tolerance when a value is supplied.
 
 **Status:** DONE via AZ-6.6. `TestCacheHitRateOverGRPC` uses a real gRPC server. 128 hits, 1 miss, ratio 0.992248.
 
-**Description**: Go benchmarks for the estimation path with a mocked client, and a
-concurrent gRPC load test that checks the cache hit rate exceeds 80% for repeated
-queries. Record baseline numbers in a document.
+**Description**: The load test is `TestCacheHitRateOverGRPC`: a real gRPC server and client, concurrent calls, and a cache hit rate higher than 80%. The recorded run is 128 hits, 1 miss, ratio 0.992248. Benchmarks for the estimation path live beside it.
 
 **Files**: `internal/pricing/` and `internal/azureclient/` benchmark and load tests.
 
@@ -714,6 +706,8 @@ gRPC code; the suite runs in seconds; tests pass.
 }
 ```
 
+The example `min_spec_version` is `0.7.0`.
+
 **Files**: `../finfocus/internal/registry/registry.json` (external to this repo)
 
 **Acceptance Check**:
@@ -738,7 +732,7 @@ finfocus plugin list | grep azure
 
 **Status:** SKIPPED, release tag is outside this run
 
-**Description**: Create annotated git tag `v0.1.0` and push to GitHub. GitHub Actions (`release.yml`) automatically builds binaries and publishes to Releases. This marks the official stable point with 3 supported resource types and working GetProjectedCost/GetActualCost RPCs.
+**Description**: Create annotated git tag `v0.1.0` and push to GitHub. GitHub Actions (`release.yml`) automatically builds binaries and publishes to Releases. This marks the official stable point for the mapped resource types and the working `GetProjectedCost` and `GetActualCost` calls. The tag itself stays outside this run.
 
 **Files**: (git tag only)
 
@@ -914,6 +908,8 @@ spend.
 **Acceptance Criteria**: markdownlint clean, and no document claims a feature the code
 lacks or denies one it has.
 
+**Status:** DONE, the Markdown check on the touched guides exited 0. The old current-state table said only three resource types and said `GetProjectedCost` falls through to Unimplemented. That table now lists the ten mapped types, and `GetActualCost` is the monthly quote times hours over 730. Break check: the three-type sentence is gone.
+
 #### AZ-6.12 — Calculator accuracy values [Issue #53]
 
 **Description**: the owner reads values from the Azure Pricing Calculator into
@@ -935,7 +931,7 @@ commits, then write `superpowers-run-report.md` with the Not delivered register.
 
 #### AZ-6.14 — Oracle comparison gate (run this right after AZ-6.1)
 
-**Status:** DONE, `go test -count=1 -run TestOracleComparison ./internal/pricing/` passed, 51 cases in `.superpowers/oracle-results.md`. Break check: doubling `unit * pluginsdk.HoursPerMonth` in the VM quote failed 19 cases, then restored. `git diff -- internal/pricing/testdata/oracle/` empty. Ambiguous AKS free chose 36.50. Ambiguous SQL zone redundancy returned NotFound because the fixture has no base compute row. Spot EstimateCost is NotFound and stays AZ-6.2.
+**Status:** DONE, `go test -count=1 -run TestOracleComparison ./internal/pricing/` passed, 51 cases in `.superpowers/oracle-results.md`. Break check: doubling `unit * pluginsdk.HoursPerMonth` in the VM quote failed 19 cases, then restored. `git diff -- internal/pricing/testdata/oracle/` empty. Ambiguous AKS free chose 36.50. Ambiguous SQL zone redundancy returned NotFound because the fixture has no base compute row. Spot `EstimateCost` was fixed in AZ-6.2: an empty priority stays on demand, priority Spot is the Linux Spot row, the category is Dynamic, and the score stays 0.
 
 **Description**: `internal/pricing/testdata/oracle/` holds an independent expected-price table
 (about 50 cases, derived from the live Retail Prices API by a script that never read this
@@ -1008,8 +1004,9 @@ rejected, and every rejected real token either fixed or in the Not delivered reg
   - Tests and validation: #52 to #55 (AZ-3.7 to AZ-3.10). #53 is BLOCKED-ON-INPUT.
   - Note: AZ-2.1 (GetProjectedCost) may optionally populate the `cost_breakdown`
     map from v0.7.0. AZ-2.6 (AKS) is where it is most useful.
-- **Post-v0.1.0**: none of the current issues. The stretch parity types (AZ-2.9)
-  have no issue yet.
+- **Post-v0.1.0**: none of the current issues. Standard Load Balancer rules
+  are quoted. NAT Gateway, virtual machine scale sets, Cache for Redis, and
+  database servers for PostgreSQL and MySQL have no issue and are not priced.
 
 ---
 
@@ -1017,19 +1014,15 @@ rejected, and every rejected real token either fixed or in the Not delivered reg
 
 ### Specification & Dependencies
 
-1. **v0.7.0 upgrade impact** (Updated 2026-09-30): finfocus-spec v0.7.0 (released
-   2026-09-29) adds FOCUS 1.4 fields and `cost_breakdown` map on
-   GetProjectedCostResponse. Key changes affecting Azure plugin:
-   - **cost_breakdown (optional)**: New map<string,double> field (15) on
-     GetProjectedCostResponse. Breakdown should sum to ±max(0.01, 0.1%) of
-     cost_per_month. Azure plugin should populate this by cost component if
-     available (e.g., compute, storage, networking). Done in run 1: the resource
-     quotes populate it.
-   - **Trace ID logging on validation failures**: SDK now automatically logs
-     host-provided trace_id on input validation errors. No plugin code change
-     required; happens at SDK level.
-   - **FOCUS 1.4 fields**: invoice_detail_id, commitment_program_eligibility_details
-     added to responses. Optional for v0.1.0; defer to v0.2+.
+1. **v0.7.0 upgrade impact** (answered 2026-10-01): spec v0.7.0 adds a
+   `cost_breakdown` map and optional FOCUS 1.4 fields.
+   - `cost_breakdown`: field 15 on `GetProjectedCostResponse`. The resource
+     quotes populate it, and the parts sum to the monthly cost.
+   - **Trace ID**: the SDK logs the host trace id on validation errors. No
+     plugin change.
+   - **FOCUS 1.4 fields**: optional. They stay deferred. A FOCUS record is
+     attached only when `FINFOCUS_BILLING_ACCOUNT_ID` is set
+     ([spec issue 590](https://github.com/rshade/finfocus-spec/issues/590)).
 
 2. **Go version cascade**: The upgrade from Go 1.25.7 to 1.27.1 (AZ-1.1) was applied
    locally on 2026-09-30 and `go build`, `go vet` and `go test` pass. It has not
@@ -1046,15 +1039,14 @@ rejected, and every rejected real token either fixed or in the Not delivered reg
 
 5. **Registry addition timing**: AZ-4.1 (registry entry) depends on a PR to the finfocus core repo. Should this be filed immediately after AZ-5.1 (v0.1.0 tag is pushed), or should an Azure plugin maintainer prepare the PR in parallel?
 
-6. **Backwards compatibility**: Azure plugin is not yet in registry, so there's no
-   installed base to break. However, are there any protocol-level changes in spec
-   v0.7.0 that existing finfocus installations (v0.6.1+) would expect? Check if
-   v0.7.0 cost_breakdown or FOCUS 1.4 fields cause compatibility issues when core
-   is still on v0.6.x.
+6. **Backwards compatibility**: This plugin is not in the core registry, so
+   there is no installed base to break. The AZ-4.1 example sets
+   `min_spec_version` to `0.7.0`. Whether a core build on an older spec
+   accepts that field set was not checked in this repository.
 
 ### Testing & QA
 
-7. **E2E testing**: Current project has unit tests (`go test`) but no integration tests that actually call the Azure Retail Prices API (live vs mock). Should v0.1.0 include integration tests with real API calls, or are unit tests with mock responses sufficient for initial release?
+7. **Live API tests**: Opt-in tests under `examples/` call the public Retail Prices API with `-tags=integration`. They are not a CI gate. Unit tests keep using recorded pages.
 
 8. **Docstring coverage enforcement**: Constitution requires ≥80% docstring coverage. What tool/script should be used to verify this in CI? (AZ-3.2)
 

@@ -13,9 +13,30 @@ See [CONTEXT.md](./CONTEXT.md) for architectural boundaries.
 
 ## Immediate Focus (v0.1.0 - Core Estimation)
 
-**Goal:** First release — connect the FinFocus generic `ResourceDescriptor`
-to Azure-specific queries and return accurate cost estimates for VMs and
-Managed Disks.
+**Goal:** First release. Quote the ten mapped types from the public Retail
+Prices API. `GetProjectedCost` is the monthly quote. `GetActualCost` is
+that quote times hours over 730, a running-cost estimate, not billed spend.
+
+### Priced in the working tree
+
+Virtual machines, including Spot, managed disks, blob storage, storage
+accounts, App Service plans, Function Apps, AKS, SQL Database
+`GP_Gen5`, Cosmos DB accounts, and Standard Load Balancer rules.
+
+Still open on this milestone: live integration as a CI gate, and estimates
+within 5% of the Pricing Calculator. Owner values for that check are empty.
+
+Not quoted: NAT Gateway, virtual machine scale sets, Cache for Redis,
+database servers for PostgreSQL and MySQL, Gateway meters, and cross-region
+load balancer meters.
+
+Not returned: a repeated price list
+([spec issue 588](https://github.com/rshade/finfocus-spec/issues/588)),
+a repeated region list
+([spec issue 589](https://github.com/rshade/finfocus-spec/issues/589)),
+and a per-request billing account id
+([spec issue 590](https://github.com/rshade/finfocus-spec/issues/590)).
+GitHub issues were not closed by this document.
 
 **Milestone:**
 [v0.1.0 - Core Estimation](https://github.com/rshade/finfocus-plugin-azure-public/milestone/4)
@@ -38,9 +59,10 @@ Managed Disks.
 - ~~EstimateCost returns accurate costs for Standard_B1s VM~~ (done)
 - ~~Managed Disk estimates scale with size~~ (done)
 - Estimates within 5% of Azure Pricing Calculator
-- Integration tests pass against live API
-- GetProjectedCost and GetActualCost RPCs return correct responses
-- Boundary-violating stubs removed, embedded type handles `Unimplemented`
+- Integration tests exist behind the integration build tag and are not a CI gate
+- ~~GetProjectedCost returns the monthly retail quote~~ (done)
+- ~~GetActualCost returns that quote times hours over 730~~ (done)
+- ~~Recommendations, dismiss, and budgets stay on the embedded unimplemented server~~ (done)
 
 ---
 
@@ -80,6 +102,9 @@ testing, validation, and documentation.
 ---
 
 ## Future Vision (Long-Term)
+
+Checkboxes below are the original milestone list. The priced-now section
+says what this tree does. GitHub issues were not closed.
 
 ### v0.3.0 - Extended Services
 
@@ -274,7 +299,15 @@ The following features violate architectural constraints defined in
 
 **Completed Issues**: #1-#19
 
-**Open Issues**: #20, #59-#61 (v0.1.0), #42-#57 (future)
+**Checklist still open here**: #20, plus the implemented or written-up
+items 42, 43, 44, 48, 49, 50, 51, 52, 54, 55, 56, 57, 59, 60, and 61.
+GitHub issues were not closed. Items 45 and 47 stay blocked on a
+missing response field. Item 46 emits a FOCUS record only when the
+process id is set. Item 53 waits on owner values.
+
+The counts in the table follow the milestone checklists. The
+priced-now list is the working tree. GitHub milestones were not
+closed.
 
 LOE Key: [S] = Small (1-2 days), [M] = Medium (3-5 days),
 [L] = Large (5+ days)
