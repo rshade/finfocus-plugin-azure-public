@@ -1,8 +1,8 @@
 package pricing
 
 import (
+	"bytes"
 	"context"
-	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -585,28 +585,21 @@ func writeOracleResults(t *testing.T, results []oracleResult) {
 func oracleCalculatorNotes(t *testing.T) string {
 	t.Helper()
 
-	path := filepath.Join("testdata", "oracle", "calculator-values.csv")
-	file, err := os.Open(path)
+	raw, err := os.ReadFile(calculatorValuesPath)
 	if err != nil {
 		return "could not read calculator-values.csv: " + err.Error() + "\n"
 	}
-	defer file.Close()
-
-	reader := csv.NewReader(file)
-	records, err := reader.ReadAll()
+	rows, err := parseCalculatorOwnerValues(bytes.NewReader(raw))
 	if err != nil {
 		return "could not parse calculator-values.csv: " + err.Error() + "\n"
 	}
 	var b strings.Builder
-	for i, record := range records {
-		if i == 0 || len(record) < 3 {
+	for _, row := range rows {
+		if row.owner == nil {
+			fmt.Fprintf(&b, "- %s skipped: owner value not supplied\n", row.id)
 			continue
 		}
-		if strings.TrimSpace(record[2]) == "" {
-			fmt.Fprintf(&b, "- %s skipped: owner value not supplied\n", record[0])
-			continue
-		}
-		fmt.Fprintf(&b, "- %s owner_monthly_usd=%s\n", record[0], record[2])
+		fmt.Fprintf(&b, "- %s owner_monthly_usd=%s\n", row.id, strconv.FormatFloat(*row.owner, 'f', -1, 64))
 	}
 	return b.String()
 }
