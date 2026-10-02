@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/rshade/finfocus-plugin-azure-public/internal/azureclient"
 )
 
 func Test_roundCurrency(t *testing.T) {
@@ -337,4 +339,102 @@ func readD2sV3LinuxSavingsPrices(t *testing.T) (float64, float64, float64) {
 		t.Fatalf("fixture prices absent: onDemand=%v 1 Year=%v 3 Years=%v", onDemand, oneYear, threeYear)
 	}
 	return onDemand, oneYear, threeYear
+}
+
+func TestPriceItemParsesSavingsPlanFixture(t *testing.T) {
+	t.Parallel()
+
+	body, err := os.ReadFile(filepath.Clean(d2sV3PreviewFixturePath()))
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	var page azureclient.PriceResponse
+	if err := json.Unmarshal(body, &page); err != nil {
+		t.Fatalf("unmarshal fixture: %v", err)
+	}
+
+	var meter *azureclient.PriceItem
+	for i := range page.Items {
+		item := &page.Items[i]
+		if item.ArmSkuName == "Standard_D2s_v3" &&
+			item.MeterName == "D2s v3" &&
+			item.ProductName == "Virtual Machines DSv3 Series" &&
+			item.Type == "Consumption" {
+			meter = item
+			break
+		}
+	}
+	if meter == nil {
+		t.Fatal("Linux D2s v3 meter is absent from fixture")
+	}
+	if len(meter.SavingsPlan) == 0 {
+		t.Fatal("savingsPlan array was ignored")
+	}
+
+	prices := map[string]float64{}
+	for _, plan := range meter.SavingsPlan {
+		prices[plan.Term] = plan.RetailPrice
+	}
+	year, err := SavingsFraction(meter.RetailPrice, prices["1 Year"])
+	if err != nil {
+		t.Fatalf("SavingsFraction 1 Year: %v", err)
+	}
+	if math.Abs(year-0.31) > 1e-9 {
+		t.Fatalf("1 Year fraction = %v, want 0.31", year)
+	}
+	years, err := SavingsFraction(meter.RetailPrice, prices["3 Years"])
+	if err != nil {
+		t.Fatalf("SavingsFraction 3 Years: %v", err)
+	}
+	if math.Abs(years-0.53) > 1e-9 {
+		t.Fatalf("3 Years fraction = %v, want 0.53", years)
+	}
+}
+
+func TestReservationHourlyUsesTermTotal(t *testing.T) {
+	t.Parallel()
+
+	body, err := os.ReadFile(filepath.Clean(filepath.Join(
+		"..", "pricing", "testdata", "retail", "savingsplan",
+		"eastus_standard_d2als_v7_pricetype_reservation.json",
+	)))
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	var page azureclient.PriceResponse
+	if err := json.Unmarshal(body, &page); err != nil {
+		t.Fatalf("unmarshal fixture: %v", err)
+	}
+	if len(page.Items) == 0 {
+		t.Fatal("reservation fixture has no rows")
+	}
+	seen := 0
+	for _, item := range page.Items {
+		if item.Type != "Reservation" {
+			continue
+		}
+		hourly, err := ReservationHourly(item.RetailPrice, item.ReservationTerm)
+		if err != nil {
+			t.Fatalf("ReservationHourly(%v, %q): %v", item.RetailPrice, item.ReservationTerm, err)
+		}
+		if hourly <= 0 || hourly >= item.RetailPrice {
+			t.Fatalf("hourly %v is not a term total divided out of %v", hourly, item.RetailPrice)
+		}
+		var hours float64
+		switch item.ReservationTerm {
+		case "1 Year":
+			hours = HoursPerYear
+		case "3 Years":
+			hours = HoursPerYear * 3
+		default:
+			t.Fatalf("unexpected term %q", item.ReservationTerm)
+		}
+		if math.Abs(hourly-item.RetailPrice/hours) > 1e-12 {
+			t.Fatalf("hourly = %v, want %v / %v", hourly, item.RetailPrice, hours)
+		}
+		seen++
+	}
+	if seen == 0 {
+		t.Fatal("reservation fixture has no Reservation rows")
+	}
 }

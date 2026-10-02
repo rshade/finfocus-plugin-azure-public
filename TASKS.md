@@ -383,7 +383,7 @@ mapper tables and fails if they differ; every supported type is listed; tests pa
 
 #### AZ-2.12 — Savings Plans spike [Issue #57]
 
-**Status:** REOPENED, verify was markdownlint only. The nested `savingsPlan` array is documented but not parsed. See AZ-6.3.
+**Status:** DONE via AZ-6.3. `PriceItem` parses the nested `savingsPlan` array. `ReservationHourly` divides the term total by 8760 or 26280. No RPC returns those extra prices. See AZ-6.4.
 
 **Description**: A research spike. Determine, from the public Retail Prices API, whether
 Azure Savings Plans pricing is exposed, which `priceType` or filter values identify it,
@@ -822,6 +822,8 @@ for the term even though `unitOfMeasure` says "1 Hour": divide by 8,760 for one 
 **Acceptance Criteria**: a test reads the parsed values from the live-captured fixture
 and fails if the array is ignored (break check). The findings document states which
 parts need the spec change in AZ-6.4.
+
+**Status:** DONE, `go test -count=1 -run 'TestPriceItemParsesSavingsPlanFixture|TestReservationHourlyUsesTermTotal' ./internal/estimation/` passed. `PriceItem` keeps the nested array. `ReservationHourly` divides the term total by 8760 or 26280. Break check: the test failed to compile (`SavingsPlan` undefined, `ReservationHourly` undefined) before the field and function existed. `GetProjectedCost` still returns one price. The repeated alternative-price list is AZ-6.4 and is not delivered.
 
 #### AZ-6.4 — File the spec issues for multi-pricing and regional comparison [Issues #45, #47]
 

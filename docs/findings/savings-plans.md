@@ -253,8 +253,9 @@ when those rows omit `savingsPlan`.
 
 Yes, for a meter that has both prices. No, for a meter that omits the array.
 Reservation percent is not answerable for `Standard_D2s_v3` because that
-Reservation query is empty. It is also not answerable for `Standard_D2als_v7`
-until some rule outside the response explains the Reservation `retailPrice`.
+Reservation query is empty. The public rows for `Standard_D2als_v7` still do
+not label whether `retailPrice` is hourly or a term total. The plugin reading
+below supplies that rule.
 
 From `eastus_standard_d2s_v3_pricetype_consumption_preview.json`, Linux
 `D2s v3`, on-demand `retailPrice` 0.096:
@@ -294,11 +295,10 @@ Savings Plans are the `savingsPlan` array on a preview Consumption item.
 `reservationTerm` selects Reservation rows. `term` inside the array selects
 the savings-plan length.
 
-This repository's client calls the base URL with no `api-version`, and
-`PriceItem` has no `savingsPlan` field. A GA response for this SKU omits
-the array, as
-`eastus_standard_d2s_v3_pricetype_consumption.json` shows. Issue #45 was
-not edited.
+This repository's client calls the base URL with no `api-version`. A stable
+response for this SKU omits the array, as
+`eastus_standard_d2s_v3_pricetype_consumption.json` shows. `PriceItem` keeps
+the array when a preview body includes it. Issue #45 was not edited.
 
 Where the two price points go in the gRPC response is the spec question
 already on that task. This spike does not choose a field.
@@ -358,3 +358,23 @@ from `priceType eq 'SavingsPlan'` and not from a commitment product. For
 Spot, Low Priority, and Windows on that SKU have no array.
 `meterRegion=primary`
 drops the one row that has it.
+
+## How the code reads the rows
+
+`PriceItem.SavingsPlan` stores the nested array. A test on
+`eastus_standard_d2s_v3_pricetype_consumption_preview.json` fails if that
+array is ignored. `SavingsFraction` on the Linux meter is 0.31 for one year
+and 0.53 for three years. The production client does not request
+`api-version=2023-01-01-preview`, so a default quote still has no array.
+
+`ReservationHourly` treats Reservation `retailPrice` as the term total even
+though `unitOfMeasure` says `1 Hour`. One year divides by 8760. Three years
+divides by 26280. For `Standard_D2als_v7` that is 416 / 8760 and 803 / 26280.
+`SavingsFraction` can then compare those hourly rates with the Linux
+on-demand rate 0.0804. The public response still does not label the unit.
+This is the rule the plugin applies.
+
+`GetProjectedCost` still returns one price. Nothing in the RPC returns the
+savings-plan terms, the reservation hourly rate, or the fraction. Putting
+those values in `metadata` or `cost_breakdown` would be the wrong shape.
+The missing repeated alternative-price list is the spec change in AZ-6.4.
