@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // projectedFocusFieldsFilled are the FOCUS names a successful projected-cost
@@ -231,13 +232,64 @@ func TestDryRunOverGRPCDoesNotCallHTTP(t *testing.T) {
 		_ = conn.Close()
 	})
 
-	resp, err := finfocusv1.NewCostSourceServiceClient(conn).DryRun(context.Background(), &finfocusv1.DryRunRequest{
-		Resource: dryRunDescriptors()["cosmosdb/Account"],
-	})
-	if err != nil {
-		t.Fatalf("DryRun() error = %v", err)
+	client := finfocusv1.NewCostSourceServiceClient(conn)
+	descriptors := dryRunDescriptors()
+	for _, resourceType := range SupportedResourceTypes() {
+		t.Run(resourceType, func(t *testing.T) {
+			t.Parallel()
+			resp, err := client.DryRun(context.Background(), &finfocusv1.DryRunRequest{
+				Resource: descriptors[resourceType],
+			})
+			if err != nil {
+				t.Fatalf("DryRun() error = %v", err)
+			}
+			assertSupportedDryRun(t, resp)
+		})
 	}
-	assertSupportedDryRun(t, resp)
+}
+
+func TestEstimateCostEveryMappedTypeOverGRPC(t *testing.T) {
+	t.Parallel()
+
+	calc := newPricingCalc(t, nil)
+	client := dialPricingClient(t, calc)
+	descriptors := dryRunDescriptors()
+	for _, resourceType := range SupportedResourceTypes() {
+		t.Run(resourceType, func(t *testing.T) {
+			t.Parallel()
+			attrs := estimateAttrsFromDescriptor(t, descriptors[resourceType])
+			_, err := client.EstimateCost(context.Background(), &finfocusv1.EstimateCostRequest{
+				ResourceType: resourceType,
+				Attributes:   attrs,
+			})
+			if status.Code(err) == codes.Unimplemented {
+				t.Fatalf("EstimateCost unimplemented for %s: %v", resourceType, err)
+			}
+			if err != nil && status.Code(err) != codes.NotFound {
+				t.Fatalf("EstimateCost code = %s, err %v", status.Code(err), err)
+			}
+		})
+	}
+}
+
+func estimateAttrsFromDescriptor(t *testing.T, desc *finfocusv1.ResourceDescriptor) *structpb.Struct {
+	t.Helper()
+
+	values := map[string]any{}
+	if desc.GetRegion() != "" {
+		values["location"] = desc.GetRegion()
+	}
+	if desc.GetSku() != "" {
+		values["sku"] = desc.GetSku()
+	}
+	for key, value := range desc.GetTags() {
+		values[key] = value
+	}
+	attrs, err := structpb.NewStruct(values)
+	if err != nil {
+		t.Fatalf("attributes: %v", err)
+	}
+	return attrs
 }
 
 func assertSupportedDryRun(t *testing.T, resp *finfocusv1.DryRunResponse) {

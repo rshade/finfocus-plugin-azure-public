@@ -215,6 +215,7 @@ resp.GetPricingCategory() // FOCUS_PRICING_CATEGORY_STANDARD
 Behavior notes:
 - Empty `resource_type` is accepted for backward compatibility (routes to VM path)
 - Unsupported non-empty `resource_type` returns `codes.Unimplemented`
+- Mapped types other than virtual machines and managed disks use the same quote as `GetProjectedCost`
 - Missing `location/region` or `vmSize/sku` returns `codes.InvalidArgument`
 - Cache hits are served from `CachedClient` with no outbound API request
 - VM `EstimateCost` reads attribute `priority`. `Spot` uses the Linux Spot row and pricing category Dynamic. An empty priority stays the on-demand row and Standard. Any other value is InvalidArgument.
