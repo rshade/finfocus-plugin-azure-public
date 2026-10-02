@@ -202,7 +202,13 @@ type `Consumption`. `1M` means per million request units. Monthly cost is
 
 If the unit is not `1M`, the result is `InvalidArgument` and names the unit.
 The saved page has no serverless storage meter. A `Data Stored` row on this
-product is still omitted. Serverless has no `size_gb` component.
+product is still omitted. That product has no `size_gb` component. The quote
+note says that product publishes no storage meter.
+
+A live query on 2026-10-01 returned one row and no next page. The filter was
+service `Azure Cosmos DB`, the same region as the fixture, and
+`contains(productName, 'serverless')`. The only meter was `1M RUs` at
+0.25 USD per `1M`. No storage meter was present.
 
 | skuName | meterName | unitOfMeasure |
 | --- | --- | --- |

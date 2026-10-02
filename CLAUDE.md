@@ -320,7 +320,9 @@ Standard control plane uses meter `Standard Uptime SLA`, unit `1 Hour`,
 and monthly `retailPrice * 730`. Tag `support=lts` uses
 `Standard Long Term Support` instead. Free uses meter
 `FreeTierInfrastructureCost Uptime SLA` and keeps the row whose
-`effectiveEndDate` is empty. Tier `Automatic` is `InvalidArgument`.
+`effectiveEndDate` is empty. A live query on 2026-10-01 returned one open
+row at 0.05 USD per hour, so the control plane month is 36.50. Tier
+`Automatic` is `InvalidArgument`.
 
 Node pools use tags `node_pool_1_sku` and `node_pool_1_count`, with optional
 `node_pool_1_name` (default `pool_1`), and the same pair for pool 2. Each
@@ -371,6 +373,8 @@ meters.
 
 `pricing_model=serverless` uses meter `1M RUs`, unit `1M`. Monthly cost is
 `(request_units / 1000000) * retailPrice`. There is no storage component.
+A live query on 2026-10-01 returned that meter only. The quote
+note says that product publishes no storage meter.
 `pricing_model=autoscale` matches a meter that ends with `100 RUs` on
 product `Azure Cosmos DB autoscale`, then applies the same `/ 100 * 730`
 rule. When `size_gb` is set, storage stays the provisioned `Data Stored`

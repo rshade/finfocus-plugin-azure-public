@@ -323,6 +323,9 @@ func TestGetProjectedCostCosmosServerlessOmitsStorageMeter(t *testing.T) {
 	if _, ok := resp.GetCostBreakdown()["storage"]; ok {
 		t.Fatalf("serverless included storage: %v", resp.GetCostBreakdown())
 	}
+	if !strings.Contains(resp.GetBillingDetail(), "no storage meter") {
+		t.Fatalf("billing_detail = %q", resp.GetBillingDetail())
+	}
 	if math.Abs(resp.GetCostPerMonth()-want) > 1e-9 {
 		t.Fatalf("cost_per_month = %v, want %v without storage", resp.GetCostPerMonth(), want)
 	}
