@@ -1,5 +1,7 @@
 # finfocus-plugin-azure-public Project Context
 
+<!-- markdownlint-disable MD007 MD022 MD030 MD032 MD036 -->
+
 This document defines the technical guardrails and architectural scope of the `finfocus-plugin-azure-public` project.
 
 ## Core Architectural Identity
@@ -16,7 +18,8 @@ This document defines the technical guardrails and architectural scope of the `f
 
 ## Data Source of Truth
 *   **Financial Data**: [Azure Retail Prices API](https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices).
-*   **Filtering**: We primarily filter for `type eq 'Consumption'` to target pay-as-you-go rates, unless specific reservation logic is requested later.
+*   **Filtering**: Quoted prices use `priceType eq 'Consumption'`. Reservation term totals and savings-plan rates are parsed from the payload and are not returned by an RPC.
+*   **Running cost**: `GetActualCost` does not call Cost Management. It scales the public retail monthly quote by hours over 730. Confidence stays in `Source`. An empty process setting leaves the FOCUS record unset.
 
 ## Interaction Model
 *   **Protocol**: gRPC (implementing `finfocus.v1.CostSourceService`).
@@ -29,7 +32,7 @@ This document defines the technical guardrails and architectural scope of the `f
     *   **Resiliency**: Robust retry logic (exponential backoff) for HTTP 429/503 responses.
 
 ## Key Technologies
-*   **Language**: Go 1.25+
+*   **Language**: Go 1.27.1
 *   **Transport**: `github.com/hashicorp/go-retryablehttp`
 *   **Protocol**: `google.golang.org/grpc`
-*   **Spec**: `github.com/rshade/finfocus-spec` (v0.5.4+)
+*   **Spec**: `github.com/rshade/finfocus-spec` (v0.7.0)

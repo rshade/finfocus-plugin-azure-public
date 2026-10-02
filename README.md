@@ -11,6 +11,13 @@ This plugin enables FinFocus to provide accurate, on-demand pricing for Azure
 resources without requiring Azure credentials. It operates by fetching public
 pricing data from the Azure Retail Prices API and caching it for performance.
 
+`GetProjectedCost` returns the monthly retail quote. `GetActualCost` scales
+that quote by the requested hours over 730. The default window is 730 hours,
+so the default result matches the monthly quote. Both calls read the public
+Retail Prices API. Neither call reads billed spend, and neither call needs
+credentials. Confidence is recorded in `Source`. A FOCUS record is attached
+only when `FINFOCUS_BILLING_ACCOUNT_ID` is set.
+
 ## Getting Started
 
 ### Prerequisites
@@ -52,6 +59,7 @@ Run the binary directly. It starts a gRPC server and outputs the port to stdout:
 | `FINFOCUS_PLUGIN_PORT` | Ephemeral | Fixed port number for the gRPC server |
 | `FINFOCUS_LOG_LEVEL` | info | Log level: trace, debug, info, warn, error |
 | `FINFOCUS_CACHE_TTL` | 24h | Cache TTL (e.g., "10s", "1h", "0s" to disable) |
+| `FINFOCUS_BILLING_ACCOUNT_ID` | empty | When set, `GetActualCost` attaches a FOCUS record. Empty leaves the record unset. |
 
 <!-- markdownlint-enable MD013 -->
 

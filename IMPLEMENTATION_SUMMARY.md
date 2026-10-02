@@ -1,7 +1,24 @@
 # Implementation Plan Summary
 
+<!-- markdownlint-disable MD022 MD026 MD032 MD034 MD060 -->
+
 **Date**: 2026-01-21
 **Status**: Planning Complete ✅
+
+## What the working tree does (2026-10-01)
+
+The January plan below is the original issue breakdown. The working tree
+on branch `run/grok-20261001` has moved past that plan.
+
+- Ten mapped types are quoted: virtual machines, including Spot, managed disks, blob storage, storage accounts, App Service plans, Function Apps, AKS, SQL Database `GP_Gen5`, Cosmos DB accounts, and Standard Load Balancer rules.
+- `GetProjectedCost` returns the monthly retail quote. `GetActualCost` multiplies that quote by hours over 730. It is a running-cost estimate from the public Retail Prices API. It is not billed spend.
+- `DryRun` and `GetPricingSpec` are implemented. Recommendations, dismiss, and budgets stay on the embedded unimplemented server.
+- The in-memory cache is in use. `FINFOCUS_CACHE_TTL` defaults to 24 hours.
+- Not delivered: a repeated price list ([spec issue 588](https://github.com/rshade/finfocus-spec/issues/588)), a repeated region list ([spec issue 589](https://github.com/rshade/finfocus-spec/issues/589)), a per-request billing account id ([spec issue 590](https://github.com/rshade/finfocus-spec/issues/590)), Pricing Calculator owner values, Gateway and cross-region load balancer meters, NAT Gateway, virtual machine scale sets, Cache for Redis, and database servers for PostgreSQL and MySQL.
+- Reservation term totals and savings-plan rates are parsed. No RPC returns them.
+- No release tag exists. The core registry file was not edited.
+
+The issue tables under this note stay as the 2026-01-21 plan. A row there is not a claim about the current tree. The RPC stubs in the sprint sequence were replaced for the calls this tree implements.
 
 ## Overview
 
