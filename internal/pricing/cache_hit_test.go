@@ -90,6 +90,68 @@ func TestCacheHitRate(t *testing.T) {
 	}
 }
 
+// TestCacheHitRateOverGRPC drives the same quote through a real gRPC server.
+// Disabling the cache drops the hit rate to zero and fails this test.
+func TestCacheHitRateOverGRPC(t *testing.T) {
+	t.Parallel()
+
+	calc, cached, req, want := newVMGoldenQuote(t)
+	client := dialPricingClient(t, calc)
+
+	warm, err := client.GetProjectedCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("warm-up GetProjectedCost() failed: %v", err)
+	}
+	if math.Abs(warm.GetCostPerMonth()-want) > goldenCostTolerance {
+		t.Fatalf("warm-up cost_per_month = %v, want %v", warm.GetCostPerMonth(), want)
+	}
+
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var callErr error
+	record := func(err error) {
+		mu.Lock()
+		defer mu.Unlock()
+		if callErr == nil {
+			callErr = err
+		}
+	}
+
+	for range cacheHitWorkers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range cacheHitRepeats {
+				resp, quoteErr := client.GetProjectedCost(context.Background(), req)
+				if quoteErr != nil {
+					record(quoteErr)
+					return
+				}
+				if math.Abs(resp.GetCostPerMonth()-want) > goldenCostTolerance {
+					record(fmt.Errorf("cost_per_month = %v, want %v", resp.GetCostPerMonth(), want))
+					return
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	if callErr != nil {
+		t.Fatalf("concurrent GetProjectedCost() failed: %v", callErr)
+	}
+
+	hits := cached.Stats().Hits.Load()
+	misses := cached.Stats().Misses.Load()
+	total := hits + misses
+	if total == 0 {
+		t.Fatal("cache recorded no hits and no misses")
+	}
+	ratio := float64(hits) / float64(total)
+	t.Logf("grpc cache hits=%d misses=%d total=%d ratio=%.6f", hits, misses, total, ratio)
+	if ratio <= cacheHitRateMin {
+		t.Fatalf("cache hit rate = %.6f, want > %.2f (hits=%d misses=%d)", ratio, cacheHitRateMin, hits, misses)
+	}
+}
+
 // BenchmarkGetProjectedCostCacheHit times the same in-process on-demand VM
 // quote as TestCacheHitRate. The timer starts after one prime, so the loop
 // is cache hits. The number is a local baseline, not a gate.
