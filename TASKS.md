@@ -566,13 +566,13 @@ gh workflow list --repo rshade/finfocus-plugin-azure-public | grep release
 
 #### AZ-3.5 — Add Release-Please Configuration
 
-**Status:** DONE, `python3 -m json.tool release-please-config.json`, parses; `.release-please-manifest.json` `"."` is `0.0.0`, not bumped
+**Status:** DONE. `initial-version` is `0.1.0`. `.release-please-manifest.json` `"."` stays `0.0.0` until that release merges. A manifest of `0.1.0` before the first release would record 0.1.0 as already shipped.
 
 **Description**: Create `release-please-config.json` and `.release-please-manifest.json` to automate semver bumping and CHANGELOG generation (pattern from AWS plugin). Enables one-click releases via GitHub UI.
 
 **Files**:
 - `release-please-config.json` (new, ~20 lines)
-- `.release-please-manifest.json` (new, 1 line: `{"." : "0.1.0"}`)
+- `.release-please-manifest.json` (stays `{".": "0.0.0"}` until the 0.1.0 release merges)
 
 **Acceptance Check**:
 ```bash

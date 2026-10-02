@@ -35,6 +35,16 @@
 - **Update Plan**: Run `.specify/scripts/bash/setup-plan.sh`
 - **Check Status**: Check `ROADMAP.md`
 
+## Release Please
+
+`.release-please-manifest.json` stays `{ ".": "0.0.0" }` until the first
+release pull request merges. `release-please-config.json` sets
+`initial-version` to `0.1.0`. A `0.0.0` manifest with no `initial-version`
+makes the action open `1.0.0`. Writing `0.1.0` into the manifest before
+that release records 0.1.0 as already shipped, so the next feature becomes
+0.2.0. Do not edit `CHANGELOG.md`. Release Please owns it. Do not tag the
+release from the task list. AZ-5.1 stays skipped.
+
 ## Active Technologies
 - **Language**: Go 1.25.5 (002-grpc-server-port)
 - **Storage**: N/A - stateless plugin (002-grpc-server-port)
