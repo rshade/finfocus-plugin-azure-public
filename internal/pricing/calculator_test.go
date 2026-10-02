@@ -210,29 +210,33 @@ func TestCalculatorConcurrentRequestsMaintainSeparateTraceIDs(t *testing.T) {
 }
 
 func TestProjectedCostSupported(t *testing.T) {
-	t.Skip("Skipping: GetProjectedCost not implemented yet. Azure pricing lookup requires implementation.")
+	t.Parallel()
 
-	logger := zerolog.Nop()
-	plugin := NewCalculator(logger)
-	testPlugin := pluginsdk.NewTestPlugin(t, plugin)
-
-	// Test supported resource
-	resource := pluginsdk.CreateTestResource("aws", "aws:ec2:Instance", map[string]string{
-		"instanceType": "t3.micro",
-		"region":       "us-east-1",
+	calc := newPricingCalc(t, []azureclient.PriceItem{{
+		CurrencyCode:  "USD",
+		ArmRegionName: "eastus",
+		ArmSkuName:    "Standard_B1s",
+		ProductName:   "Virtual Machines BS Series",
+		MeterName:     "B1s",
+		UnitOfMeasure: "1 Hour",
+		Type:          "Consumption",
+		RetailPrice:   0.02,
+	}})
+	testPlugin := pluginsdk.NewTestPlugin(t, calc)
+	resource := pluginsdk.CreateTestResource("azure", "compute/VirtualMachine", map[string]string{
+		"region": "eastus",
+		"sku":    "Standard_B1s",
 	})
 
 	resp := testPlugin.TestProjectedCost(resource, false)
 	if resp == nil {
-		t.Fatal("Expected response, got nil")
+		t.Fatal("response is nil")
 	}
-
 	if resp.GetCurrency() != "USD" {
-		t.Errorf("Expected currency USD, got %s", resp.GetCurrency())
+		t.Fatalf("currency = %s, want USD", resp.GetCurrency())
 	}
-
 	if resp.GetUnitPrice() <= 0 {
-		t.Errorf("Expected positive unit price, got %f", resp.GetUnitPrice())
+		t.Fatalf("unit price = %v, want a positive rate", resp.GetUnitPrice())
 	}
 }
 

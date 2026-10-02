@@ -760,6 +760,7 @@ func TestCachedClientEvictionLogging_ConcurrentSafe(t *testing.T) {
 	}
 }
 
+// newTestClient returns a Retail Prices client for baseURL with retries off.
 func newTestClient(t *testing.T, baseURL string) *Client {
 	t.Helper()
 
@@ -778,6 +779,7 @@ func newTestClient(t *testing.T, baseURL string) *Client {
 	return client
 }
 
+// newTestCachedClient wraps client with cfg and fails the test on error.
 func newTestCachedClient(t *testing.T, client *Client, cfg CacheConfig) *CachedClient {
 	t.Helper()
 
