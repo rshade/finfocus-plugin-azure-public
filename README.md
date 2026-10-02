@@ -194,6 +194,12 @@ To skip integration tests (e.g., in offline environments):
 SKIP_INTEGRATION=true go test -tags=integration ./examples/...
 ```
 
+Live meter checks are opt-in and are not part of CI:
+
+```bash
+./scripts/live-check.sh
+```
+
 ## Development
 
 See [CLAUDE.md](CLAUDE.md) for development commands and guidelines.
