@@ -12,6 +12,12 @@ func CacheKey(query PriceQuery) string {
 		normalizeKeyPart(query.ServiceName),
 		normalizeKeyPart(query.CurrencyCode),
 	}
+	if strings.TrimSpace(query.PriceType) != "" || strings.TrimSpace(query.APIVersion) != "" {
+		parts = append(parts,
+			"type="+normalizeKeyPart(query.PriceType),
+			"api="+normalizeKeyPart(query.APIVersion),
+		)
+	}
 
 	return strings.Join(parts, "|")
 }

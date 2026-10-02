@@ -118,6 +118,13 @@ func (c *Client) GetPrices(ctx context.Context, query PriceQuery) ([]PriceItem, 
 	if filter := buildFilterQuery(query); filter != "" {
 		requestURL = fmt.Sprintf("%s?$filter=%s", c.baseURL, url.QueryEscape(filter))
 	}
+	if version := strings.TrimSpace(query.APIVersion); version != "" {
+		join := "?"
+		if strings.Contains(requestURL, "?") {
+			join = "&"
+		}
+		requestURL += join + "api-version=" + url.QueryEscape(version)
+	}
 
 	// Paginate through all results with safety limit
 	for page := 0; requestURL != "" && page < MaxPaginationPages; page++ {
@@ -412,5 +419,6 @@ func buildFilterQuery(query PriceQuery) string {
 		Service(query.ServiceName).
 		ProductName(query.ProductName).
 		CurrencyCode(query.CurrencyCode).
+		Type(query.PriceType).
 		Build()
 }

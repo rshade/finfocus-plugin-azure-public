@@ -414,23 +414,28 @@ successful `GetProjectedCost` fills is marked supported.
 `GetActualCost` is the projected monthly cost times `hours / 730`. The
 default window is 730 hours. The source string carries
 `azure-retail-prices[confidence:HIGH|MEDIUM|LOW]`. A FOCUS record is built
-only when `SetBillingAccountID` has a non-empty id. The process reads
-`FINFOCUS_BILLING_ACCOUNT_ID`. The request has no field for it. An empty
-setting logs the validation error and leaves `FocusRecord` nil. The request
-field is spec issue 590.
+when a billing account id is available. `GetActualCostRequest.billing_account_id`
+wins. An empty request id uses `SetBillingAccountID`, which the process sets
+from `FINFOCUS_BILLING_ACCOUNT_ID`. Dry run ignores the request id. An empty
+id logs the validation error and leaves `FocusRecord` nil. No id is invented.
 
 `estimation.SavingsFraction` returns `(onDemand-other)/onDemand` with no
 rounding. `PriceItem.SavingsPlan` keeps the nested `savingsPlan` array when
 a preview Consumption body includes it. `priceType eq 'SavingsPlan'` does
 not return those rows. `ReservationHourly` treats a Reservation
-`retailPrice` as the term total and divides by 8760 or 26280. The production
-client does not request the preview API. `GetProjectedCost` still returns
-one price. The extra prices are not delivered until the spec has a repeated
-list. The proposals are spec issues 588 and 589.
+`retailPrice` as the term total and divides by 8760 or 26280. A VM
+`GetProjectedCost` or `EstimateCost` adds Consumption, Spot, Savings Plan,
+and Reservation rows to `price_options`. The selected monthly cost does not
+include them. Projected `savings_fraction` compares unit prices. Estimate
+compares monthly costs. The fraction is 0 when the selected price is 0.
+The preview query sends `api-version=2023-01-01-preview`. Reservation sends
+`priceType eq 'Reservation'`. A failed extra query is omitted.
 
-`SortRegionPrices` orders Linux on-demand VM rows from saved pages. A miss
-is `Found: false` and a zero price that is not a cost. The RPC still prices
-one region. A repeated region list is spec issue 589.
+`SortRegionPrices` orders Linux on-demand VM rows. A miss is `Found: false`
+and a zero price that is not a cost. A VM quote calls it on the regionless
+Consumption page and returns the other regions on `region_prices`. The
+requested region stays the parent price. A region with no selected row is
+omitted. A Spot quote uses the Linux Spot row for those other regions.
 
 Carbon is findings only, in `docs/findings/carbon.md`. No estimator is wired.
 
@@ -444,7 +449,7 @@ Carbon is findings only, in `docs/findings/carbon.md`. No estimator is wired.
 | `FINFOCUS_LOG_LEVEL` | info | Log level (debug, info, warn, error) |
 | `FINFOCUS_CACHE_TTL` | 24h | Cache TTL duration (e.g., "10s", "1h", "0s" to disable) |
 | `SKIP_INTEGRATION` | (unset) | Set to "true" to skip integration tests |
-| `FINFOCUS_BILLING_ACCOUNT_ID` | (unset) | FOCUS billing account id. Empty leaves the actual-cost record unset |
+| `FINFOCUS_BILLING_ACCOUNT_ID` | (unset) | FOCUS billing account id used when the request id is empty. Empty leaves the actual-cost record unset |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -471,7 +476,7 @@ result, err := cachedClient.GetPrices(ctx, query)
 ```
 
 Cache behavior:
-- Key normalization: `CacheKey(query)` => `region|armsku|skuname|product|service|currency` (lowercase, trimmed)
+- Key normalization: `CacheKey(query)` => `region|armsku|skuname|product|service|currency` (lowercase, trimmed). `type=` and `api=` are appended only when `PriceType` or `APIVersion` is set.
 - L1 cache: in-process LRU+TTL (default 1000 entries, 24h TTL)
 - L2 hint: `CachedResult.ExpiresAt` (default 4h) propagated to gRPC projected/actual cost responses
 - TTL override: `FINFOCUS_CACHE_TTL` env var parsed in `main.go` (e.g., "10s", "1h", "0s" to disable)

@@ -62,6 +62,9 @@ type monthlyQuote struct {
 	// meters are the selected retail rows. price is the meter retail price,
 	// not the monthly total. unit is that row's unitOfMeasure.
 	meters []quoteMeter
+	// advisories and regions are VM alternatives. They are not part of monthly.
+	advisories []advisoryPrice
+	regions    []advisoryRegion
 }
 
 // quoteMeter is one selected retail row behind a quote component.
@@ -109,9 +112,16 @@ func (c *Calculator) GetActualCost(
 		ts = timestamppb.New(window.start)
 	}
 
-	// The request has no billing account field. The process setting is the
-	// only id. Empty fails validation, so FocusRecord stays nil.
-	record, focusErr := buildFocusRecord(resource, quote, window, c.billingAccountID, req.GetResourceId())
+	// billing_account_id on the request wins. An empty request id uses the
+	// process setting. Empty fails validation, so FocusRecord stays nil.
+	// Dry run ignores the request id. Neither source is invented.
+	record, focusErr := buildFocusRecord(
+		resource,
+		quote,
+		window,
+		c.billingAccountFor(req),
+		req.GetResourceId(),
+	)
 	if focusErr != nil {
 		log.Warn().Err(focusErr).Msg("leaving FocusRecord unset")
 		record = nil
@@ -179,17 +189,7 @@ func (c *Calculator) GetProjectedCost(
 			Str("resource_type", resource.GetResourceType()).
 			Msg("spot interruption risk is unknown; score left at 0")
 	}
-	resp := pluginsdk.NewGetProjectedCostResponse(
-		pluginsdk.WithProjectedCostDetails(
-			quote.unitPrice,
-			quote.currency,
-			quote.monthly,
-			quote.billingDetail,
-		),
-		pluginsdk.WithProjectedCostPricingCategory(category),
-		pluginsdk.WithProjectedCostBreakdown(projectedBreakdown(quote)),
-		pluginsdk.WithProjectedCostExpiresAt(quote.expiresAt),
-	)
+	resp := pluginsdk.NewGetProjectedCostResponse(projectedOptions(quote, category)...)
 	if validateErr := pluginsdk.ValidateGetProjectedCostResponse(resp); validateErr != nil {
 		err = status.Errorf(codes.Internal, "invalid projected cost response: %v", validateErr)
 		log.Error().Str("result_status", "error").Err(err).Msg("GetProjectedCost response rejected")
@@ -206,6 +206,44 @@ func (c *Calculator) GetProjectedCost(
 		Msg("GetProjectedCost completed")
 
 	return resp, nil
+}
+
+func projectedOptions(
+	quote monthlyQuote,
+	category finfocusv1.FocusPricingCategory,
+) []pluginsdk.GetProjectedCostResponseOption {
+	opts := []pluginsdk.GetProjectedCostResponseOption{
+		pluginsdk.WithProjectedCostDetails(
+			quote.unitPrice,
+			quote.currency,
+			quote.monthly,
+			quote.billingDetail,
+		),
+		pluginsdk.WithProjectedCostPricingCategory(category),
+		pluginsdk.WithProjectedCostBreakdown(projectedBreakdown(quote)),
+		pluginsdk.WithProjectedCostExpiresAt(quote.expiresAt),
+	}
+	if priceOpts := priceOptionProtos(quote.advisories, quote.unitPrice, quote.monthly, false); len(priceOpts) > 0 {
+		opts = append(opts, pluginsdk.WithProjectedCostPriceOptions(priceOpts...))
+	}
+	if regions := regionPriceProtos(quote.regions); len(regions) > 0 {
+		opts = append(opts, pluginsdk.WithProjectedCostRegionPrices(regions...))
+	}
+	return opts
+}
+
+// billingAccountFor uses the request id when the caller sent one.
+// Dry run ignores that id. An empty request id keeps the process setting.
+func (c *Calculator) billingAccountFor(req *finfocusv1.GetActualCostRequest) string {
+	if c == nil {
+		return ""
+	}
+	if req != nil && !req.GetDryRun() {
+		if id := strings.TrimSpace(req.GetBillingAccountId()); id != "" {
+			return id
+		}
+	}
+	return c.billingAccountID
 }
 
 func projectedPricingCategory(resource *finfocusv1.ResourceDescriptor) finfocusv1.FocusPricingCategory {
@@ -275,13 +313,14 @@ func (c *Calculator) quoteVM(
 	if service == "" {
 		service = defaultServiceName
 	}
-
-	result, err := c.fetchPrices(ctx, azureclient.PriceQuery{
+	query := azureclient.PriceQuery{
 		ArmRegionName: region,
 		ArmSkuName:    sku,
 		ServiceName:   service,
 		CurrencyCode:  descriptorCurrency(resource),
-	}, taskID)
+	}
+
+	result, err := c.fetchPrices(ctx, query, taskID)
 	if err != nil {
 		return monthlyQuote{}, err
 	}
@@ -297,6 +336,7 @@ func (c *Calculator) quoteVM(
 	}
 
 	monthly := unit * pluginsdk.HoursPerMonth
+	advisories, regions := c.vmAdvisories(ctx, query, result.Items, spot, taskID)
 	return monthlyQuote{
 		unitPrice:     unit,
 		monthly:       monthly,
@@ -312,6 +352,8 @@ func (c *Calculator) quoteVM(
 			price: unit,
 			unit:  item.UnitOfMeasure,
 		}},
+		advisories: advisories,
+		regions:    regions,
 	}, nil
 }
 

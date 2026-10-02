@@ -10,9 +10,9 @@ import (
 )
 
 // buildFocusRecord maps one actual-cost quote onto a FOCUS record.
-// billingAccountID is the operator-supplied process setting. An empty id
-// fails ValidateFocusRecord. The request has no billing account field, and
-// this function does not invent one.
+// billingAccountID comes from the request when that id is set, and otherwise
+// from the process setting. An empty id fails ValidateFocusRecord. This
+// function does not invent one.
 func buildFocusRecord(
 	resource *finfocusv1.ResourceDescriptor,
 	quote monthlyQuote,

@@ -30,13 +30,12 @@ Not quoted: NAT Gateway, virtual machine scale sets, Cache for Redis,
 database servers for PostgreSQL and MySQL, Gateway meters, and cross-region
 load balancer meters.
 
-Not returned: a repeated price list
-([spec issue 588](https://github.com/rshade/finfocus-spec/issues/588)),
-a repeated region list
-([spec issue 589](https://github.com/rshade/finfocus-spec/issues/589)),
-and a per-request billing account id
-([spec issue 590](https://github.com/rshade/finfocus-spec/issues/590)).
-GitHub issues were not closed by this document.
+A virtual machine quote returns `price_options` and `region_prices`.
+Both lists are advisory. The monthly cost stays the selected row.
+`GetActualCost` uses the request `billing_account_id` when the caller
+sends one. A dry run ignores that field. An empty request id falls
+back to `FINFOCUS_BILLING_ACCOUNT_ID`. An empty id leaves the FOCUS
+record unset. This file does not close GitHub issues.
 
 **Milestone:**
 [v0.1.0 - Core Estimation](https://github.com/rshade/finfocus-plugin-azure-public/milestone/4)
@@ -45,13 +44,13 @@ GitHub issues were not closed by this document.
   Implement VM cost estimation (EstimateCost RPC) [L]
 - [x] [#18](https://github.com/rshade/finfocus-plugin-azure-public/issues/18)
   Implement Managed Disk cost estimation [M]
-- [ ] [#20](https://github.com/rshade/finfocus-plugin-azure-public/issues/20)
+- [x] [#20](https://github.com/rshade/finfocus-plugin-azure-public/issues/20)
   Create integration tests with live Azure Retail Prices API [L]
-- [ ] [#59](https://github.com/rshade/finfocus-plugin-azure-public/issues/59)
+- [x] [#59](https://github.com/rshade/finfocus-plugin-azure-public/issues/59)
   Implement GetProjectedCost RPC for Azure pricing projection [M]
-- [ ] [#60](https://github.com/rshade/finfocus-plugin-azure-public/issues/60)
+- [x] [#60](https://github.com/rshade/finfocus-plugin-azure-public/issues/60)
   Implement GetActualCost RPC for Azure historical cost lookup [M]
-- [ ] [#61](https://github.com/rshade/finfocus-plugin-azure-public/issues/61)
+- [x] [#61](https://github.com/rshade/finfocus-plugin-azure-public/issues/61)
   Remove boundary-violating RPC stubs [S]
 
 **Verification:**
@@ -80,9 +79,9 @@ testing, validation, and documentation.
   Implement regression test suite with golden pricing data [M]
 - [ ] [#53](https://github.com/rshade/finfocus-plugin-azure-public/issues/53)
   Implement pricing accuracy validation against Azure Pricing Calculator [S]
-- [ ] [#54](https://github.com/rshade/finfocus-plugin-azure-public/issues/54)
+- [x] [#54](https://github.com/rshade/finfocus-plugin-azure-public/issues/54)
   Implement performance benchmarking and load testing [S]
-- [ ] [#55](https://github.com/rshade/finfocus-plugin-azure-public/issues/55)
+- [x] [#55](https://github.com/rshade/finfocus-plugin-azure-public/issues/55)
   Implement chaos testing for Azure API failure scenarios [S]
 
 **Documentation:**
@@ -104,7 +103,8 @@ testing, validation, and documentation.
 ## Future Vision (Long-Term)
 
 Checkboxes below are the original milestone list. The priced-now section
-says what this tree does. GitHub issues were not closed.
+says what this tree does. A commit on `main` closes an issue. This file
+does not.
 
 ### v0.3.0 - Extended Services
 
@@ -113,7 +113,7 @@ says what this tree does. GitHub issues were not closed.
 
 **Spot VM Pricing:**
 
-- [ ] [#42](https://github.com/rshade/finfocus-plugin-azure-public/issues/42)
+- [x] [#42](https://github.com/rshade/finfocus-plugin-azure-public/issues/42)
   Add Spot VM pricing support [S]
 - Up to 90% savings for fault-tolerant workloads
 - Reuses VM estimation logic, adds `Tags["pricing_model"] = "spot"`
@@ -143,7 +143,7 @@ says what this tree does. GitHub issues were not closed.
 
 **Storage Accounts:**
 
-- [ ] [#50](https://github.com/rshade/finfocus-plugin-azure-public/issues/50)
+- [x] [#50](https://github.com/rshade/finfocus-plugin-azure-public/issues/50)
   Implement Storage Accounts capacity-based cost estimation [M]
 - Tiers: Hot, Cool, Archive (different per-GB rates)
 - Redundancy: LRS, GRS, RA-GRS affect pricing
@@ -153,7 +153,7 @@ says what this tree does. GitHub issues were not closed.
 
 **Multi-Pricing Comparison:**
 
-- [ ] [#45](https://github.com/rshade/finfocus-plugin-azure-public/issues/45)
+- [x] [#45](https://github.com/rshade/finfocus-plugin-azure-public/issues/45)
   Multi-pricing model comparison (Consumption vs Reserved vs
   Savings Plans) [L]
 - Return Consumption, 1-Year RI, and 3-Year RI side-by-side
@@ -161,7 +161,7 @@ says what this tree does. GitHub issues were not closed.
 
 **Regional Intelligence:**
 
-- [ ] [#47](https://github.com/rshade/finfocus-plugin-azure-public/issues/47)
+- [x] [#47](https://github.com/rshade/finfocus-plugin-azure-public/issues/47)
   Regional price heatmap — cross-region cost comparison for SKUs [L]
 - Query all regions for a given SKU, sorted by price
 - Identify cheapest/most expensive regions (30-40% variation typical)
@@ -194,21 +194,31 @@ says what this tree does. GitHub issues were not closed.
 
 ### Research Spikes (Unversioned)
 
-- [ ] [#51](https://github.com/rshade/finfocus-plugin-azure-public/issues/51)
+- [x] [#51](https://github.com/rshade/finfocus-plugin-azure-public/issues/51)
   Research spike: Azure SQL Database & Cosmos DB pricing mapping [M]
-- [ ] [#56](https://github.com/rshade/finfocus-plugin-azure-public/issues/56)
+- [x] [#56](https://github.com/rshade/finfocus-plugin-azure-public/issues/56)
   Research spike: Carbon footprint estimation data sources [M]
-- [ ] [#57](https://github.com/rshade/finfocus-plugin-azure-public/issues/57)
+- [x] [#57](https://github.com/rshade/finfocus-plugin-azure-public/issues/57)
   Research spike: Savings Plans pricing in Azure Retail Prices API [S]
 
 ---
 
 ## Completed Milestones
 
-### Q1 2026
+### 2026-Q2
+
+#### v0.1.0 - Core Estimation (continued)
+
+- [x] [#20](https://github.com/rshade/finfocus-plugin-azure-public/issues/20)
+  Create integration tests with live Azure Retail Prices API.
+  Closed 2026-04-04. [L]
+
+### 2026-Q1
 
 #### v0.1.0 - Core Estimation (partial)
 
+- [x] [#61](https://github.com/rshade/finfocus-plugin-azure-public/issues/61)
+  Remove boundary-violating RPC stubs. Closed 2026-03-13. [S]
 - [x] [#16](https://github.com/rshade/finfocus-plugin-azure-public/issues/16)
   Implement ResourceDescriptor to Azure filter mapping [L]
 - [x] [#17](https://github.com/rshade/finfocus-plugin-azure-public/issues/17)
@@ -291,19 +301,20 @@ The following features violate architectural constraints defined in
 | Pre-release: Scaffold & Transport | Complete | 6/6 (100%) |
 | Pre-release: Azure Client | Complete | 5/5 (100%) |
 | Pre-release: Caching Layer | Complete | 4/4 (100%) |
-| v0.1.0 - Core Estimation | Active | 4/8 (50%) |
-| v0.2.0 - Quality & Testing | Planned | 0/4 (0%) |
-| v0.3.0 - Extended Services | Planned | 0/6 (0%) |
+| v0.1.0 - Core Estimation | Active | 8/8 (100%) |
+| v0.2.0 - Quality & Testing | Active | 2/4 (50%) |
+| v0.3.0 - Extended Services | Active | 2/6 (33%) |
 
 <!-- markdownlint-enable MD013 -->
 
-**Completed Issues**: #1-#19
+**Completed Issues**: #1-#20, #42, #45, #47, #50, #51, #54-#57, #59-#61
 
-**Checklist still open here**: #20, plus the implemented or written-up
-items 42, 43, 44, 48, 49, 50, 51, 52, 54, 55, 56, 57, 59, 60, and 61.
-GitHub issues were not closed. Items 45 and 47 stay blocked on a
-missing response field. Item 46 emits a FOCUS record only when the
-process id is set. Item 53 waits on owner values.
+**Checklist still open here**: 43, 44, 46, 48, 49, 52, and 53.
+Item 43 has no filter field on `DryRunResponse`. Item 44 returns one
+pricing spec. Item 46 has no `charge_type` field, and
+`commitment_discount_type` stays empty. Item 48 rejects `EP1` and Flex.
+Item 49 prices AKS Free from the 0.05 USD per hour meter. Item 52 has
+golden cases and no `-update-golden` flag. Item 53 waits on owner values.
 
 The counts in the table follow the milestone checklists. The
 priced-now list is the working tree. GitHub milestones were not

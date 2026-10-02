@@ -38,6 +38,72 @@ func TestGetActualCostFocusRecordOverGRPC(t *testing.T) {
 	}
 }
 
+func TestGetActualCostRequestBillingAccountOverGRPC(t *testing.T) {
+	t.Parallel()
+
+	const requestID = "ba-request"
+	calc := focusActualCalc(t)
+	calc.SetBillingAccountID("ba-process")
+	client := dialPricingClient(t, calc)
+
+	req := focusActualRequest()
+	req.BillingAccountId = requestID
+	resp, err := client.GetActualCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("GetActualCost() failed: %v", err)
+	}
+	record := resp.GetResults()[0].GetFocusRecord()
+	if record == nil {
+		t.Fatal("FocusRecord = nil, want the request billing account id")
+	}
+	if err := pluginsdk.ValidateFocusRecord(record); err != nil {
+		t.Fatalf("ValidateFocusRecord() = %v", err)
+	}
+	if record.GetBillingAccountId() != requestID {
+		t.Fatalf("billing account id = %q, want %q", record.GetBillingAccountId(), requestID)
+	}
+}
+
+func TestGetActualCostRequestBillingAccountWithoutProcessOverGRPC(t *testing.T) {
+	t.Parallel()
+
+	client := dialPricingClient(t, focusActualCalc(t))
+	req := focusActualRequest()
+	req.BillingAccountId = "ba-request-only"
+	resp, err := client.GetActualCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("GetActualCost() failed: %v", err)
+	}
+	record := resp.GetResults()[0].GetFocusRecord()
+	if record == nil {
+		t.Fatal("FocusRecord = nil, want a record from the request id")
+	}
+	if record.GetBillingAccountId() != "ba-request-only" {
+		t.Fatalf("billing account id = %q", record.GetBillingAccountId())
+	}
+}
+
+func TestGetActualCostDryRunIgnoresRequestBillingAccount(t *testing.T) {
+	t.Parallel()
+
+	calc := focusActualCalc(t)
+	calc.SetBillingAccountID("ba-process")
+	req := focusActualRequest()
+	req.DryRun = true
+	req.BillingAccountId = "ba-request"
+	resp, err := calc.GetActualCost(context.Background(), req)
+	if err != nil {
+		t.Fatalf("GetActualCost() failed: %v", err)
+	}
+	record := resp.GetResults()[0].GetFocusRecord()
+	if record == nil {
+		t.Fatal("FocusRecord = nil, want the process id when dry run ignores the request id")
+	}
+	if record.GetBillingAccountId() != "ba-process" {
+		t.Fatalf("billing account id = %q, want the process id", record.GetBillingAccountId())
+	}
+}
+
 func TestGetActualCostOmitsFocusRecordWithoutAccountOverGRPC(t *testing.T) {
 	t.Parallel()
 
@@ -134,7 +200,7 @@ func TestFocusRecordMatchesActualCost(t *testing.T) {
 	monthly := 0.0104 * pluginsdk.HoursPerMonth
 	quote := focusQuote(monthly, "USD", "vm detail")
 	window := focusWindow(hours)
-	// Passed only by the test. Production has no billing-account argument.
+	// The RPC resolves this from the request or the process setting.
 	billingAccountID := "ba-focus-test"
 
 	record, err := buildFocusRecord(focusVMDescriptor(nil), quote, window, billingAccountID, "vm-1")

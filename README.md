@@ -16,7 +16,14 @@ that quote by the requested hours over 730. The default window is 730 hours,
 so the default result matches the monthly quote. Both calls read the public
 Retail Prices API. Neither call reads billed spend, and neither call needs
 credentials. Confidence is recorded in `Source`. A FOCUS record is attached
-only when `FINFOCUS_BILLING_ACCOUNT_ID` is set.
+when the request sets `billing_account_id`, or, when that field is empty,
+when `FINFOCUS_BILLING_ACCOUNT_ID` is set. Dry run ignores the request id.
+An empty id leaves the record unset.
+
+A virtual machine quote also returns `price_options` and `region_prices`.
+`price_options` lists Consumption, Spot, Savings Plan, and Reservation
+rates. `region_prices` lists the same SKU in other regions. Both lists are
+advisory and are not added to the monthly cost.
 
 Providers `azure` and `azure-native` are accepted. A plan fixture with one
 resource for each priced type is in `testdata/pulumi/azure-plan.json`.
@@ -62,7 +69,7 @@ Run the binary directly. It starts a gRPC server and outputs the port to stdout:
 | `FINFOCUS_PLUGIN_PORT` | Ephemeral | Fixed port number for the gRPC server |
 | `FINFOCUS_LOG_LEVEL` | info | Log level: trace, debug, info, warn, error |
 | `FINFOCUS_CACHE_TTL` | 24h | Cache TTL (e.g., "10s", "1h", "0s" to disable) |
-| `FINFOCUS_BILLING_ACCOUNT_ID` | empty | When set, `GetActualCost` attaches a FOCUS record. Empty leaves the record unset. |
+| `FINFOCUS_BILLING_ACCOUNT_ID` | empty | FOCUS billing account id used when the request id is empty. Empty leaves the record unset. |
 
 <!-- markdownlint-enable MD013 -->
 

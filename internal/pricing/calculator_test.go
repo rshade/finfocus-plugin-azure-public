@@ -986,13 +986,18 @@ func TestEstimateCost_RepeatedQuery_UsesCacheOnSecondCall(t *testing.T) {
 	if err != nil {
 		t.Fatalf("first EstimateCost() call failed: %v", err)
 	}
+	// Selected page, preview, reservation, and other regions.
+	const vmQuoteRequests = 4
+	if got := calls.Load(); got != vmQuoteRequests {
+		t.Fatalf("first quote upstream requests = %d, want %d", got, vmQuoteRequests)
+	}
 	second, err := calc.EstimateCost(context.Background(), req)
 	if err != nil {
 		t.Fatalf("second EstimateCost() call failed: %v", err)
 	}
 
-	if got := calls.Load(); got != 1 {
-		t.Fatalf("expected one upstream request, got %d", got)
+	if got := calls.Load(); got != vmQuoteRequests {
+		t.Fatalf("second quote upstream requests = %d, want %d", got, vmQuoteRequests)
 	}
 	if math.Abs(first.GetCostMonthly()-second.GetCostMonthly()) > 0.000001 {
 		t.Fatalf(
@@ -1036,11 +1041,13 @@ func TestEstimateCost_CacheStats_RecordsHitAndMiss(t *testing.T) {
 	}
 
 	stats := cachedClient.Stats()
-	if stats.Hits.Load() != 1 {
-		t.Fatalf("expected 1 cache hit, got %d", stats.Hits.Load())
+	// Selected page, preview, reservation, and other regions. Each misses once.
+	const vmQuoteRequests = 4
+	if stats.Hits.Load() != vmQuoteRequests {
+		t.Fatalf("cache hits = %d, want %d", stats.Hits.Load(), vmQuoteRequests)
 	}
-	if stats.Misses.Load() != 1 {
-		t.Fatalf("expected 1 cache miss, got %d", stats.Misses.Load())
+	if stats.Misses.Load() != vmQuoteRequests {
+		t.Fatalf("cache misses = %d, want %d", stats.Misses.Load(), vmQuoteRequests)
 	}
 }
 
@@ -1163,6 +1170,11 @@ func TestGetProjectedCostSetsExpiresAtFromCache(t *testing.T) {
 	if first.GetExpiresAt() == nil {
 		t.Fatal("expected first response to include expires_at")
 	}
+	// Selected page, preview, reservation, and other regions.
+	const vmQuoteRequests = 4
+	if got := calls.Load(); got != vmQuoteRequests {
+		t.Fatalf("first quote upstream requests = %d, want %d", got, vmQuoteRequests)
+	}
 
 	second, err := calc.GetProjectedCost(context.Background(), req)
 	if err != nil {
@@ -1172,8 +1184,8 @@ func TestGetProjectedCostSetsExpiresAtFromCache(t *testing.T) {
 		t.Fatal("expected second response to include expires_at")
 	}
 
-	if got := calls.Load(); got != 1 {
-		t.Fatalf("expected cache hit on second call (1 upstream request), got %d calls", got)
+	if got := calls.Load(); got != vmQuoteRequests {
+		t.Fatalf("second quote upstream requests = %d, want %d", got, vmQuoteRequests)
 	}
 
 	if !first.GetExpiresAt().AsTime().Equal(second.GetExpiresAt().AsTime()) {

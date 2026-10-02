@@ -92,6 +92,14 @@ type PriceQuery struct {
 
 	// CurrencyCode filters by currency (default: "USD").
 	CurrencyCode string
+
+	// PriceType overrides the default Consumption priceType. Empty keeps
+	// Consumption. Reservation is the term-total query.
+	PriceType string
+
+	// APIVersion is sent as api-version when set. Empty uses the stable API.
+	// The preview version is what returns a Consumption row's savingsPlan array.
+	APIVersion string
 }
 
 // PriceItem represents a single price entry from the Azure Retail Prices API.

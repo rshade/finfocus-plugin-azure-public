@@ -411,7 +411,9 @@ response plus one trailing newline. `not-a-region` has `Count` 0 and an
 empty `Items` array.
 
 Tests pass `Items` to `selectVMItem` for the non-Windows on-demand row.
-`SortRegionPrices` reads those rows. It does not change `GetProjectedCost`.
+`SortRegionPrices` reads those rows. A virtual machine quote returns the
+other regions on `region_prices` and keeps the requested region as the
+parent cost.
 
 ```bash
 mkdir -p internal/pricing/testdata/retail/regions

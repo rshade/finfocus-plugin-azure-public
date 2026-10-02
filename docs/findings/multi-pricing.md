@@ -3,7 +3,8 @@
 AZ-2.13 records Consumption, Savings Plan, and Reservation prices for one SKU,
 and the fraction between two prices that share a unit. `SavingsFraction` in
 `internal/estimation` returns `(onDemand - other) / onDemand`. It does not
-round. Nothing in `GetProjectedCost` calls it. The RPC still returns one price.
+round. A virtual machine quote calls it for each `price_options` row. The
+selected monthly cost stays the row the caller asked for.
 
 ## Standard_D2s_v3 Consumption and Savings Plan
 
@@ -51,10 +52,9 @@ The hourly Consumption price beside those rows is 0.0804, also
 Those Reservation rows are labeled `1 Hour`, and the response has no second
 field that says whether 416 and 803 are an hourly rate or a term total. The
 plugin treats them as term totals. `ReservationHourly` divides 416 by 8760
-and 803 by 26280, then `SavingsFraction` can compare each hourly rate with
-the Linux on-demand rate 0.0804. `GetProjectedCost` still returns one price.
-The repeated alternative-price list that would carry the term, the hourly
-rate, and the fraction is the spec change in AZ-6.4.
+and 803 by 26280, then `SavingsFraction` compares each hourly rate with
+the Linux on-demand rate 0.0804. A virtual machine quote returns those
+rows on `price_options`. The selected monthly cost stays 0.0804 times 730.
 
 ## Savings Plans are not a price type
 
@@ -69,25 +69,23 @@ These files are `Count` 0:
 The 0.06624 and 0.04512 prices are read from the preview Consumption fixture
 in the first section, not from a `SavingsPlan` price type.
 
-## GetProjectedCost is blocked
+## GetProjectedCost returns price options
 
-The RPC is BLOCKED. The missing field is a repeated alternative-price list on
-the projected-cost response. This task does not invent that field, and it does
-not put three prices, savings percents, or term labels into `metadata` or
-`cost_breakdown`.
+A virtual machine `GetProjectedCost` and `EstimateCost` return
+`price_options`. The selected monthly cost is unchanged. The list is
+advisory. Consumption, Spot, Savings Plan, and Reservation rows are
+included when the retail page has them. A SKU with no reservation rows
+omits Reservation. Windows, Low Priority, and DevTest rows are not
+options.
 
-The proposal for that list is
+`price_options` is the repeated list from
 [spec issue 588](https://github.com/rshade/finfocus-spec/issues/588).
-The proposal for a per-region list is
+`region_prices` is the per-region list from
 [spec issue 589](https://github.com/rshade/finfocus-spec/issues/589).
-Neither list is summed into the primary cost.
 
-Checked `GetProjectedCostResponse` in FinFocus spec v0.7.0,
-`../finfocus-spec/sdk/go/proto/finfocus/v1/costsource.pb.go` (module
-`github.com/rshade/finfocus-spec` v0.7.0). The message has one `unit_price`
-(lines 1487-1488) and one `cost_per_month` (lines 1491-1492).
-`PricingCategory` is one value (lines 1516-1526), not a list of prices. No
-field is a repeated list of alternative prices.
+The notes below record why `metadata` and `cost_breakdown` were the
+wrong shape in spec v0.7.0, before those fields existed. They are still
+the wrong shape. The line numbers are that v0.7.0 reading.
 
 `metadata` (lines 1615-1635) is the wrong shape. It is `map[string]string`
 for plugin hints. The comment names keys such as `defaults_applied`. Values

@@ -30,6 +30,11 @@ func SortRegionPrices(pages map[string][]azureclient.PriceItem) []RegionPrice {
 			Found:  true,
 		})
 	}
+	sortRegionPrices(out)
+	return out
+}
+
+func sortRegionPrices(out []RegionPrice) {
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Found != out[j].Found {
 			return out[i].Found
@@ -39,5 +44,4 @@ func SortRegionPrices(pages map[string][]azureclient.PriceItem) []RegionPrice {
 		}
 		return out[i].Region < out[j].Region
 	})
-	return out
 }

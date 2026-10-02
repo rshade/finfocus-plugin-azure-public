@@ -40,8 +40,9 @@ func NewCalculator(logger zerolog.Logger, cachedClient ...*azureclient.CachedCli
 	}
 }
 
-// SetBillingAccountID stores the operator-supplied FOCUS billing account id.
-// GetActualCostRequest has no field for it. An empty id leaves FocusRecord
+// SetBillingAccountID stores the process FOCUS billing account id.
+// GetActualCost uses GetActualCostRequest.billing_account_id when that
+// field is set. This value is the fallback. An empty id leaves FocusRecord
 // nil. The value is not read from Azure and is not invented.
 func (c *Calculator) SetBillingAccountID(id string) {
 	if c == nil {
@@ -178,10 +179,7 @@ func (c *Calculator) estimateQuotedCost(
 		Str("result_status", "success").
 		Msg("EstimateCost completed")
 
-	return pluginsdk.NewEstimateCostResponse(
-		pluginsdk.WithEstimateCost(quote.currency, quote.monthly),
-		pluginsdk.WithPricingCategory(category),
-	), nil
+	return newEstimateResponse(quote.currency, quote.monthly, category, quote.advisories, quote.regions)
 }
 
 func descriptorFromEstimate(
@@ -287,6 +285,7 @@ func (c *Calculator) estimateVMCost(
 
 	costMonthly := unitPrice * pluginsdk.HoursPerMonth
 	category := estimateVMCategory(log, query.ArmRegionName, query.ArmSkuName, spot)
+	advisories, regions := c.vmAdvisories(ctx, query, result.Items, spot, taskEstimate)
 
 	log.Info().
 		Str("region", query.ArmRegionName).
@@ -297,10 +296,7 @@ func (c *Calculator) estimateVMCost(
 		Str("result_status", "success").
 		Msg("EstimateCost completed")
 
-	return pluginsdk.NewEstimateCostResponse(
-		pluginsdk.WithEstimateCost(currency, costMonthly),
-		pluginsdk.WithPricingCategory(category),
-	), nil
+	return newEstimateResponse(currency, costMonthly, category, advisories, regions)
 }
 
 func estimateVMCategory(log zerolog.Logger, region, sku string, spot bool) finfocusv1.FocusPricingCategory {

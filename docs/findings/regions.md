@@ -2,23 +2,23 @@
 
 AZ-2.15 sorts `Standard_B1s` Linux on-demand prices across regions.
 `SortRegionPrices` in `internal/pricing/regions.go` calls
-`selectVMItem(items, false)` on each saved page. `GetProjectedCost` does
-not call it. Quote selection, DryRun, and GetPricingSpec are unchanged.
+`selectVMItem(items, false)` on each saved page.
+
+A virtual machine `GetProjectedCost` and `EstimateCost` return the other
+regions on `region_prices`. The requested region stays the parent cost.
+A region with no selected row is left off the list. A zero appears only
+when a row was found. A Spot quote uses the Linux Spot row for those
+regions. An on-demand quote uses `SortRegionPrices`. The list is
+advisory. The monthly cost stays the requested region. DryRun and
+GetPricingSpec do not return the list.
 
 ## RPC
 
-The RPC exposure is `BLOCKED`. The proposal for a repeated region list is
+`region_prices` is the repeated region list from
 [spec issue 589](https://github.com/rshade/finfocus-spec/issues/589).
-`SortRegionPrices` stays a pure helper. No RPC returns the list.
-
-`GetProjectedCostResponse` is
-`../finfocus-spec/sdk/go/proto/finfocus/v1/costsource.pb.go` lines 1485-1672.
-It has one `unit_price` (line 1488) and one `cost_per_month` (line 1492).
-It has no repeated region list. The only repeated message field is
-`impact_metrics` (line 1496), which is sustainability metrics, not prices
-by region. `metadata` (line 1635) is a string hint map. `cost_breakdown`
-(line 1669) is the components of that one monthly cost. A region ranking is
-not written into either map.
+The parent response still has one `unit_price` and one monthly cost.
+`metadata` and `cost_breakdown` stay hints and components of that one
+cost. The rows below are the fixture evidence. The prices are unchanged.
 
 ## Selected rows
 

@@ -364,8 +364,9 @@ drops the one row that has it.
 `PriceItem.SavingsPlan` stores the nested array. A test on
 `eastus_standard_d2s_v3_pricetype_consumption_preview.json` fails if that
 array is ignored. `SavingsFraction` on the Linux meter is 0.31 for one year
-and 0.53 for three years. The production client does not request
-`api-version=2023-01-01-preview`, so a default quote still has no array.
+and 0.53 for three years. A virtual machine quote requests
+`api-version=2023-01-01-preview` for that array. The selected page stays
+on the stable API.
 
 `ReservationHourly` treats Reservation `retailPrice` as the term total even
 though `unitOfMeasure` says `1 Hour`. One year divides by 8760. Three years
@@ -374,8 +375,8 @@ divides by 26280. For `Standard_D2als_v7` that is 416 / 8760 and 803 / 26280.
 on-demand rate 0.0804. The public response still does not label the unit.
 This is the rule the plugin applies.
 
-`GetProjectedCost` still returns one price. Nothing in the RPC returns the
-savings-plan terms, the reservation hourly rate, or the fraction. Putting
-those values in `metadata` or `cost_breakdown` would be the wrong shape.
-The missing repeated alternative-price list is
+A virtual machine quote returns those terms on `price_options`, with the
+reservation hourly rate and the savings fraction. The selected monthly
+cost stays the on-demand or Spot row. `metadata` and `cost_breakdown`
+are the wrong shape for a second price. The repeated list is
 [spec issue 588](https://github.com/rshade/finfocus-spec/issues/588).

@@ -1,37 +1,38 @@
 # FOCUS alignment
 
-AZ-2.14 maps issue #46 onto finfocus-spec v0.7.0. `GetProjectedCost` stays
-one price. It does not grow a FOCUS record.
+AZ-2.14 maps issue #46 onto the SDK FOCUS record builder.
+`GetProjectedCost` stays one monthly price. It does not attach a FOCUS
+record. A virtual machine quote can also return advisory `price_options`
+and `region_prices`. Those lists stay out of the monthly cost.
 
-`GetProjectedCostResponse` is
-`../finfocus-spec/sdk/go/proto/finfocus/v1/costsource.pb.go` lines 1484-1672.
-The struct ends at `cost_breakdown` (line 1669). There is no `focus_record`.
-`metadata` (line 1635) is a string map for plugin hints. `cost_breakdown`
-(line 1669) is component amounts of that one monthly price. FOCUS columns
-are not written into either map.
-
-`ActualCostResult.FocusRecord` is lines 2323-2325. The comment says the
-field is optional and will eventually replace the legacy fields.
-`GetActualCostRequest` is lines 1132-1168. Its fields are `resource_id`,
-`start`, `end`, `tags`, `arn`, `dry_run`, `page_size`, and `page_token`.
-There is no billing-account field.
+`GetActualCost` attaches `FocusRecord` when a billing account id is
+available. `GetActualCostRequest.billing_account_id` wins when the caller
+sends one. A dry run ignores that field. An empty request id falls back
+to `SetBillingAccountID`, which reads `FINFOCUS_BILLING_ACCOUNT_ID` at
+startup. When both are empty, `Build` returns an error that names
+`billing_account_id`, the error is logged at warn, and `FocusRecord`
+stays nil. When an id is present, the record passes `ValidateFocusRecord`.
+The scaled actual cost is the same value either way. No billing account
+id, invoice id, or tag is invented. Tags are filters. The request id is
+a record field, and it is not a price filter.
+[Spec issue 590](https://github.com/rshade/finfocus-spec/issues/590)
+added the request field.
 
 `ValidateFocusRecord` calls `validateMandatoryFields` in
-`../finfocus-spec/sdk/go/pluginsdk/focus_conformance.go`. Lines 200-201
-reject an empty `billing_account_id`. `Build` in
-`../finfocus-spec/sdk/go/pluginsdk/focus_builder.go` lines 575-581 calls
-that validation.
+`../finfocus-spec/sdk/go/pluginsdk/focus_conformance.go`. An empty
+`billing_account_id` is rejected. `Build` in
+`../finfocus-spec/sdk/go/pluginsdk/focus_builder.go` calls that
+validation.
 
-The request has no billing-account field. Tags are filters, not an account
-id. `SetBillingAccountID` stores an operator-supplied process setting, read
-at startup from `FINFOCUS_BILLING_ACCOUNT_ID`. When that setting is empty,
-`Build` returns an error that names `billing_account_id`, the error is
-logged at warn, and `FocusRecord` stays nil. When it is set, `GetActualCost`
-returns a record that passes `ValidateFocusRecord`. The scaled actual cost
-is the same value either way. No billing account id, invoice id, or tag is
-invented. The process setting cannot vary per request. The request field is
-proposed in
-[spec issue 590](https://github.com/rshade/finfocus-spec/issues/590).
+Issue #46 stays open. The column table below still disagrees with the
+issue checklist. `ChargeType` has no proto field. This plugin leaves
+`commitment_discount_type` empty, because a retail price is not a
+commitment discount.
+
+The line numbers in the table were read from spec v0.7.0 `focus.pb.go`.
+The plugin now depends on `github.com/rshade/finfocus-spec`
+`v0.7.1-0.20261002115132-9eccf57a87b5`. Those line numbers are the
+v0.7.0 reading.
 
 ## Issue #46 columns
 

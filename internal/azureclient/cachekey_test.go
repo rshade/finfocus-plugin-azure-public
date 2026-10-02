@@ -41,6 +41,18 @@ func TestCacheKey(t *testing.T) {
 			want: "eastus||p10 lrs|premium ssd managed disks|storage|usd",
 		},
 		{
+			name: "appends price type and api version when set",
+			query: PriceQuery{
+				ArmRegionName: "eastus",
+				ArmSkuName:    "Standard_B1s",
+				ServiceName:   "Virtual Machines",
+				CurrencyCode:  "USD",
+				PriceType:     " Reservation ",
+				APIVersion:    " 2023-01-01-preview ",
+			},
+			want: "eastus|standard_b1s|||virtual machines|usd|type=reservation|api=2023-01-01-preview",
+		},
+		{
 			name: "uses canonical field order",
 			query: PriceQuery{
 				CurrencyCode:  "USD",

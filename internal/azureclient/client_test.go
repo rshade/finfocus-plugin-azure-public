@@ -916,6 +916,59 @@ func TestBuildFilterQuery_AllFields(t *testing.T) {
 	}
 }
 
+func TestBuildFilterQuery_PriceTypeOverride(t *testing.T) {
+	query := PriceQuery{
+		ArmRegionName: "eastus",
+		ArmSkuName:    "Standard_D2als_v7",
+		PriceType:     "Reservation",
+	}
+	filter := buildFilterQuery(query)
+
+	if !strings.Contains(filter, "priceType eq 'Reservation'") {
+		t.Fatalf("filter = %s", filter)
+	}
+	if strings.Contains(filter, "priceType eq 'Consumption'") {
+		t.Fatalf("filter kept the default price type: %s", filter)
+	}
+}
+
+func TestClient_GetPrices_SendsAPIVersion(t *testing.T) {
+	var got string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.URL.RawQuery
+		resp := PriceResponse{
+			Items: []PriceItem{{RetailPrice: 0.01, CurrencyCode: "USD"}},
+			Count: 1,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Errorf("encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	config := DefaultConfig()
+	config.BaseURL = server.URL
+	config.RetryMax = 0
+	client, err := NewClient(config)
+	if err != nil {
+		t.Fatalf("NewClient() failed: %v", err)
+	}
+
+	if _, err := client.GetPrices(context.Background(), PriceQuery{
+		ArmRegionName: "eastus",
+		APIVersion:    "2023-01-01-preview",
+	}); err != nil {
+		t.Fatalf("GetPrices() failed: %v", err)
+	}
+	if !strings.Contains(got, "api-version=2023-01-01-preview") {
+		t.Fatalf("query = %s", got)
+	}
+	if !strings.Contains(got, "%24filter=") && !strings.Contains(got, "$filter=") {
+		t.Fatalf("query = %s", got)
+	}
+}
+
 func TestBuildFilterQuery_ODataEscape(t *testing.T) {
 	// Test that single quotes are properly escaped to prevent OData injection
 	query := PriceQuery{ArmRegionName: "east'us"}

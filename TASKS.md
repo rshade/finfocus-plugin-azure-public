@@ -2,8 +2,8 @@
 
 <!-- markdownlint-disable MD013 MD060 MD031 MD032 MD029 -->
 
-**Current branch**: `run/grok-20261001` | **Target**: v0.1.0 |
-**Updated**: 2026-10-01 (spec v0.7.0). `main` is unchanged. No release tag.
+**Current branch**: `main` | **Target**: v0.1.0 |
+**Updated**: 2026-10-02. No release tag.
 
 ## Current State Summary
 
@@ -13,7 +13,7 @@
 - **Tests**: `go test -count=1 -v ./...` passed after AZ-6.10. The only skips are nine accuracy cases. Each names `owner_monthly_usd`.
 - **Linting**: the 2026-09-30 note of two findings is obsolete. Re-run `make lint` for a fresh result.
 - **Go version**: 1.27.1, committed
-- **Spec version**: `github.com/rshade/finfocus-spec` v0.7.0, committed
+- **Spec version**: `github.com/rshade/finfocus-spec` `v0.7.1-0.20261002115132-9eccf57a87b5`. `pluginsdk.SpecVersion` is still `v0.7.0`.
 
 ### RPC Implementation Status
 
@@ -46,7 +46,7 @@ Mapped types (ten):
 
 Not priced: NAT Gateway, virtual machine scale sets, Cache for Redis, and database servers for PostgreSQL and MySQL. Gateway and cross-region load balancer meters are not quoted.
 
-Not returned on an RPC: a repeated price list ([spec issue 588](https://github.com/rshade/finfocus-spec/issues/588)) and a repeated region list ([spec issue 589](https://github.com/rshade/finfocus-spec/issues/589)). A FOCUS record is attached only when `FINFOCUS_BILLING_ACCOUNT_ID` is set. A per-request billing account id is [spec issue 590](https://github.com/rshade/finfocus-spec/issues/590).
+A virtual machine quote returns `price_options` ([spec issue 588](https://github.com/rshade/finfocus-spec/issues/588)) and `region_prices` ([spec issue 589](https://github.com/rshade/finfocus-spec/issues/589)). Both lists are advisory. The monthly cost stays the selected row. `GetActualCost` uses request `billing_account_id` when the caller sends one ([spec issue 590](https://github.com/rshade/finfocus-spec/issues/590)). A dry run ignores that field. An empty request id falls back to `FINFOCUS_BILLING_ACCOUNT_ID`. An empty id leaves the FOCUS record unset.
 
 ### Release Infrastructure
 
@@ -375,7 +375,7 @@ mapper tables and fails if they differ; every supported type is listed; tests pa
 
 #### AZ-2.12 — Savings Plans spike [Issue #57]
 
-**Status:** DONE via AZ-6.3. `PriceItem` parses the nested `savingsPlan` array. `ReservationHourly` divides the term total by 8760 or 26280. No RPC returns those extra prices. See AZ-6.4.
+**Status:** DONE via AZ-6.3. `PriceItem` parses the nested `savingsPlan` array. `ReservationHourly` divides the term total by 8760 or 26280. A virtual machine quote returns those prices on `price_options`. See AZ-2.13.
 
 **Description**: A research spike. Determine, from the public Retail Prices API, whether
 Azure Savings Plans pricing is exposed, which `priceType` or filter values identify it,
@@ -393,7 +393,7 @@ marked "not answerable from the public API".
 
 #### AZ-2.13 — Multi-pricing model comparison [Issue #45]
 
-**Status:** BLOCKED, GetProjectedCostResponse has no repeated price list. The savings math is not called from an RPC. Spec proposal: [spec issue 588](https://github.com/rshade/finfocus-spec/issues/588)
+**Status:** DONE, `go test -count=1 -run 'TestGetProjectedCostVMAlternativesFromFixtures|TestGetProjectedCostVMReservationOptionsFromFixtures|TestVMQuoteIgnoresAdvisoryFetchErrors' ./internal/pricing/` passed. A virtual machine quote returns Consumption, Spot, Savings Plan, and Reservation on `price_options` when the page has them. `Standard_D2s_v3` has no reservation rows, so Reservation is omitted. `Standard_D2als_v7` returns 1 Year and 3 Years. The savings fraction is tested. A failed extra query leaves the selected cost unchanged. The selected monthly cost does not include the options.
 
 **Description**: For a query, return Consumption, 1-Year Reserved and 3-Year Reserved
 prices side by side, plus Savings Plans if AZ-2.12 shows they are available. The
@@ -414,7 +414,7 @@ savings percentage computed and tested; the decision on the response shape recor
 
 #### AZ-2.14 — FOCUS alignment [Issue #46]
 
-**Status:** DONE via AZ-6.5. A configured billing account id returns a FocusRecord that passes validation. An empty setting leaves FocusRecord nil. The request still has no field. Spec proposal: [spec issue 590](https://github.com/rshade/finfocus-spec/issues/590).
+**Status:** DONE for the record builder. `go test -count=1 -run 'TestGetActualCostRequestBillingAccountOverGRPC|TestGetActualCostRequestBillingAccountWithoutProcessOverGRPC|TestGetActualCostDryRunIgnoresRequestBillingAccount|TestGetActualCostFocusRecordOverGRPC|TestGetActualCostOmitsFocusRecordWithoutAccountOverGRPC' ./internal/pricing/` passed. Request `billing_account_id` wins. A dry run ignores it. An empty request id uses `FINFOCUS_BILLING_ACCOUNT_ID`. Empty leaves FocusRecord nil. Issue #46 stays open: `charge_type` has no proto field, and `commitment_discount_type` stays empty.
 
 **Description**: The issue asks to align response fields with FOCUS 1.3 column names.
 The spec has moved: v0.7.0 adds FOCUS 1.4 columns and a FOCUS record builder in
@@ -432,7 +432,7 @@ landed; tests pass.
 
 #### AZ-2.15 — Regional price comparison [Issue #47]
 
-**Status:** BLOCKED, GetProjectedCostResponse has no repeated region list. SortRegionPrices is not called from an RPC. Spec proposal: [spec issue 589](https://github.com/rshade/finfocus-spec/issues/589)
+**Status:** DONE, `go test -count=1 -run 'TestGetProjectedCostVMRegionPricesFromFixtures' ./internal/pricing/` passed. A virtual machine quote returns other regions on `region_prices`, cheapest found row first. The requested region stays the parent cost. A miss is omitted. A Spot quote uses the Linux Spot row.
 
 **Description**: For a SKU, query the Retail Prices API across regions and return the
 prices sorted, so a user sees that one region costs more than another. The issue prefers
@@ -817,7 +817,7 @@ for the term even though `unitOfMeasure` says "1 Hour": divide by 8,760 for one 
 and fails if the array is ignored (break check). The findings document states which
 parts need the spec change in AZ-6.4.
 
-**Status:** DONE, `go test -count=1 -run 'TestPriceItemParsesSavingsPlanFixture|TestReservationHourlyUsesTermTotal' ./internal/estimation/` passed. `PriceItem` keeps the nested array. `ReservationHourly` divides the term total by 8760 or 26280. Break check: the test failed to compile (`SavingsPlan` undefined, `ReservationHourly` undefined) before the field and function existed. `GetProjectedCost` still returns one price. The repeated alternative-price list is AZ-6.4 and is not delivered.
+**Status:** DONE, `go test -count=1 -run 'TestPriceItemParsesSavingsPlanFixture|TestReservationHourlyUsesTermTotal' ./internal/estimation/` passed. `PriceItem` keeps the nested array. `ReservationHourly` divides the term total by 8760 or 26280. Break check: the test failed to compile (`SavingsPlan` undefined, `ReservationHourly` undefined) before the field and function existed. The repeated alternative-price list landed after this task. A virtual machine quote returns it on `price_options`. See AZ-2.13.
 
 #### AZ-6.4 — File the spec issues for multi-pricing and regional comparison [Issues #45, #47]
 
@@ -831,7 +831,7 @@ advisory, never summed into the primary cost.
 **Acceptance Criteria**: two issue URLs (or links to existing issues) in the status line
 and in the Not delivered register. The pure functions stay.
 
-**Status:** DONE, spec v0.7.0 `costsource.proto` has one `unit_price` (line 371) and one `cost_per_month` (line 375) on `GetProjectedCostResponse`, and one `cost_monthly` (line 1233) on `EstimateCostResponse`. No `PriceOption` or `RegionPrice` message exists. Issue search before filing found no match. Filed [spec issue 588](https://github.com/rshade/finfocus-spec/issues/588) and [spec issue 589](https://github.com/rshade/finfocus-spec/issues/589). Break check: a matching open issue would have been linked instead of filing a new one. `SavingsFraction`, `ReservationHourly`, and `SortRegionPrices` are not called from an RPC. AZ-2.13 and AZ-2.15 stay BLOCKED. Not delivered until those fields exist.
+**Status:** DONE, spec v0.7.0 `costsource.proto` has one `unit_price` (line 371) and one `cost_per_month` (line 375) on `GetProjectedCostResponse`, and one `cost_monthly` (line 1233) on `EstimateCostResponse`. No `PriceOption` or `RegionPrice` message exists. Issue search before filing found no match. Filed [spec issue 588](https://github.com/rshade/finfocus-spec/issues/588) and [spec issue 589](https://github.com/rshade/finfocus-spec/issues/589). Break check: a matching open issue would have been linked instead of filing a new one. The fields later landed on the spec. Virtual machine quotes fill `price_options` and `region_prices`. See AZ-2.13 and AZ-2.15.
 
 #### AZ-6.5 — FOCUS record in production [Issue #46]
 
@@ -843,7 +843,7 @@ carrier, file the issue. Do not invent an account id.
 **Acceptance Criteria**: a gRPC test with an id returns a record that passes
 `ValidateFocusRecord`, and a test without one proves the documented fallback.
 
-**Status:** DONE, `go test -count=1 -run 'TestGetActualCostFocusRecordOverGRPC|TestGetActualCostOmitsFocusRecordWithoutAccountOverGRPC' ./internal/pricing/` passed. `SetBillingAccountID` feeds the record. The environment variable `FINFOCUS_BILLING_ACCOUNT_ID` sets it in the process. Empty leaves FocusRecord nil and logs why. Break check: the test failed to compile (`SetBillingAccountID` undefined) before the setter existed. The request has no field. Spec proposal: [spec issue 590](https://github.com/rshade/finfocus-spec/issues/590). No account id is invented.
+**Status:** DONE, `go test -count=1 -run 'TestGetActualCostFocusRecordOverGRPC|TestGetActualCostOmitsFocusRecordWithoutAccountOverGRPC' ./internal/pricing/` passed. `SetBillingAccountID` feeds the record. The environment variable `FINFOCUS_BILLING_ACCOUNT_ID` sets it in the process. Empty leaves FocusRecord nil and logs why. Break check: the test failed to compile (`SetBillingAccountID` undefined) before the setter existed. Request `billing_account_id` now wins over the process setting. A dry run ignores it. [Spec issue 590](https://github.com/rshade/finfocus-spec/issues/590) is closed. No account id is invented. Issue #46 stays open because `charge_type` is absent.
 
 #### AZ-6.6 — A real gRPC load test [Issue #54]
 
@@ -976,43 +976,26 @@ rejected, and every rejected real token either fixed or in the Not delivered reg
 - **spec-first**: Requires finfocus-spec update
 - **effort/small**: 1-2 days | **effort/medium**: 3-5 days | **effort/large**: 5+ days
 
-### All Open Issues (18)
+### Open issues
 
-| # | Title | Labels | Disposition | Task |
-|---|-------|--------|-------------|------|
-| [#60](https://github.com/rshade/finfocus-plugin-azure-public/issues/60) | Implement GetActualCost RPC for Azure historical cost lookup | roadmap/current, component/estimation, priority/high, effort/medium, spec-first | **AZ-2.2** | Finalize GetActualCost RPC |
-| [#59](https://github.com/rshade/finfocus-plugin-azure-public/issues/59) | Implement GetProjectedCost RPC for Azure pricing projection | roadmap/current, component/estimation, priority/high, effort/medium, spec-first | **AZ-2.1** | Finalize GetProjectedCost RPC |
-| [#57](https://github.com/rshade/finfocus-plugin-azure-public/issues/57) | Research spike: Savings Plans pricing in Azure Retail Prices API | roadmap/future, component/estimation, priority/medium, effort/small | **AZ-2.12** | In scope for v0.1.0: spike with findings document |
-| [#56](https://github.com/rshade/finfocus-plugin-azure-public/issues/56) | Research spike: Carbon footprint estimation data sources for Azure | roadmap/future, component/estimation, priority/low, effort/medium | **AZ-2.16** | In scope for v0.1.0: spike with findings document |
-| [#55](https://github.com/rshade/finfocus-plugin-azure-public/issues/55) | Implement chaos testing for Azure API failure scenarios | roadmap/next, component/testing, priority/medium, effort/small | **AZ-3.10** | In scope for v0.1.0 |
-| [#54](https://github.com/rshade/finfocus-plugin-azure-public/issues/54) | Implement performance benchmarking and load testing | roadmap/next, component/testing, priority/medium, effort/small | **AZ-3.9** | In scope for v0.1.0 |
-| [#53](https://github.com/rshade/finfocus-plugin-azure-public/issues/53) | Implement pricing accuracy validation against Azure Pricing Calculator | roadmap/next, component/testing, priority/high, effort/small | **AZ-3.8** | In scope for v0.1.0; BLOCKED-ON-INPUT (calculator values from the owner) |
-| [#52](https://github.com/rshade/finfocus-plugin-azure-public/issues/52) | Implement regression test suite with golden pricing data | roadmap/next, component/testing, priority/high, effort/medium | **AZ-3.7** | In scope for v0.1.0 |
-| [#51](https://github.com/rshade/finfocus-plugin-azure-public/issues/51) | Research spike: Azure SQL Database & Cosmos DB pricing mapping | roadmap/future, component/estimation, priority/medium, effort/medium | **AZ-2.7, AZ-2.8** | In scope for v0.1.0: spike then working estimation |
-| [#50](https://github.com/rshade/finfocus-plugin-azure-public/issues/50) | Implement Storage Accounts capacity-based cost estimation | roadmap/future, component/estimation, priority/medium, effort/medium | **AZ-2.4** | In scope for v0.1.0 |
-| [#49](https://github.com/rshade/finfocus-plugin-azure-public/issues/49) | Implement AKS cluster cost estimation | roadmap/future, component/estimation, priority/high, effort/medium | **AZ-2.6** | In scope for v0.1.0 |
-| [#48](https://github.com/rshade/finfocus-plugin-azure-public/issues/48) | Implement App Service & Azure Functions cost estimation | roadmap/future, component/estimation, priority/high, effort/medium | **AZ-2.5** | In scope for v0.1.0 |
-| [#47](https://github.com/rshade/finfocus-plugin-azure-public/issues/47) | Regional price heatmap — cross-region cost comparison for SKUs | roadmap/future, component/estimation, priority/low, effort/large | **AZ-2.15** | In scope for v0.1.0 |
-| [#46](https://github.com/rshade/finfocus-plugin-azure-public/issues/46) | Align response fields with FOCUS 1.3 specification | roadmap/future, priority/low, effort/large, spec-first | **AZ-2.14** | In scope for v0.1.0; re-scoped against spec v0.7.0 (FOCUS 1.4) |
-| [#45](https://github.com/rshade/finfocus-plugin-azure-public/issues/45) | Multi-pricing model comparison (Consumption vs Reserved vs Savings Plans) | roadmap/future, component/estimation, priority/low, effort/large, spec-first | **AZ-2.13** | In scope for v0.1.0; response shape needs a spec check |
-| [#44](https://github.com/rshade/finfocus-plugin-azure-public/issues/44) | Implement GetPricingSpec RPC for plugin discovery | roadmap/future, component/estimation, priority/medium, effort/medium, spec-first | **AZ-2.11** | In scope for v0.1.0 |
-| [#43](https://github.com/rshade/finfocus-plugin-azure-public/issues/43) | Implement DryRun validation RPC | roadmap/future, component/estimation, priority/medium, effort/small, spec-first | **AZ-2.10** | In scope for v0.1.0 |
-| [#42](https://github.com/rshade/finfocus-plugin-azure-public/issues/42) | Add Spot VM pricing support | roadmap/future, component/estimation, priority/medium, effort/small | **AZ-2.3** | In scope for v0.1.0 |
+Closed on `main` by earlier commits: #42, #50, #51, #54, #55, #56, #57, #59, #60, #61.
+This change closes #45 and #47. #46 stays open.
 
-**Summary** (Updated for spec v0.7.0):
-- **All 18 open issues are in scope for v0.1.0, each with its own task.** The owner
-  decided on 2026-09-30 that v0.1.0 is the full working plugin: every resource type
-  and every issue in the tracker.
-  - RPCs: #59, #60 (AZ-2.1, AZ-2.2), #43 (AZ-2.10), #44 (AZ-2.11)
-  - Resource types: #42, #48, #49, #50, #51 (AZ-2.3 to AZ-2.8)
-  - Pricing models and data: #57 (AZ-2.12 spike), #45 (AZ-2.13), #46 (AZ-2.14),
-    #47 (AZ-2.15), #56 (AZ-2.16 spike)
-  - Tests and validation: #52 to #55 (AZ-3.7 to AZ-3.10). #53 is BLOCKED-ON-INPUT.
-  - Note: AZ-2.1 (GetProjectedCost) may optionally populate the `cost_breakdown`
-    map from v0.7.0. AZ-2.6 (AKS) is where it is most useful.
-- **Post-v0.1.0**: none of the current issues. Standard Load Balancer rules
-  are quoted. NAT Gateway, virtual machine scale sets, Cache for Redis, and
-  database servers for PostgreSQL and MySQL have no issue and are not priced.
+| # | Title | Why it stays open |
+| --- | --- | --- |
+| [#53](https://github.com/rshade/finfocus-plugin-azure-public/issues/53) | Pricing accuracy vs the Azure Pricing Calculator | **AZ-3.8** BLOCKED-ON-INPUT. Every `owner_monthly_usd` cell is empty. |
+| [#52](https://github.com/rshade/finfocus-plugin-azure-public/issues/52) | Golden pricing regression suite | **AZ-3.7** has golden cases. The issue also asks for `-update-golden`. |
+| [#49](https://github.com/rshade/finfocus-plugin-azure-public/issues/49) | AKS cluster cost estimation | **AZ-2.6** quotes AKS. Free tier uses the live 0.05 USD per hour meter. |
+| [#48](https://github.com/rshade/finfocus-plugin-azure-public/issues/48) | App Service and Functions cost estimation | **AZ-2.5** quotes plans and Consumption. `EP1` and Flex are `InvalidArgument`. |
+| [#46](https://github.com/rshade/finfocus-plugin-azure-public/issues/46) | FOCUS 1.3 column alignment | **AZ-2.14** emits a record. `charge_type` has no proto field. `commitment_discount_type` stays empty. |
+| [#44](https://github.com/rshade/finfocus-plugin-azure-public/issues/44) | GetPricingSpec for plugin discovery | **AZ-2.11** returns one spec for the quoted resource, not a catalog. |
+| [#43](https://github.com/rshade/finfocus-plugin-azure-public/issues/43) | DryRun validation RPC | **AZ-2.10** validates and does not call Azure. `DryRunResponse` has no filter field. |
+
+**Summary** (updated 2026-10-02):
+- Seven issues stay open. The reasons are in the table.
+- Standard Load Balancer rules are quoted. NAT Gateway, virtual machine scale
+  sets, Cache for Redis, and database servers for PostgreSQL and MySQL have
+  no issue and are not priced.
 
 ---
 
@@ -1026,13 +1009,14 @@ rejected, and every rejected real token either fixed or in the Not delivered reg
      quotes populate it, and the parts sum to the monthly cost.
    - **Trace ID**: the SDK logs the host trace id on validation errors. No
      plugin change.
-   - **FOCUS 1.4 fields**: optional. They stay deferred. A FOCUS record is
-     attached only when `FINFOCUS_BILLING_ACCOUNT_ID` is set
-     ([spec issue 590](https://github.com/rshade/finfocus-spec/issues/590)).
+   - **FOCUS 1.4 fields**: a record is attached when the request sets
+     `billing_account_id`, or, when that field is empty, when
+     `FINFOCUS_BILLING_ACCOUNT_ID` is set. A dry run ignores the request
+     id. [Spec issue 590](https://github.com/rshade/finfocus-spec/issues/590)
+     is closed.
 
-2. **Go version cascade**: The upgrade from Go 1.25.7 to 1.27.1 (AZ-1.1) was applied
-   locally on 2026-09-30 and `go build`, `go vet` and `go test` pass. It has not
-   run on a CI runner yet. Confirm on the first CI run.
+2. **Go version cascade**: The upgrade from Go 1.25.7 to 1.27.1 (AZ-1.1) is on
+   `main`. The Test workflow passed on that tree.
 
 3. **Confidence level encoding** (answered in run 1: kept in `Source`, the v0.7.0 proto has no field for it): Issue #60 references encoding confidence in the
    `Source` field as `"azure-retail-prices[confidence:HIGH]"`. Is this format
@@ -1065,10 +1049,10 @@ rejected, and every rejected real token either fixed or in the Not delivered reg
 10. **Calculator values for #53 (AZ-3.8)**: the Azure Pricing Calculator is a web
     application. The owner needs to supply the expected monthly costs for the
     sample configurations. Until then AZ-3.8 stays BLOCKED-ON-INPUT.
-11. **Spec-first issues (#43, #44, #45, #46, #47)**: several say a spec change is
-    needed first. v0.7.0 may already provide it (`DryRun`, `GetPricingSpec`, FOCUS
-    1.4). Each task tells the run to read the spec and list any real gap under
-    decisions needed.
+11. **Spec-first issues (#43, #44, #46)**: #45 and #47 are delivered on
+    `price_options` and `region_prices`. #43 still has no filter field on
+    `DryRunResponse`. #44 returns one pricing spec. #46 still has no
+    `charge_type` field.
 
 ---
 
