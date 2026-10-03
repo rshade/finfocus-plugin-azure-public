@@ -20,11 +20,10 @@ import (
 	"github.com/rshade/finfocus-plugin-azure-public/internal/pricing"
 )
 
-// priceTolerance is the band for hand-recorded reference prices. Virtual
-// machine and disk tests read their reference live instead (see
+// priceTolerance is the band for hand-recorded reference prices in
+// projected_cost_integration_test.go. Virtual machine, disk, and AKS node
+// tests read their reference live instead (see
 // live_reference_integration_test.go).
-//
-//nolint:unused // Shared with projected_cost_integration_test.go (open PR #70).
 const priceTolerance = 0.25 // ±25%
 
 func skipIfDisabled(t *testing.T) {
@@ -61,7 +60,6 @@ func newTestCalculator(t *testing.T) (*pricing.Calculator, *azureclient.CachedCl
 	return calc, cachedClient
 }
 
-//nolint:unused // Shared with projected_cost_integration_test.go (open PR #70).
 func assertInRange(t *testing.T, actual, reference float64) {
 	t.Helper()
 	low := reference * (1 - priceTolerance)

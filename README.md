@@ -218,9 +218,10 @@ read their reference price from the Retail Prices API at test time, with
 selection rules written in the test, so Azure price changes do not fail
 them. The reference request retries HTTP 429 and 503 up to four times and
 honours `Retry-After`. Tests that still use recorded reference constants
-allow ±25%: the App Service, Functions, and AKS tests in
-`examples/projected_cost_integration_test.go`. If those fail due to price
-drift, update their constants. Run with `-v` to see the actual prices.
+allow ±25%: the App Service, Functions, and AKS control-plane checks in
+`examples/projected_cost_integration_test.go`. The AKS node pool checks read
+the virtual machine price live. If a constant-based check fails due to price
+drift, update its constant. Run with `-v` to see the actual prices.
 
 To skip integration tests (e.g., in offline environments):
 
