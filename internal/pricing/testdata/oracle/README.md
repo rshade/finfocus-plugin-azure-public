@@ -30,7 +30,9 @@ the plugin, or list it in the "Not delivered" register with the reason.
 5. **Calculator values win.** For every row of `calculator-values.csv` with a value, the plugin must
    be within 5% of it. When the calculator and the oracle disagree, the test logs both and the report
    says so. The rows with no value are skipped with the reason `owner value not supplied`. A
-   filled value needs a `read_on` date, and at least 4 rows must be filled.
+   filled value needs a `read_on` date that is not in the future, and case ids are unique.
+   `calculatorMinComparedRows` is the number of rows the offline run compares today, so losing
+   any row fails the suite.
 6. **Write the results** (case id, plugin value, expected, difference, verdict) to
    `.superpowers/oracle-results.md` and paste the table in the run report.
 
@@ -49,15 +51,21 @@ own source and would make the comparison circular.
 1. Print the values without changing anything:
 
    ```bash
-   scripts/calculator-values.py
+   python3 scripts/calculator-values.py
    ```
 
 2. Write them into `calculator-values.csv`. Each filled row gets today's UTC date in `read_on`
    (`YYYY-MM-DD`) and the offers and formula in `notes`:
 
    ```bash
-   scripts/calculator-values.py --write
+   python3 scripts/calculator-values.py --write
    ```
+
+   The script prints `FILLED`, `EMPTY`, `KEPT` and `WARN` lines. `KEPT` means a row that held a
+   value can no longer be read from the calculator. The old value stays and the script exits 1;
+   find out what changed in the calculator data before committing. `WARN` means the row's
+   `calculator_configuration` does not mention something the script read from the case id.
+   Text in `notes` after an `owner:` marker is kept when the script rewrites the generated part.
 
 3. Compare. Offline uses each case's oracle rows; `ORACLE_LIVE=1` queries the real API:
 
@@ -70,13 +78,23 @@ own source and would make the comparison circular.
 
 The script computes each row the way the calculator does: 730 hours per month, graduated
 blob bands, and the Functions free grant bands. A row it cannot express without guessing is
-left empty, and the script prints why.
+left empty, and the script prints why. A price of 0 is a calculator placeholder for a size or
+offer not sold in that region, so it is refused rather than written as a free row. The one
+intended zero is AKS Free, and only while the calculator has no priced Free or infrastructure
+offer.
+
+Zone redundant SQL follows the calculator's single database module: compute is the zone offer
+plus the local offer, and storage is the zone storage rate in place of the local rate.
 
 Re-read the values every 90 days. The test logs a row whose `read_on` is older than that.
 
 When the plugin and the calculator disagree by more than 5 percent, find out which side is
 wrong before changing anything. A plugin bug is fixed in the plugin. A row whose
 `calculator_configuration` does not match what the plugin is asked to price is fixed in the
-script. Never edit a value by hand and never widen the tolerance. A row that cannot be
-compared yet is listed in `calculatorRowSkipReason` in `calculator_accuracy_test.go`, with the
-reason; remove the entry when the gap closes.
+script. Never edit a value by hand and never widen the tolerance.
+
+A known plugin gap is listed in `calculatorKnownFailure` in `calculator_accuracy_test.go` and in
+the Not delivered register. The row is still compared on every run and skips while it misses.
+When it comes inside the band the test fails with `gap closed`; remove the entry and the register
+line then. A row the offline oracle cannot serve is listed in `calculatorLiveOnlyReason` and is
+compared only with `ORACLE_LIVE=1`.

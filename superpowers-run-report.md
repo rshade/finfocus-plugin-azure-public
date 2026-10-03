@@ -205,7 +205,8 @@ region Global.
 | Repeated alternative prices on the cost methods | Response has one unit price and one month cost | spec-gap | spec issue 588 | spec |
 | Repeated per-region prices | Same responses have no region list | spec-gap | spec issue 589 | spec |
 | Billing account id on the actual-cost request | Process setting works. It cannot vary per request | spec-gap | spec issue 590 | spec |
-| Calculator owner months | All 22 `owner_monthly_usd` cells are empty | needs-owner-input | file not edited | owner |
+| AKS Free control plane matches the calculator | Quote uses the `FreeTierInfrastructureCost` meter, 36.50. Calculator and pricing page say 0 | known-failure | PR #70; calculator row `aks_control_plane_free:eastus` | owner |
+| Zone redundant SQL storage matches the calculator | Quote bills local plus zone storage. Calculator bills zone storage instead of local, 700.58 vs 585.58 at 1000 GB | known-failure | calculator row `sql_gp_gen5:2vcore:1000gb:zr:eastus` | owner |
 | Windows virtual machine meter | Token is rejected so it cannot return the Linux meter | deferred-minor | no spec issue | owner |
 | Storage for the request-unit Cosmos product | Live page has only the `1M RUs` meter | outside-boundary | AZ-6.8 | retail API |
 | Gateway and cross-region load balancer meters | Each product has its own meters | out-of-scope | AZ-6.9 | owner |
