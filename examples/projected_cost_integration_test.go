@@ -27,7 +27,6 @@ const (
 	refFunctionsPremiumVCPUHour  = 0.173    // Premium vCPU Duration, unit 1 Hour
 	refFunctionsPremiumGiBHour   = 0.0123   // Premium Memory Duration, unit 1 GiB Hour
 	refAKSStandardHourly         = 0.10     // Standard Uptime SLA
-	refAKSNodeD2sv3Hourly        = 0.096    // Standard_D2s_v3 Linux on-demand node
 
 	functionsFreeExecutions = 1_000_000
 	functionsFreeGBSeconds  = 400_000
@@ -125,6 +124,7 @@ func TestGetProjectedCost_FunctionAppPremium_MatchesReference(t *testing.T) {
 func TestGetProjectedCost_AKSStandardOneNodePool_SumsControlPlaneAndNodes(t *testing.T) {
 	skipIfDisabled(t)
 	t.Cleanup(rateLimitDelay)
+	nodeHourly := linuxOnDemandVMRate(t, "eastus", "Standard_D2s_v3").RetailPrice
 	calc, _ := newTestCalculator(t)
 
 	const nodeCount = 2
@@ -143,7 +143,7 @@ func TestGetProjectedCost_AKSStandardOneNodePool_SumsControlPlaneAndNodes(t *tes
 
 	breakdown := resp.GetCostBreakdown()
 	assertInRange(t, breakdown["control_plane"], refAKSStandardHourly*pluginsdk.HoursPerMonth)
-	assertInRange(t, breakdown["node_pool_system"], nodeCount*refAKSNodeD2sv3Hourly*pluginsdk.HoursPerMonth)
+	assertMatchesLive(t, breakdown["node_pool_system"], nodeCount*nodeHourly*pluginsdk.HoursPerMonth)
 	t.Logf("AKS Standard eastus, 2x Standard_D2s_v3: $%.4f/month (control_plane=%.4f nodes=%.4f)",
 		resp.GetCostPerMonth(), breakdown["control_plane"], breakdown["node_pool_system"])
 }
@@ -151,6 +151,7 @@ func TestGetProjectedCost_AKSStandardOneNodePool_SumsControlPlaneAndNodes(t *tes
 func TestGetProjectedCost_AKSFreeTierOneNodePool_ControlPlaneIsZero(t *testing.T) {
 	skipIfDisabled(t)
 	t.Cleanup(rateLimitDelay)
+	nodeHourly := linuxOnDemandVMRate(t, "eastus", "Standard_D2s_v3").RetailPrice
 	calc, _ := newTestCalculator(t)
 
 	resp := projectedCost(t, calc, &finfocusv1.ResourceDescriptor{
@@ -170,7 +171,7 @@ func TestGetProjectedCost_AKSFreeTierOneNodePool_ControlPlaneIsZero(t *testing.T
 	if breakdown["control_plane"] != 0 {
 		t.Fatalf("free control_plane = %.4f, want 0", breakdown["control_plane"])
 	}
-	assertInRange(t, breakdown["node_pool_system"], refAKSNodeD2sv3Hourly*pluginsdk.HoursPerMonth)
+	assertMatchesLive(t, breakdown["node_pool_system"], nodeHourly*pluginsdk.HoursPerMonth)
 	if !strings.Contains(resp.GetBillingDetail(), "FreeTierInfrastructureCost") {
 		t.Fatalf("billing_detail = %q, want the unbilled Free meter note", resp.GetBillingDetail())
 	}
