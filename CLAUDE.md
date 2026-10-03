@@ -34,6 +34,9 @@
 - **New Feature**: Run `.specify/scripts/bash/create-new-feature.sh`
 - **Update Plan**: Run `.specify/scripts/bash/setup-plan.sh`
 - **Check Status**: Check `ROADMAP.md`
+- **Work a Roadmap Issue**: `/pick-issue [N]` (`.claude/commands/pick-issue.md`;
+  Codex wrapper in `.agents/skills/pick-issue/`). Claims via the
+  `processing:roadmap` label, commits, opens the PR, then releases the claim
 
 ## Release Please
 
