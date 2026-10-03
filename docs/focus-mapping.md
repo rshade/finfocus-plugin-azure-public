@@ -27,52 +27,83 @@ Projected and estimate responses are not FOCUS rows. They carry the FOCUS
 | HostProviderName | `Microsoft` | equals ServiceProviderName |
 | ProviderName (deprecated) | `Microsoft` | still mandatory in FOCUS 1.3 |
 | PublisherName (deprecated) | `Microsoft` | still mandatory in FOCUS 1.3 |
-| InvoiceIssuerName | `Microsoft` | direct-customer default |
-| ServiceName | Azure service name | Retail API `serviceName` |
+| InvoiceIssuerName | `Microsoft` | correct for direct EA and MCA customers; a CSP partner is the issuer for CSP customers |
+| ServiceName | Azure service name, per resource type | Services.csv `ServiceName` |
 | ServiceCategory, ServiceSubcategory | see the table below | Services.csv |
 | ListCost, BilledCost, EffectiveCost | monthly quote × hours / 730 | Retail API `retailPrice` |
 | ContractedCost | same as ListCost | no negotiated discounts |
-| PricingUnit, ConsumedUnit | `Hours` or `Months` | see the pricing basis below |
+| PricingUnit, ConsumedUnit | `Hours`, `Units/Month`, or `Months` | PricingUnits.csv; see the pricing basis below |
 | PricingQuantity, ConsumedQuantity | basis quantity | see the pricing basis below |
-| ListUnitPrice, ContractedUnitPrice | basis unit price | Retail API `retailPrice` |
+| ListUnitPrice, ContractedUnitPrice | meter retail price, or unset | Retail API `retailPrice`; unset when several meters priced the resource |
 | SkuId | quoted SKU | descriptor or Pulumi property |
 | RegionId, RegionName | ARM region name | descriptor region |
 | ResourceId, ResourceType | request resource id, descriptor type | caller |
 
 ## Pricing basis
 
-When exactly one meter with a positive price priced the resource and its unit
-is `1 Hour` or `1/Month`:
+A quote billed by exactly one meter with a positive price, whose monthly total
+is that price times its count, is expressed in the meter's unit. The units
+follow microsoft/finops-toolkit `src/open-data/PricingUnits.csv` (read
+2026-10-02):
 
-- The unit is `Hours` or `Months`.
-- The unit price is that meter's retail price.
-- The quantity is the cost divided by that price. A scale set of three VMs
-  bills three instance-hours per hour, and a disk bills a fraction of a month.
-
-Every other quote uses window hours and an average hourly unit price. That
-includes several meters (AKS, SQL Database, Functions, Cosmos DB, Load
-Balancer with overage), GB-month storage bands, request-unit meters, and zero
-prices. In both cases unit price times quantity equals the cost.
-
-## Service category and subcategory
-
-The values follow microsoft/finops-toolkit `src/open-data/Services.csv`.
-
-| Resource type | ServiceCategory | ServiceSubcategory |
+| Retail `unitOfMeasure` | PricingUnit | Quantity |
 | --- | --- | --- |
-| Virtual machine, scale set | Compute | Virtual Machines |
-| Managed disk | Compute | Virtual Machines |
-| Storage account, Blob | Storage | Storage Platforms |
-| App Service plan | Compute | Other (Compute) |
-| Function App | Compute | Serverless Compute |
-| AKS | Compute | Containers |
-| SQL Database | Databases | Relational Databases |
-| Cosmos DB | Databases | NoSQL Databases |
-| Load Balancer | Networking | Application Networking |
+| `1 Hour`, `1 Hours` (any case) | `Hours` | window hours × instance count |
+| `1/Month` | `Units/Month` | window hours / 730 × count |
+| `1 Month` | `Months` | window hours / 730 × count |
 
-Microsoft maps App Service plans to `Web` / `Application Platforms`.
-`FocusServiceCategory` has no `Web` value yet (rshade/finfocus-spec#612), so
-the plugin uses the valid pair `Compute` / `Other (Compute)` until then.
+The quantity is counted, not divided back out of the cost, so a 24-hour window
+is exactly 24 and a scale set of three is exactly 72. The unit price is the
+meter's retail price, and ListUnitPrice × PricingQuantity equals ListCost to
+within float noise.
+
+Every other quote uses window hours with ListUnitPrice and ContractedUnitPrice
+unset (0). That includes several meters (AKS with node pools, SQL Database,
+Functions, Cosmos DB, Load Balancer with overage or data), GB-month storage
+bands, request-unit meters, and zero prices. A blended hourly rate is not a
+published price, so the record does not claim one. `ValidateFocusRecord`
+compares ContractedCost with unit price × quantity only when both are non-zero,
+and still requires ConsumedQuantity > 0.
+
+`ActualCostResult.usage_amount` stays the window hours for every resource,
+including scale sets. The FOCUS ConsumedQuantity counts instance-hours, so a
+scale set of three over 24 hours reports 24 there and 72 in the record.
+
+## Service name, category, and subcategory
+
+The values follow microsoft/finops-toolkit `src/open-data/Services.csv` (read
+2026-10-02), keyed by Azure resource type, so rows line up with Azure's own
+FOCUS exports. The Retail API `serviceName` (for example `Storage` for a disk)
+is not the FOCUS ServiceName. A VM `service` tag changes which retail rows are
+queried, not the FOCUS service.
+
+| Resource type | ServiceName | ServiceCategory | ServiceSubcategory |
+| --- | --- | --- | --- |
+| Virtual machine | Virtual Machines | Compute | Virtual Machines |
+| Scale set | Virtual Machine Scale Sets | Compute | Virtual Machines |
+| Managed disk | Virtual Machines | Compute | Virtual Machines |
+| Storage account, Blob | Storage Accounts | Storage | Storage Platforms |
+| App Service plan | Azure App Service | Compute | Other (Compute) |
+| Function App on a plan SKU | Azure App Service | Compute | Other (Compute) |
+| Function App (Consumption, Premium) | Functions | Compute | Serverless Compute |
+| AKS | Azure Kubernetes Service | Compute | Containers |
+| SQL Database | Azure SQL Database | Databases | Relational Databases |
+| Cosmos DB | Cosmos DB | Databases | NoSQL Databases |
+| Load Balancer | Load Balancer | Networking | Application Networking |
+
+Microsoft maps App Service (`microsoft.web/serverfarms` and `sites`) to `Web` /
+`Application Platforms`. `FocusServiceCategory` has no `Web` value yet
+(rshade/finfocus-spec#612), so the plugin uses the valid pair `Compute` /
+`Other (Compute)` until then.
+
+## Expected SDK warnings
+
+FOCUS 1.3 deprecates ProviderName and PublisherName but still lists them as
+mandatory, so the record sets both. The SDK builder then logs two warnings,
+`provider_name is deprecated, using service_provider_name` and the matching
+publisher warning. Each is guarded by a `sync.Once`, so each prints at most
+once per process. They go through the global `zerolog` logger in the SDK to `stderr`, so
+`FINFOCUS_LOG_LEVEL` does not filter them.
 
 ## Columns left empty
 

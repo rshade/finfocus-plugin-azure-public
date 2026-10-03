@@ -51,8 +51,9 @@ comes before its implementation task and must fail first.
   check against the FOCUS 1.3 allowed pairs used
 - [x] T010 [US3] Implement `focusServiceClass` replacing `focusServiceCategory`
   and set `WithServiceSubcategory` in `internal/pricing/focus.go`
-- [x] T011 [US3] Update `TestFocusServiceCategory` and
-  `TestFocusNativeFunctionWebApp` expectations (disk moves to Compute)
+- [x] T011 [US3] Confirm `TestFocusServiceCategory` and
+  `TestFocusNativeFunctionWebApp` still pass with disks under Compute (neither
+  needed a change)
 
 ## Phase 6: Cross-cutting validation
 
@@ -73,6 +74,22 @@ comes before its implementation task and must fail first.
 
 - [x] T016 Run `make build`, `make test`, `make lint`, markdownlint-cli2, and
   vale on changed markdown
+
+## Phase 9: Review follow-up (PR #74)
+
+- [x] T017 Test: `TestGetActualCost_VMSizeKeys_BuildsFocusRecord` and
+  `TestGetActualCost_RealQuotes_SetFocusPricingBasis` in
+  `internal/pricing/focus_actual_test.go`, over gRPC with realistic retail
+  rows for VM, Spot, scale set, Windows, disk, AKS, SQL, Functions, and Load
+  Balancer
+- [x] T018 Test: `TestBuildFocusRecord_ProductionCostPath_QuantityIsExact`
+  (24 and 72 exactly)
+- [x] T019 Implement: `focusServiceClass` returns the Services.csv ServiceName
+  and no longer goes through `MapDescriptorToQuery`; a Function App on a plan
+  SKU is Azure App Service
+- [x] T020 Implement: `quoteMeter.count`, counted quantities, PricingUnits.csv
+  units, and unset unit prices for blended quotes
+- [x] T021 Update `docs/focus-mapping.md`, CLAUDE.md, and these artifacts
 
 ## Dependencies
 

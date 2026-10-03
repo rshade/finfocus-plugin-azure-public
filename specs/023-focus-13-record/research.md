@@ -1,6 +1,6 @@
 # Research: FOCUS 1.3 Cost Record Alignment
 
-Sources read on 2026-10-03.
+Sources read on 2026-10-02.
 
 ## R1: Does finfocus-spec already define FOCUS 1.3 columns?
 
@@ -60,7 +60,7 @@ duplicates the existing message.
 | microsoft.network/loadbalancers | Networking | Application Networking |
 
 **Gap**: The `Web` category is missing from `FocusServiceCategory`, which has
-11 values against 19 in FOCUS 1.3. App Service plans therefore use `Compute` /
+10 values plus `UNSPECIFIED` against 19 in FOCUS 1.3, so nine are missing. App Service plans therefore use `Compute` /
 `Other (Compute)` for now, which is a valid FOCUS pair. This is filed as
 rshade/finfocus-spec#612.
 

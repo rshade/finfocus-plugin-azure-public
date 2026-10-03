@@ -1,6 +1,6 @@
 # Implementation Plan: FOCUS 1.3 Cost Record Alignment
 
-**Branch**: `023-focus-13-record` | **Date**: 2026-10-03 | **Spec**: [spec.md](spec.md)
+**Branch**: `023-focus-13-record` | **Date**: 2026-10-02 | **Spec**: [spec.md](spec.md)
 **Input**: Feature specification from `specs/023-focus-13-record/spec.md`
 
 ## Summary
@@ -74,15 +74,16 @@ waits on finfocus-spec#612.
 
 ### Pricing basis (FR-002–FR-005)
 
-`focusPricingBasis(quote, cost, hours) (quantity, unit, unitPrice)`:
+`focusPricingBasis(meters, monthly, hours) (quantity, unit, unitPrice)`:
 
 | Quote meters | Unit, unit price, quantity |
 | --- | --- |
-| one meter, price > 0, hourly | `Hours`, price, cost / price |
-| one meter, price > 0, monthly | `Months`, price, cost / price |
-| anything else | `Hours`, cost / hours, hours |
+| one meter, price > 0, `1 Hour`, monthly = price × 730 × count | `Hours`, price, hours × count |
+| one meter, price > 0, `1/Month`, monthly = price × count | `Units/Month`, price, hours / 730 × count |
+| one meter, price > 0, `1 Month`, monthly = price × count | `Months`, price, hours / 730 × count |
+| anything else | `Hours`, unset (0), hours |
 
-- **ContractedUnitPrice:** equals unitPrice.
+- **ContractedUnitPrice:** equals `unitPrice`, so both are unset for blended quotes.
 - **ContractedCost, ListCost, BilledCost, EffectiveCost:** all equal the window
   cost.
 - **ConsumedQuantity and ConsumedUnit:** equal the pricing pair.

@@ -460,12 +460,25 @@ id logs the validation error and leaves `FocusRecord` nil. No id is invented.
 
 The record follows FOCUS 1.3. The service, host, provider, publisher, and
 invoice issuer names are `Microsoft`, and `billing_account_name` is the id.
-Contracted cost equals list cost. One positive `1 Hour` or `1/Month` meter
-sets the pricing unit (`Hours` or `Months`) and price, with quantity equal to
-cost divided by price. Every other quote uses window `Hours`. Category and
-subcategory follow Microsoft's FOCUS service mapping, so disks are Compute /
-Virtual Machines. App Service plans are Compute / Other (Compute) until
-finfocus-spec#612 adds Web. `docs/focus-mapping.md` lists each column.
+`Microsoft` is the right invoice issuer for direct EA and MCA customers; a CSP
+customer's issuer is the partner. Contracted cost equals list cost.
+
+A quote billed by one positive meter, whose monthly total is that price times
+its count, uses the meter's unit from finops-toolkit PricingUnits.csv:
+`1 Hour` and `1 Hours` are `Hours`, `1/Month` is `Units/Month`, and `1 Month`
+is `Months`. The quantity is counted (window hours times instances, or window
+months), not divided out of the cost, so 24 hours is exactly 24. Every other
+quote uses window `Hours` with both unit prices unset. `usage_amount` stays
+window hours, while a scale set's FOCUS consumed quantity is instance-hours.
+
+ServiceName, category, and subcategory follow finops-toolkit Services.csv by
+resource type, not the Retail API service: disks are Virtual Machines /
+Compute / Virtual Machines, scale sets are Virtual Machine Scale Sets, storage
+is Storage Accounts, and SQL is Azure SQL Database. App Service plans, and a
+Function App on a plan SKU, are Azure App Service / Compute / Other (Compute)
+until finfocus-spec#612 adds Web. The SDK logs two one-time deprecation
+warnings for the provider and publisher columns. `docs/focus-mapping.md` lists
+each column.
 
 `estimation.SavingsFraction` returns `(onDemand-other)/onDemand` with no
 rounding. `PriceItem.SavingsPlan` keeps the nested `savingsPlan` array when

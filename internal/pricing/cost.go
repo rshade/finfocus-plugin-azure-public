@@ -72,6 +72,9 @@ type quoteMeter struct {
 	key   string
 	price float64
 	unit  string
+	// count is how many units of this meter the quote bills at once, such as
+	// the instances of a scale set. Zero means one.
+	count float64
 }
 
 type actualWindow struct {
@@ -356,6 +359,7 @@ func (c *Calculator) quoteVM(
 			key:   breakdownCompute,
 			price: unit,
 			unit:  item.UnitOfMeasure,
+			count: float64(count),
 		}},
 		advisories: advisories,
 		regions:    regions,

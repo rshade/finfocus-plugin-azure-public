@@ -1,7 +1,7 @@
 # Feature Specification: FOCUS 1.3 Cost Record Alignment
 
 **Feature Branch**: `023-focus-13-record`
-**Created**: 2026-10-03
+**Created**: 2026-10-02
 **Status**: Draft
 **Input**: Issue #46 ("Align response fields with FOCUS 1.3 specification"),
 narrowed to what finfocus-spec v0.7.1 already defines.
@@ -67,14 +67,17 @@ unit, quantity, unit price, and both cost identities.
 
 1. **Given** a quote with exactly one hourly meter, **When** the record is
    built, **Then** `pricing_unit` is `Hours`, `list_unit_price` is the meter
-   price, and `pricing_quantity` is cost divided by that price (instance-hours
-   for a scale set).
+   price, and `pricing_quantity` is the window hours times the instance count
+   (instance-hours for a scale set), counted exactly rather than divided out of
+   the cost.
 2. **Given** a quote with exactly one monthly meter, **When** the record is
-   built, **Then** `pricing_unit` is `Months` and `pricing_quantity` is the
-   fraction of a month in the window.
+   built, **Then** `pricing_unit` is `Units/Month` for `1/Month` (or `Months`
+   for `1 Month`) and `pricing_quantity` is the fraction of a month in the
+   window.
 3. **Given** a quote with several meters, a zero price, or any other unit,
    **When** the record is built, **Then** the basis is the window in `Hours`
-   and `list_unit_price` is cost divided by window hours.
+   and `list_unit_price` and `contracted_unit_price` are unset (0), because a
+   blended rate is not a published price.
 4. **Given** any quote, **When** the record is built, **Then**
    `contracted_unit_price` equals `list_unit_price`, and `contracted_cost`,
    `list_cost`, `billed_cost`, and `effective_cost` equal the window cost.
@@ -113,8 +116,8 @@ every column it leaves empty on purpose.
 
 ### Edge Cases
 
-- Window hours of 0: no pricing columns are set, and the record is unchanged
-  from today's behavior.
+- Window hours of 0: no pricing columns are set, so `Build` fails the
+  `ConsumedQuantity > 0` check and the record is nil, as before this change.
 - Meter price of 0 with a single meter (for example App Service `F1`): use the
   window basis, so no division by zero.
 - Spot VM: single Spot meter, `pricing_category` Dynamic, hourly basis.
@@ -132,17 +135,23 @@ every column it leaves empty on purpose.
   `contracted_unit_price`. With no negotiated discounts in public prices,
   contracted equals list.
 - **FR-003**: `pricing_unit` and `consumed_unit` MUST use FOCUS unit format
-  (`Hours`, `Months`).
+  following finops-toolkit PricingUnits.csv: `1 Hour` and `1 Hours` are
+  `Hours`, `1/Month` is `Units/Month`, and `1 Month` is `Months`.
 - **FR-004**: With exactly one meter that has a positive price and an hourly
   or monthly unit, the pricing basis MUST use that meter's unit and price, with
-  quantity equal to cost divided by price. Every other quote MUST use the
-  window-hours basis.
-- **FR-005**: `list_cost` MUST equal `list_unit_price × pricing_quantity`, and
-  `contracted_cost` MUST equal `contracted_unit_price × pricing_quantity`,
-  within the SDK's validation tolerance.
+  the quantity counted from the window and instance count, when the quote's
+  monthly total is that price times the count. Every other quote MUST use the
+  window-hours basis with both unit prices unset.
+- **FR-005**: When unit prices are set, `list_cost` MUST equal
+  `list_unit_price × pricing_quantity`, and `contracted_cost` MUST equal
+  `contracted_unit_price × pricing_quantity`, within the SDK validation
+  tolerance.
 - **FR-006**: The record MUST set `service_subcategory` to a FOCUS 1.3 allowed
   value whose parent is the record's service category, using the mapping in
-  User Story 3.
+  User Story 3. `service_name` MUST be finops-toolkit Services.csv's
+  ServiceName for the resource type, and the record MUST NOT depend on a SKU
+  being resolvable by the mapper, so every VM size key that prices also gets
+  a record.
 - **FR-007**: Every record MUST pass
   `pluginsdk.ValidateFocusRecordWithOptions` in aggregate mode with no errors.
 - **FR-008**: Projected cost, estimate cost, and DryRun responses MUST NOT
