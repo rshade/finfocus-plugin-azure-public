@@ -1,26 +1,60 @@
 {
+  "installation": {
+    "installation_method": "binary"
+  },
   "metadata": {
-    "name": "azure-public",
-    "version": "0.1.0",
-    "description": "Estimates Azure resource costs from the public Azure Retail Prices API",
     "author": "Richard Shade",
-    "repository": "https://github.com/rshade/finfocus-plugin-azure-public",
-    "license": "Apache-2.0",
+    "description": "Estimates Azure resource costs from the public Azure Retail Prices API",
     "keywords": [
       "finfocus",
       "cost",
       "plugin",
       "azure"
-    ]
+    ],
+    "license": "Apache-2.0",
+    "name": "azure-public",
+    "repository": "https://github.com/rshade/finfocus-plugin-azure-public",
+    "version": "0.1.0"
   },
   "specification": {
-    "specVersion": "0.7.1",
-    "supportedProviders": [
+    "capabilities": [
+      "projected_costs",
+      "actual_costs",
+      "pricing_spec",
+      "estimate_cost",
+      "dry_run",
+      "caching"
+    ],
+    "service_definition": {
+      "methods": [
+        "Name",
+        "Supports",
+        "GetProjectedCost",
+        "GetActualCost",
+        "GetPricingSpec",
+        "EstimateCost",
+        "GetPluginInfo",
+        "DryRun"
+      ],
+      "package_name": "finfocus.v1",
+      "service_name": "CostSourceService"
+    },
+    "spec_version": "0.7.2",
+    "supported_providers": [
       "azure"
     ],
-    "supportedResources": {
+    "supported_resources": {
       "azure": {
-        "resourceTypes": [
+        "billing_modes": [
+          "per_data_transfer_gb",
+          "per_gb_month",
+          "per_hour",
+          "per_month",
+          "per_ru",
+          "per_second",
+          "per_vcpu_hour"
+        ],
+        "resource_types": [
           "compute/VirtualMachine",
           "containerservice/KubernetesCluster",
           "cosmosdb/Account",
@@ -31,37 +65,8 @@
           "storage/StorageAccount",
           "web/AppServicePlan",
           "web/FunctionApp"
-        ],
-        "billingModes": [
-          "per_data_transfer_gb",
-          "per_gb_month",
-          "per_hour",
-          "per_month",
-          "per_ru",
-          "per_second",
-          "per_vcpu_hour"
         ]
       }
-    },
-    "capabilities": [
-      "cost_projection",
-      "cost_retrieval",
-      "pricing_specs",
-      "caching"
-    ],
-    "serviceDefinition": {
-      "serviceName": "CostSourceService",
-      "packageName": "finfocus.v1",
-      "methods": [
-        "Name",
-        "Supports",
-        "GetProjectedCost",
-        "GetActualCost",
-        "GetPricingSpec"
-      ]
     }
-  },
-  "installation": {
-    "installationMethod": "INSTALLATION_METHOD_BINARY"
   }
 }

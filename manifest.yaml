@@ -1,68 +1,58 @@
-metadata:
-    name: azure-public
-    version: 0.1.0
-    description: Estimates Azure resource costs from the public Azure Retail Prices API
-    author: Richard Shade
-    homepage: ""
-    repository: https://github.com/rshade/finfocus-plugin-azure-public
-    license: Apache-2.0
-    keywords:
-        - finfocus
-        - cost
-        - plugin
-        - azure
-    createdat: null
-    updatedat: null
-specification:
-    specversion: 0.7.1
-    supportedproviders:
-        - azure
-    supportedresources:
-        azure:
-            resourcetypes:
-                - compute/VirtualMachine
-                - containerservice/KubernetesCluster
-                - cosmosdb/Account
-                - network/LoadBalancer
-                - sql/Database
-                - storage/BlobStorage
-                - storage/ManagedDisk
-                - storage/StorageAccount
-                - web/AppServicePlan
-                - web/FunctionApp
-            billingmodes:
-                - per_data_transfer_gb
-                - per_gb_month
-                - per_hour
-                - per_month
-                - per_ru
-                - per_second
-                - per_vcpu_hour
-            regions: []
-    capabilities:
-        - cost_projection
-        - cost_retrieval
-        - pricing_specs
-        - caching
-    servicedefinition:
-        servicename: CostSourceService
-        packagename: finfocus.v1
-        methods:
-            - Name
-            - Supports
-            - GetProjectedCost
-            - GetActualCost
-            - GetPricingSpec
-        port: 0
-        healthcheckpath: ""
-    observabilitysupport: null
-security: null
 installation:
-    installationmethod: 1
-    downloadurl: ""
-    checksum: ""
-    checksumalgorithm: ""
-    installscript: ""
-    preinstallchecks: []
-    postinstallsteps: []
-configuration: null
+  installation_method: binary
+metadata:
+  author: Richard Shade
+  description: Estimates Azure resource costs from the public Azure Retail Prices API
+  keywords:
+    - finfocus
+    - cost
+    - plugin
+    - azure
+  license: Apache-2.0
+  name: azure-public
+  repository: https://github.com/rshade/finfocus-plugin-azure-public
+  version: 0.1.0
+specification:
+  capabilities:
+    - projected_costs
+    - actual_costs
+    - pricing_spec
+    - estimate_cost
+    - dry_run
+    - caching
+  service_definition:
+    methods:
+      - Name
+      - Supports
+      - GetProjectedCost
+      - GetActualCost
+      - GetPricingSpec
+      - EstimateCost
+      - GetPluginInfo
+      - DryRun
+    package_name: finfocus.v1
+    service_name: CostSourceService
+  spec_version: 0.7.2
+  supported_providers:
+    - azure
+  supported_resources:
+    azure:
+      billing_modes:
+        - per_data_transfer_gb
+        - per_gb_month
+        - per_hour
+        - per_month
+        - per_ru
+        - per_second
+        - per_vcpu_hour
+      resource_types:
+        - compute/VirtualMachine
+        - containerservice/KubernetesCluster
+        - cosmosdb/Account
+        - network/LoadBalancer
+        - sql/Database
+        - storage/BlobStorage
+        - storage/ManagedDisk
+        - storage/StorageAccount
+        - web/AppServicePlan
+        - web/FunctionApp
