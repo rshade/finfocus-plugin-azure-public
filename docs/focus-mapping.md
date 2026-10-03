@@ -108,9 +108,15 @@ FOCUS 1.3 requires each subcategory to have one parent category, so
 `Compute` / `Other (Compute)` would misstate the service, and
 `Other` / `Application Platforms` would break the parent rule. The `x_` prefix
 is the FOCUS custom-column convention. finfocus core does not read the
-service category today. rshade/finfocus-spec#612 tracks adding the missing
-values. When a release includes `Web`, the plugin can send it directly and
-drop the two columns.
+service category today.
+
+Until rshade/finfocus-spec#612 adds the missing values, `x_ServiceCategory`
+and `x_ServiceSubcategory` are the authoritative FOCUS values for these rows.
+A consumer that flattens extended columns sees `ServiceCategory=Other` next to
+`x_ServiceCategory=Web`, and should trust the `x_` column. When a spec release
+includes `Web`, the plugin will send it directly and keep both `x_` columns
+for one more release. Removing them after that is a visible output change for
+anyone who reads them.
 
 ## Expected SDK warnings
 
