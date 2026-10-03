@@ -184,7 +184,7 @@ query, err := pricing.MapDescriptorToQuery(desc)
 | `network/LoadBalancer` | Load Balancer |
 
 **Behavior**:
-- Providers `azure` and `azure-native` are accepted. Resource type matching is case-insensitive and includes type tokens such as `azure:compute/linuxVirtualMachine:LinuxVirtualMachine`, `azure:compute/managedDisk:ManagedDisk`, `azure:storage/account:Account`, `azure:storage/blob:Blob`, `azure:appservice/servicePlan:ServicePlan`, `azure:mssql/database:Database`, `azure-native:compute:VirtualMachine`, `azure-native:compute:Disk`, `azure-native:storage:StorageAccount`, `azure-native:web:AppServicePlan`, `azure-native:web:WebApp` with `kind=FunctionApp`, `azure-native:containerservice:ManagedCluster`, `azure-native:sql:Database`, `azure-native:documentdb:DatabaseAccount`, and `azure-native:network:LoadBalancer`. `azure:compute/windowsVirtualMachine:WindowsVirtualMachine` is not quoted. `EstimateCost` sees `kind` on `azure-native:web:WebApp`. A managed disk pricing spec rate uses `per_month`
+- Providers `azure` and `azure-native` are accepted. Resource type matching is case-insensitive and includes type tokens such as `azure:compute/linuxVirtualMachine:LinuxVirtualMachine`, `azure:compute/managedDisk:ManagedDisk`, `azure:storage/account:Account`, `azure:storage/blob:Blob`, `azure:appservice/servicePlan:ServicePlan`, `azure:mssql/database:Database`, `azure-native:compute:VirtualMachine`, `azure-native:compute:Disk`, `azure-native:storage:StorageAccount`, `azure-native:web:AppServicePlan`, `azure-native:web:WebApp` with `kind=FunctionApp`, `azure-native:containerservice:ManagedCluster`, `azure-native:sql:Database`, `azure-native:documentdb:DatabaseAccount`, and `azure-native:network:LoadBalancer`. Windows virtual machines and the real scale-set tokens are quoted. `EstimateCost` sees `kind` on `azure-native:web:WebApp`. A managed disk pricing spec rate uses `per_month`
 - Tag fallback: `Tags["region"]` and `Tags["sku"]` when primary fields empty
 - Primary fields always take precedence over tags
 - Default currency: USD
@@ -229,8 +229,37 @@ Behavior notes:
 - Mapped types other than virtual machines and managed disks use the same quote as `GetProjectedCost`
 - Missing `location/region` or `vmSize/sku` returns `codes.InvalidArgument`
 - Cache hits are served from `CachedClient` with no outbound API request
-- VM `EstimateCost` reads attribute `priority`. `Spot` uses the Linux Spot row and pricing category Dynamic. An empty priority stays the on-demand row and Standard. Any other value is InvalidArgument. When priority is empty, `pricing_model=spot` selects Spot and `pricing_model=consumption` stays on demand.
+- VM `EstimateCost` reads attribute `priority`. `Spot` uses the Linux Spot row and pricing category Dynamic. An empty priority or `Regular` stays the on-demand row and Standard. Any other value is InvalidArgument. When priority is empty, `pricing_model=spot` selects Spot and `pricing_model=consumption` stays on demand.
 - `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.1`). A value without the `v` prefix is rejected by the SDK
+
+### Real Pulumi virtual machines
+
+`GetProjectedCost` prices classic, native, and legacy virtual machines, plus
+`linuxVirtualMachineScaleSet`, `windowsVirtualMachineScaleSet`,
+`orchestratedVirtualMachineScaleSet`, and
+`azure-native:compute:VirtualMachineScaleSet`.
+
+The size is `Sku`, then tags `sku`, `vmSize`, `armSkuName`, `size`,
+`hardwareProfile.vmSize`, `sku.name`, and `skuName`. A bare `hardwareProfile`
+tag is the size when the core collapsed that object to one value.
+`priority=Regular` is on-demand. `priority=Spot` selects the Spot meter.
+When `priority` is empty, `virtualMachineProfile.priority=Spot` does too.
+`Low` is `InvalidArgument`.
+
+A Windows guest is the classic Windows token, a Windows scale-set token,
+native `osProfile.windowsConfiguration` (including the collapsed `osProfile`
+string), or legacy `osProfileWindowsConfig`. With no Hybrid Benefit
+`licenseType`, the quote uses the product whose name contains Windows.
+`Windows_Server` and `Windows_Client` price the base (Linux) rate, and
+`billing_detail` says the licence is already paid. A Windows guest is not
+given that Linux rate without the note.
+
+The scale-set count is tag `instances`, then `sku.capacity`, otherwise 1.
+Monthly cost is the meter times 730 times that count. A native scale set
+whose core view dropped `sku.capacity` prices one instance. A dotted native
+scale set with `virtualMachineProfile.priority=Spot` uses the Spot meter.
+`plan-expected.json` records the on-demand meter for `azure-native/vmss`,
+and that fixture has no Spot row, so the dotted quote is `NotFound`.
 
 ### Managed Disk Cost Estimation
 

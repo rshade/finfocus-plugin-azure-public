@@ -26,9 +26,10 @@ accounts, App Service plans, Function Apps, AKS, SQL Database
 Still open on this milestone: live integration as a CI gate, and estimates
 within 5% of the Pricing Calculator. Owner values for that check are empty.
 
-Not quoted: NAT Gateway, virtual machine scale sets, Cache for Redis,
-database servers for PostgreSQL and MySQL, Gateway meters, and cross-region
-load balancer meters.
+Not quoted: NAT Gateway, Cache for Redis, database servers for PostgreSQL
+and MySQL, Gateway meters, and cross-region load balancer meters. Virtual
+machine scale sets are quoted from the VM meter times `instances` or
+`sku.capacity`.
 
 A virtual machine quote returns `price_options` and `region_prices`.
 Both lists are advisory. The monthly cost stays the selected row.

@@ -178,14 +178,18 @@ Resource type matching is case-insensitive. Spot is a Virtual Machine with
 tag `priority=Spot`, or the same `priority` attribute on `EstimateCost`.
 When priority is empty, `pricing_model=spot` selects the same row and
 `pricing_model=consumption` stays on demand. The response category is
-Dynamic. Any other priority or pricing_model value is rejected. A storage
+Dynamic. `priority=Regular` is on-demand. Any other priority or
+pricing_model value is rejected. A storage
 account accepts `capacity_gb` as an alias of `size_gb`. The quote is
 capacity only. Transaction meters are not included.
 Standard Load Balancer bills the included rules meter. A regional page with
 no rows is read again at price region `Global`. Omitted `rule_count` uses
 that meter once. Gateway and cross-region meters are not quoted. NAT
-Gateway, virtual machine scale sets, Cache for Redis, and database servers
-for PostgreSQL and MySQL are not priced.
+Gateway, Cache for Redis, and database servers for PostgreSQL and MySQL are
+not priced. Virtual machine scale sets use the VM meter times `instances`
+or `sku.capacity`. `priority=Regular` is on-demand. A Windows VM with
+`licenseType` `Windows_Server` or `Windows_Client` uses the base rate and
+says so. Any other Windows VM uses the Windows meter.
 
 ## Integration Tests
 

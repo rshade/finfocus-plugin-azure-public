@@ -4,7 +4,6 @@ import (
 	"context"
 	"math"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -49,12 +48,12 @@ func TestSupportsRealPulumiTokens(t *testing.T) {
 			wantKind: kindVM,
 		},
 		{
-			name:      "windows virtual machine is not the linux meter",
-			provider:  "azure",
-			typ:       "azure:compute/windowsVirtualMachine:WindowsVirtualMachine",
-			sku:       "Standard_D2s_v3",
-			want:      false,
-			wantError: codes.Unimplemented,
+			name:     "windows virtual machine",
+			provider: "azure",
+			typ:      "azure:compute/windowsVirtualMachine:WindowsVirtualMachine",
+			sku:      "Standard_D2s_v3",
+			want:     true,
+			wantKind: kindVM,
 		},
 		{
 			name:     "classic managed disk",
@@ -211,12 +210,12 @@ func TestSupportsRealPulumiTokens(t *testing.T) {
 			wantError: codes.InvalidArgument,
 		},
 		{
-			name:      "scale set is not a virtual machine",
-			provider:  "azure-native",
-			typ:       "azure-native:compute:VirtualMachineScaleSet",
-			sku:       "Standard_B1s",
-			want:      false,
-			wantError: codes.Unimplemented,
+			name:     "native scale set",
+			provider: "azure-native",
+			typ:      "azure-native:compute:VirtualMachineScaleSet",
+			sku:      "Standard_B1s",
+			want:     true,
+			wantKind: kindVM,
 		},
 		{
 			name:      "network cloud vm is not compute",
@@ -318,7 +317,7 @@ func TestWindowsVMQuoteIsNotLinuxPrice(t *testing.T) {
 			UnitOfMeasure: "1 Hour",
 		},
 	})
-	_, err := calc.GetProjectedCost(context.Background(), &finfocusv1.GetProjectedCostRequest{
+	resp, err := calc.GetProjectedCost(context.Background(), &finfocusv1.GetProjectedCostRequest{
 		Resource: &finfocusv1.ResourceDescriptor{
 			Provider:     "azure",
 			ResourceType: "azure:compute/windowsVirtualMachine:WindowsVirtualMachine",
@@ -326,21 +325,24 @@ func TestWindowsVMQuoteIsNotLinuxPrice(t *testing.T) {
 			Sku:          "Standard_D2s_v3",
 		},
 	})
-	if status.Code(err) != codes.Unimplemented {
-		t.Fatalf("code = %s, want Unimplemented (%v)", status.Code(err), err)
+	if err != nil {
+		t.Fatalf("GetProjectedCost() error = %v", err)
 	}
-	if !strings.Contains(status.Convert(err).Message(), "not quoted") {
-		t.Fatalf("message = %q, want it to say the meter is not quoted", status.Convert(err).Message())
+	if resp.GetCostPerMonth() != 0.188*730 {
+		t.Fatalf("cost = %v, want the Windows meter", resp.GetCostPerMonth())
 	}
-	_, err = calc.EstimateCost(context.Background(), newEstimateCostRequest(t,
+	estimated, err := calc.EstimateCost(context.Background(), newEstimateCostRequest(t,
 		"azure:compute/windowsVirtualMachine:WindowsVirtualMachine",
 		map[string]any{
 			"location": "eastus",
 			"vmSize":   "Standard_D2s_v3",
 		},
 	))
-	if status.Code(err) != codes.Unimplemented {
-		t.Fatalf("EstimateCost code = %s, want Unimplemented (%v)", status.Code(err), err)
+	if err != nil {
+		t.Fatalf("EstimateCost() error = %v", err)
+	}
+	if estimated.GetCostMonthly() != 0.188*730 {
+		t.Fatalf("EstimateCost cost = %v, want the Windows meter", estimated.GetCostMonthly())
 	}
 }
 

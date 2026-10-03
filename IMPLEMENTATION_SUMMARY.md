@@ -14,7 +14,7 @@ on branch `run/grok-20261001` has moved past that plan.
 - `GetProjectedCost` returns the monthly retail quote. `GetActualCost` multiplies that quote by hours over 730. It is a running-cost estimate from the public Retail Prices API. It is not billed spend.
 - `DryRun` and `GetPricingSpec` are implemented. Recommendations, dismiss, and budgets stay on the embedded unimplemented server.
 - The in-memory cache is in use. `FINFOCUS_CACHE_TTL` defaults to 24 hours.
-- Not delivered: a repeated price list ([spec issue 588](https://github.com/rshade/finfocus-spec/issues/588)), a repeated region list ([spec issue 589](https://github.com/rshade/finfocus-spec/issues/589)), a per-request billing account id ([spec issue 590](https://github.com/rshade/finfocus-spec/issues/590)), Pricing Calculator owner values, Gateway and cross-region load balancer meters, NAT Gateway, virtual machine scale sets, Cache for Redis, and database servers for PostgreSQL and MySQL.
+- Not delivered: a repeated price list ([spec issue 588](https://github.com/rshade/finfocus-spec/issues/588)), a repeated region list ([spec issue 589](https://github.com/rshade/finfocus-spec/issues/589)), a per-request billing account id ([spec issue 590](https://github.com/rshade/finfocus-spec/issues/590)), Pricing Calculator owner values, Gateway and cross-region load balancer meters, NAT Gateway, Cache for Redis, and database servers for PostgreSQL and MySQL. Virtual machine scale sets are quoted.
 - Reservation term totals and savings-plan rates are parsed. No RPC returns them.
 - No release tag exists. The core registry file was not edited.
 

@@ -299,7 +299,7 @@ func (c *Calculator) quoteVM(
 	taskID string,
 ) (monthlyQuote, error) {
 	region := descriptorRegion(resource)
-	sku := descriptorSKU(resource)
+	sku := vmSKU(resource)
 	if err := requireFields(region, sku); err != nil {
 		return monthlyQuote{}, err
 	}
@@ -308,6 +308,11 @@ func (c *Calculator) quoteVM(
 	if err != nil {
 		return monthlyQuote{}, err
 	}
+	count, err := vmInstanceCount(resource.GetTags())
+	if err != nil {
+		return monthlyQuote{}, err
+	}
+	license, hybrid := vmHybridLicense(resource)
 
 	service := firstNonEmptyTag(resource.GetTags(), "service", "serviceName")
 	if service == "" {
@@ -325,7 +330,7 @@ func (c *Calculator) quoteVM(
 		return monthlyQuote{}, err
 	}
 
-	item, err := selectVMItem(result.Items, spot)
+	item, err := selectVMProduct(result.Items, spot, vmOSWindows(resource) && !hybrid)
 	if err != nil {
 		return monthlyQuote{}, MapToGRPCStatus(err).Err()
 	}
@@ -335,13 +340,13 @@ func (c *Calculator) quoteVM(
 		return monthlyQuote{}, MapToGRPCStatus(err).Err()
 	}
 
-	monthly := unit * pluginsdk.HoursPerMonth
+	monthly := unit * pluginsdk.HoursPerMonth * float64(count)
 	advisories, regions := c.vmAdvisories(ctx, query, result.Items, spot, taskID)
 	return monthlyQuote{
 		unitPrice:     unit,
 		monthly:       monthly,
 		currency:      currency,
-		billingDetail: vmBillingDetail(spot, service, sku, region),
+		billingDetail: vmQuoteDetail(spot, service, sku, region, license, count),
 		breakdownKey:  breakdownCompute,
 		expiresAt:     result.ExpiresAt,
 		region:        region,
@@ -618,9 +623,7 @@ func classifyResource(resource *finfocusv1.ResourceDescriptor) (string, error) {
 
 	lower := strings.ToLower(resourceType)
 	switch {
-	case isWindowsVirtualMachineResourceType(lower):
-		return "", status.Errorf(codes.Unimplemented, "Windows virtual machine meters are not quoted")
-	case isVirtualMachineResourceType(lower):
+	case isPricedVMResourceType(lower):
 		return kindVM, nil
 	case isManagedDiskResourceType(lower):
 		return kindDisk, nil

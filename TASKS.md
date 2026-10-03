@@ -980,8 +980,9 @@ next.
 **Status:** DONE, `go test -count=1 -timeout 120s ./internal/pricing/ -run 'TestRealPulumiPlan$|TestRealPlanDottedVMSize'` passed. `azure/legacyVm` matches both input sets and is the ratchet. Break check: `descriptorSKU` ignored `Sku` and renamed `vmSize` to `instanceSize`; both legacy VM rows failed with missing sku, then the function was restored.
 
 **Description**: Write the test specified in `testdata/pulumi-real/README.md`: for every resource in
-the genuine previews, build a request from `core-view.json` and from a deterministic dotted-key
-flattening of the real inputs, call `GetProjectedCost` through a real gRPC server (offline price
+the genuine previews, build a request from `core-view.json` (today) and from
+`core-view-proposed.json` (dotted nested tags and a per-type SKU source, what the core would send after
+the fix), call `GetProjectedCost` through a real gRPC server (offline price
 rows), and compare with `plan-expected.json`. Its failures set the order of AZ-7.2 to AZ-7.9.
 
 **Acceptance Criteria**: a results table in `.superpowers/real-plan-results.md` and the report, per
@@ -1000,6 +1001,15 @@ prices at the base rate with a note, no `licenseType` uses the Windows meter. Sc
 
 **Acceptance Criteria**: every VM and scale set row of `plan-expected.json` passes for both input
 sets, and a native Windows VM is never priced on the Linux meter without the Hybrid Benefit note.
+
+**Status:** The VM rows and the classic scale set pass both input sets.
+`go test -count=1 -timeout 180s ./internal/pricing/` passed.
+`azure-native/vmss` does not match `plan-expected.json`. The core input prices one
+on-demand instance (83.95, want 251.85) because that view has no `sku.capacity`.
+The dotted input is `NotFound`: `virtualMachineProfile.priority` is `Spot` and the
+fixture rows are the on-demand meter only. Break check: renaming the `size` tag to
+`instanceSize` made `azure/linuxVm`, `azure/linuxVmRegular`, and `azure/windowsVm`
+fail with missing sku. The tag was restored and the package test passed again.
 
 #### AZ-7.3 — Managed disks
 
@@ -1069,20 +1079,30 @@ plan, never zero and never an "unsupported" that hides the reason.
 
 #### AZ-7.10 — Core issue drafts
 
-**Description**: Write complete prompt-style drafts in `.superpowers/issue-drafts/` (not filed): (1)
-flatten nested inputs into dotted keys in the tags the plugin receives, additively, with a
-before-and-after table from `core-view.json`; (2) plan-wide resolution of child to parent
-(region from the server, plan SKU for apps, cluster for node pools, account for Cosmos children).
+**Description**: The core's strict pre-flight check needs a non-empty SKU and region, so a resource
+with an empty SKU never reaches the plugin; and the core flattens nested objects to a bare name.
+These are core changes, not spec changes (aws-public copes with the same flattening in its own
+plugin code, and the spec's `mapping` package was never extended for any provider). Write them in
+`.superpowers/issue-drafts/` (not filed): (1) a per-type SKU and region source for Azure type tokens (`sku` means a different
+property per type; before and after table from `core-view.json` against `core-view-proposed.json`);
+(2) additive dotted-key flattening of nested inputs, keeping today's collapsed value, with the tag
+count caps; (3) plan-wide resolution of child to parent (region from the server, plan SKU for apps,
+cluster for node pools, account for Cosmos children).
 
-**Acceptance Criteria**: two drafts, each with evidence, a proposal, and acceptance criteria.
+**Acceptance Criteria**: three drafts, each with evidence, a proposal, a compatibility note and
+acceptance criteria.
 
-#### AZ-7.11 — Spec issue for the mapping helpers
+#### AZ-7.11 — Spec docs-only draft
 
-**Description**: `mapping.ExtractAzureSKU` and `ExtractAzureRegion` read too few keys (`size`,
-`skuName`, `skuTier`, `storageAccountType`, `accountTier`, nested `sku.name`, `hardwareProfile.vmSize`).
-Prove it, check for an existing issue, and file one in `finfocus-spec` (section 4b).
+**Description**: The spec is generic and says nothing about how Pulumi inputs reach `tags`. Draft
+(not filed) one docs issue for `finfocus-spec`: the properties-to-tags contract (scalar rules, nested
+maps as dotted keys, arrays, the legacy `map[...]` collapse, `__` keys filtered, the tag count
+caps, and that `EstimateCostRequest.attributes` carries the structured form), and strict against
+lenient request validation for hosts. Do not propose Azure key lists, credential names, a parent
+reference, or any proto field: the 2026-10-02 genericity audit found each already solved in a plugin
+or the core.
 
-**Acceptance Criteria**: the issue URL, or the link to the existing issue, in the status line.
+**Acceptance Criteria**: one docs draft with a before and after example from `core-view.json`.
 
 #### AZ-7.12 — Review fixes
 

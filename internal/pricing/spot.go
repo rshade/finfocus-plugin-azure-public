@@ -25,7 +25,7 @@ func descriptorSpot(resource *finfocusv1.ResourceDescriptor) (bool, error) {
 		return false, nil
 	}
 	tags := resource.GetTags()
-	return spotFromFields(tags["priority"], tags["pricing_model"])
+	return spotFromFields(vmPriorityRaw(tags), tags["pricing_model"])
 }
 
 // prioritySpot reports whether raw selects Spot. An empty value is on-demand.
@@ -35,10 +35,15 @@ func prioritySpot(raw string) (bool, error) {
 	if priority == "" || priority == formattedNil {
 		return false, nil
 	}
-	if strings.EqualFold(priority, vmPrioritySpot) {
+	switch strings.ToLower(priority) {
+	case strings.ToLower(vmPrioritySpot):
 		return true, nil
+	case "regular":
+		// Classic preview fills the provider default Regular for on-demand.
+		return false, nil
+	default:
+		return false, status.Errorf(codes.InvalidArgument, "unsupported priority %q", priority)
 	}
-	return false, status.Errorf(codes.InvalidArgument, "unsupported priority %q", priority)
 }
 
 // estimateSpot reads EstimateCost attributes priority and pricing_model.
@@ -81,8 +86,15 @@ func attrString(raw any) string {
 // skuName or meterName, not a letter sequence inside another word.
 // No match returns ErrNotFound instead of a zero price.
 func selectVMItem(items []azureclient.PriceItem, spot bool) (azureclient.PriceItem, error) {
+	return selectVMProduct(items, spot, false)
+}
+
+// selectVMProduct picks the on-demand or Spot row for the guest OS.
+// windows selects a product whose name contains Windows. The Linux call
+// keeps an empty productName so a single test row still prices.
+func selectVMProduct(items []azureclient.PriceItem, spot, windows bool) (azureclient.PriceItem, error) {
 	for _, item := range items {
-		if !vmProductAllowed(item.ProductName) || isLowPriorityVM(item) {
+		if !vmProductMatches(item.ProductName, windows) || isLowPriorityVM(item) {
 			continue
 		}
 		if isSpotVM(item) != spot {
@@ -93,11 +105,16 @@ func selectVMItem(items []azureclient.PriceItem, spot bool) (azureclient.PriceIt
 	return azureclient.PriceItem{}, azureclient.ErrNotFound
 }
 
-func vmProductAllowed(productName string) bool {
+func vmProductMatches(productName string, windows bool) bool {
 	if strings.TrimSpace(productName) == "" {
-		return true
+		return !windows
 	}
-	return !strings.Contains(strings.ToLower(productName), "windows")
+	hasWindows := strings.Contains(strings.ToLower(productName), "windows")
+	return hasWindows == windows
+}
+
+func vmProductAllowed(productName string) bool {
+	return vmProductMatches(productName, false)
 }
 
 func isLowPriorityVM(item azureclient.PriceItem) bool {

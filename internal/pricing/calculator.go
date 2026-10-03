@@ -620,6 +620,19 @@ func isWindowsVirtualMachineResourceType(lower string) bool {
 	return resourceSegment(lower, "compute/windowsvirtualmachine")
 }
 
+func isVirtualMachineScaleSetResourceType(lower string) bool {
+	return resourceSegment(lower, "compute/linuxvirtualmachinescaleset") ||
+		resourceSegment(lower, "compute/windowsvirtualmachinescaleset") ||
+		resourceSegment(lower, "compute/orchestratedvirtualmachinescaleset") ||
+		tokenSuffix(lower, "compute", "virtualmachinescaleset")
+}
+
+func isPricedVMResourceType(lower string) bool {
+	return isVirtualMachineResourceType(lower) ||
+		isWindowsVirtualMachineResourceType(lower) ||
+		isVirtualMachineScaleSetResourceType(lower)
+}
+
 func isVirtualMachineResourceType(lower string) bool {
 	return resourceSegment(lower, "compute/virtualmachine") ||
 		resourceSegment(lower, "compute/linuxvirtualmachine") ||

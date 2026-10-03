@@ -33,10 +33,22 @@ const (
 // realPlanMustPass is the ratchet. AZ-7.2 and later add an id here only
 // after that input set matches plan-expected.json.
 func realPlanMustPass() map[string]bool {
-	return map[string]bool{
-		"azure/legacyVm/core":   true,
-		"azure/legacyVm/dotted": true,
+	ids := []string{
+		"azure-native/linuxVm",
+		"azure-native/vmNoLocation",
+		"azure-native/windowsVm",
+		"azure/legacyVm",
+		"azure/linuxVm",
+		"azure/linuxVmRegular",
+		"azure/vmss",
+		"azure/windowsVm",
 	}
+	out := make(map[string]bool, len(ids)*2)
+	for _, id := range ids {
+		out[id+"/core"] = true
+		out[id+"/dotted"] = true
+	}
+	return out
 }
 
 type realPlanCase struct {
@@ -51,6 +63,7 @@ type realPlanExpect struct {
 	Status          string                  `json:"status"`
 	ExpectedMonthly *float64                `json:"expected_monthly"`
 	Must            string                  `json:"must"`
+	Notes           []string                `json:"notes"`
 	Rows            []azureclient.PriceItem `json:"rows"`
 }
 
@@ -202,7 +215,7 @@ func judgeRealPlanError(expectStatus string, err error) string {
 func judgeRealPlanPrice(expect realPlanExpect, monthly float64, detail string) string {
 	switch expect.Status {
 	case "ok":
-		return judgeRealPlanOK(expect.ExpectedMonthly, monthly)
+		return judgeRealPlanOK(expect.ExpectedMonthly, monthly, detail, expect.Notes)
 	case "unsupported_must_error":
 		return fmt.Sprintf("priced %.6f", monthly)
 	case "usage_required", "needs_parent_resource", "ambiguous":
@@ -218,7 +231,7 @@ func judgeRealPlanPrice(expect realPlanExpect, monthly float64, detail string) s
 	}
 }
 
-func judgeRealPlanOK(want *float64, monthly float64) string {
+func judgeRealPlanOK(want *float64, monthly float64, detail string, notes []string) string {
 	if want == nil {
 		return "missing expected_monthly"
 	}
@@ -228,6 +241,14 @@ func judgeRealPlanOK(want *float64, monthly float64) string {
 	}
 	if math.Abs(monthly-*want) > tol {
 		return fmt.Sprintf("cost %.6f want %.6f", monthly, *want)
+	}
+	for _, note := range notes {
+		if strings.TrimSpace(note) == "" {
+			continue
+		}
+		if !strings.Contains(detail, note) {
+			return "missing note"
+		}
 	}
 	return "pass"
 }

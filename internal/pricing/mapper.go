@@ -210,7 +210,7 @@ func resolveMappedResource(normalizedType string, tags map[string]string) (mappe
 }
 
 func matchDirectSegments(mapped mappedResource, ok bool, normalizedType string) (mappedResource, bool) {
-	if isVirtualMachineResourceType(normalizedType) {
+	if isPricedVMResourceType(normalizedType) {
 		mapped.serviceName = defaultServiceName
 		ok = true
 	}
