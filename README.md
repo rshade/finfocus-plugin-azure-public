@@ -25,7 +25,11 @@ A virtual machine quote also returns `price_options` and `region_prices`.
 rates. `region_prices` lists the same SKU in other regions. Both lists are
 advisory and are not added to the monthly cost.
 
-Providers `azure` and `azure-native` are accepted. A plan fixture with one
+The provider is the cloud, `azure`. Classic `azure` and `azure-native` are
+Pulumi packages, read from the resource type prefix. The plugin also
+advertises and accepts the provider `azure-native`, because hosts before
+rshade/finfocus#1645 send the package prefix as the provider. Issue #84 drops
+it from what the plugin advertises once that ships. A plan fixture with one
 resource for each priced type is in `testdata/pulumi/azure-plan.json`.
 
 ## Getting Started
