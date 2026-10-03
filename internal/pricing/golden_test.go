@@ -206,6 +206,9 @@ func newGoldenCalc(t *testing.T, paths ...string) *Calculator {
 		if len(pages) == 2 {
 			items = sqlItemsForFilter(r.URL.Query().Get("$filter"), pages[0].Items, pages[1].Items)
 		}
+		if items == nil {
+			items = []azureclient.PriceItem{}
+		}
 		resp := azureclient.PriceResponse{Items: items, Count: len(items)}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {

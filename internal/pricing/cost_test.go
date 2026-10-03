@@ -531,12 +531,13 @@ var (
 // conditions of an OData filter, comparing exactly (the live API is
 // case-sensitive). Only those two fields are applied, only the first
 // condition for each field is read, and an or between conditions is not
-// understood. Every other field is left to the selectors under test.
+// understood. Every other field is left to the selectors under test. The
+// result is never nil, so a fake page always carries an Items array.
 func retailFakeItems(filter string, items []azureclient.PriceItem) []azureclient.PriceItem {
 	product, hasProduct := filterEquals(filter, productNameFilter)
 	sku, hasSKU := filterEquals(filter, skuNameFilter)
 	if !hasProduct && !hasSKU {
-		return items
+		return append([]azureclient.PriceItem{}, items...)
 	}
 
 	kept := make([]azureclient.PriceItem, 0, len(items))
