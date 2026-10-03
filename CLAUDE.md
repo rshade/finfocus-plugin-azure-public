@@ -390,9 +390,11 @@ product `SQL Database Single/Elastic Pool General Purpose - Storage`.
 Monthly storage is `retailPrice * size_gb`.
 `General Purpose Data Stored - Free` is not the overage.
 
-Tag `zone_redundant=true` adds meter `Zone Redundancy vCore` and meter
-`General Purpose Zone Redundancy Data Stored`. Components are `compute`,
-`storage`, and those two zone keys when zone redundancy was requested.
+Tag `zone_redundant=true` adds meter `Zone Redundancy vCore` to compute and
+bills storage on meter `General Purpose Zone Redundancy Data Stored` instead
+of `General Purpose Data Stored`. Zone storage replaces local storage; it is
+not added on top (issue #77). Components are `compute`, `storage`, and
+`zone_redundancy_compute` when zone redundancy was requested.
 
 DTU, serverless, Business Critical, Hyperscale, and other hardware return
 `Unimplemented`. The message names the model and `AZ-2.7`.
