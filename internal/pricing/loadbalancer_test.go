@@ -207,6 +207,9 @@ func newLoadBalancerCalc(t *testing.T, page azureclient.PriceResponse, calls *in
 func writePricePage(t *testing.T, w http.ResponseWriter, page azureclient.PriceResponse) {
 	t.Helper()
 
+	if page.Items == nil {
+		page.Items = []azureclient.PriceItem{}
+	}
 	if page.Count == 0 {
 		page.Count = len(page.Items)
 	}

@@ -211,12 +211,14 @@ go test -tags=integration -update-golden -count=1 -timeout 8m ./... -run TestUpd
 moves by more than 0.01 fails the test. The procedure is also in
 `internal/pricing/testdata/golden/README.md`.
 
-Tests include rate-limiting delays (12s between API calls). The virtual
+Each live test waits 12 seconds when it finishes, to stay under the Retail
+Prices API rate limit. One test can make several API calls. The virtual
 machine and managed disk tests in `examples/estimate_cost_integration_test.go`
 read their reference price from the Retail Prices API at test time, with
 selection rules written in the test, so Azure price changes do not fail
-them. Tests that still use recorded reference constants allow ±25%: the App
-Service, Functions, and AKS tests in
+them. The reference request retries HTTP 429 and 503 up to four times and
+honours `Retry-After`. Tests that still use recorded reference constants
+allow ±25%: the App Service, Functions, and AKS tests in
 `examples/projected_cost_integration_test.go`. If those fail due to price
 drift, update their constants. Run with `-v` to see the actual prices.
 

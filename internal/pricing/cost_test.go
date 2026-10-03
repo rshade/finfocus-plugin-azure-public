@@ -433,6 +433,9 @@ func TestGetActualCostDiskAndBlob(t *testing.T) {
 func newPricingCalc(t *testing.T, items []azureclient.PriceItem) *Calculator {
 	t.Helper()
 
+	if items == nil {
+		items = []azureclient.PriceItem{}
+	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		resp := azureclient.PriceResponse{Items: items, Count: len(items)}
 		w.Header().Set("Content-Type", "application/json")
