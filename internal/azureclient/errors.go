@@ -37,6 +37,11 @@ var (
 	// query returns zero results (empty result set).
 	ErrNotFound = errors.New("not found")
 
+	// errNoPricingData marks an HTTP 200 answer with zero rows. It wraps
+	// ErrNotFound for callers, and CachedClient caches it because Azure
+	// answered; only failed responses must be retried.
+	errNoPricingData = fmt.Errorf("%w: no pricing data", ErrNotFound)
+
 	// ErrPaginationLimitExceeded is returned when pagination exceeds the safety limit.
 	ErrPaginationLimitExceeded = fmt.Errorf("pagination limit exceeded (%d pages)", MaxPaginationPages)
 )

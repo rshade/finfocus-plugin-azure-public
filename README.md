@@ -211,12 +211,14 @@ go test -tags=integration -update-golden -count=1 -timeout 8m ./... -run TestUpd
 moves by more than 0.01 fails the test. The procedure is also in
 `internal/pricing/testdata/golden/README.md`.
 
-Tests include rate-limiting delays (12s between API calls) and use ±25%
-tolerance on reference prices to absorb Azure pricing changes. If tests
-fail due to price drift, update the reference constants in
-`examples/estimate_cost_integration_test.go` (virtual machines) or
-`examples/projected_cost_integration_test.go` (App Service, Functions, and
-AKS). Run with `-v` to see actual prices.
+Tests include rate-limiting delays (12s between API calls). The virtual
+machine and managed disk tests in `examples/estimate_cost_integration_test.go`
+read their reference price from the Retail Prices API at test time, with
+selection rules written in the test, so Azure price changes do not fail
+them. Tests that still use recorded reference constants allow ±25%: the App
+Service, Functions, and AKS tests in
+`examples/projected_cost_integration_test.go`. If those fail due to price
+drift, update their constants. Run with `-v` to see the actual prices.
 
 To skip integration tests (e.g., in offline environments):
 

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
+
 	"github.com/rshade/finfocus-plugin-azure-public/internal/azureclient"
 )
 

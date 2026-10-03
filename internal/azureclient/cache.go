@@ -2,6 +2,7 @@ package azureclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -24,6 +25,8 @@ type CachedResult struct {
 	Items     []PriceItem
 	CreatedAt time.Time
 	ExpiresAt time.Time
+
+	noData bool
 }
 
 // CacheConfig configures CachedClient behavior.
@@ -110,6 +113,9 @@ func (cc *CachedClient) GetPrices(ctx context.Context, query PriceQuery) (Cached
 	if !cc.disabled {
 		if cached, ok := cc.cache.Get(key); ok {
 			cc.recordHit(key)
+			if cached.noData {
+				return CachedResult{}, fmt.Errorf("%s: %w", formatQueryContext(query), errNoPricingData)
+			}
 			return cloneCachedResult(cached), nil
 		}
 	}
@@ -117,6 +123,9 @@ func (cc *CachedClient) GetPrices(ctx context.Context, query PriceQuery) (Cached
 
 	items, err := cc.client.GetPrices(ctx, query)
 	if err != nil {
+		if !cc.disabled && errors.Is(err, errNoPricingData) {
+			cc.cache.Add(key, CachedResult{noData: true})
+		}
 		return CachedResult{}, err
 	}
 
