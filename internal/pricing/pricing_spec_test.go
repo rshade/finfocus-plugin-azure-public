@@ -402,7 +402,6 @@ func addPlatformWants(t *testing.T, fx pricingSpecFX, wants map[string]pricingSp
 			"control_plane":     fx.aksItem.UnitOfMeasure,
 			"node_pool_pool_1":  fx.nodeItem.UnitOfMeasure,
 			"node_pool_pool_2":  fx.nodeItem.UnitOfMeasure,
-			"node_pool_N_sku":   "VM size",
 			"node_pool_N_count": "count",
 		},
 		reject: []float64{

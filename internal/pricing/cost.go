@@ -62,6 +62,8 @@ type monthlyQuote struct {
 	// meters are the selected retail rows. price is the meter retail price,
 	// not the monthly total. unit is that row's unitOfMeasure.
 	meters []quoteMeter
+	// spot is true when a VM quote priced the Spot meter.
+	spot bool
 	// advisories and regions are VM alternatives. They are not part of monthly.
 	advisories []advisoryPrice
 	regions    []advisoryRegion
@@ -364,6 +366,7 @@ func (c *Calculator) quoteVM(
 			unit:  item.UnitOfMeasure,
 			count: float64(count),
 		}},
+		spot:       spot,
 		advisories: advisories,
 		regions:    regions,
 	}, nil
@@ -782,7 +785,22 @@ func requireFields(region, sku string) error {
 const missingFieldsPrefix = "missing required field(s): "
 
 func missingFieldsError(fields []string) error {
-	return status.Error(codes.InvalidArgument, missingFieldsPrefix+strings.Join(fields, ", "))
+	return &requiredFieldsError{fields: append([]string(nil), fields...)}
+}
+
+// requiredFieldsError is the InvalidArgument error missingFieldsError returns. It
+// keeps the field list so a caller can read it with errors.As instead of
+// parsing the message; GRPCStatus gives gRPC the same status as before.
+type requiredFieldsError struct {
+	fields []string
+}
+
+func (e *requiredFieldsError) GRPCStatus() *status.Status {
+	return status.New(codes.InvalidArgument, missingFieldsPrefix+strings.Join(e.fields, ", "))
+}
+
+func (e *requiredFieldsError) Error() string {
+	return e.GRPCStatus().Err().Error()
 }
 
 // selectBlobStoredMonthly bills Data Stored in marginal volume bands.

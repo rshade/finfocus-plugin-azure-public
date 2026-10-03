@@ -55,7 +55,7 @@ func (c *Calculator) SetBillingAccountID(id string) {
 // Name returns the name of the plugin for the SDK.
 // The SDK wraps this and provides the gRPC Name RPC implementation.
 func (c *Calculator) Name() string {
-	return "azure-public"
+	return PluginInfo().Name
 }
 
 // pluginVersion is the version GetPluginInfo reports and the manifest files
@@ -81,6 +81,20 @@ func PluginCapabilities() []finfocusv1.PluginCapability {
 	}
 }
 
+// PluginInfo is the plugin's identity and explicit capabilities. GetPluginInfo
+// serves it, and the binary passes it as pluginsdk.ServeConfig.PluginInfo,
+// whose Capabilities feed the SDK's Supports capabilities_enum.
+func PluginInfo() *pluginsdk.PluginInfo {
+	return &pluginsdk.PluginInfo{
+		Name:         "azure-public",
+		Version:      pluginVersion,
+		SpecVersion:  pluginsdk.SpecVersion,
+		Providers:    []string{providerAzure, providerAzureNative},
+		Metadata:     map[string]string{pluginMetadataType: pluginTypePublicPricing},
+		Capabilities: PluginCapabilities(),
+	}
+}
+
 // GetPluginInfo returns metadata about the plugin including name, version,
 // spec version, supported cloud providers, and its explicit capabilities.
 // The SDK server adds the legacy supports_* metadata keys from Capabilities.
@@ -91,13 +105,14 @@ func (c *Calculator) GetPluginInfo(
 	log := logging.RequestLogger(ctx, c.logger)
 	log.Info().Msg("handling GetPluginInfo request")
 
+	info := PluginInfo()
 	return &finfocusv1.GetPluginInfoResponse{
-		Name:         "azure-public",
-		Version:      pluginVersion,
-		SpecVersion:  pluginsdk.SpecVersion,
-		Providers:    []string{providerAzure, providerAzureNative},
-		Metadata:     map[string]string{pluginMetadataType: pluginTypePublicPricing},
-		Capabilities: PluginCapabilities(),
+		Name:         info.Name,
+		Version:      info.Version,
+		SpecVersion:  info.SpecVersion,
+		Providers:    info.Providers,
+		Metadata:     info.Metadata,
+		Capabilities: info.Capabilities,
 	}, nil
 }
 

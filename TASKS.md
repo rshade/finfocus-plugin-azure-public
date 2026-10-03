@@ -364,15 +364,23 @@ called); covers every resource type in scope; tests pass.
 
 **Status:** DONE, go test -count=1 ./internal/pricing/, ok github.com/rshade/finfocus-plugin-azure-public/internal/pricing 0.071s
 
-**Description**: Implement the stubbed `GetPricingSpec` RPC so the plugin describes what
-it can price: resource types, required and optional fields, supported currencies. Build
-it from the mapper tables so it cannot drift from what `Supports` answers. Do this after
-AZ-2.3 to AZ-2.8 so the spec lists every type. Check the spec v0.7.0 messages first.
+**Description**: Implement the stubbed `GetPricingSpec` RPC. The spec defines it as one
+request for one `ResourceDescriptor`, returning one `PricingSpec` (rate, billing mode,
+unit, assumptions, metric hints). Resolution: there is no type catalog by design. The
+spec has no catalog RPC, and FinFocus core reads no catalog, required-field list, or
+manifest `supported_resources` (`rshade/finfocus` at 706c5f3). Core reads the explicit
+`GetPluginInfo` capabilities, `DryRun` through `plugin inspect`, and `GetPricingSpec` per
+resource in the `cost estimate` view and `--pricing-spec-fallback`, so those are what
+the plugin fills. A catalog, auto-complete, or marketplace data needs a core consumer
+first, not a spec change.
 
-**Files**: `internal/pricing/` (`Calculator.GetPricingSpec`), tests.
+**Files**: `internal/pricing/` (`Calculator.GetPricingSpec`, `GetPluginInfo`,
+`HandleDryRun`), `cmd/`, tests.
 
-**Acceptance Criteria**: a test that compares the pricing spec's resource types with the
-mapper tables and fails if they differ; every supported type is listed; tests pass.
+**Acceptance Criteria**: every supported type returns a valid `PricingSpec` whose billing
+mode core either prices correctly or skips; `GetPluginInfo` lists only served
+capabilities; `plugin inspect`'s type-only `DryRun` request returns the field mappings;
+the manifest's `supported_resources` matches `SupportedResourceTypes()`; tests pass.
 
 **Linked issues**: [#44](https://github.com/rshade/finfocus-plugin-azure-public/issues/44)
 

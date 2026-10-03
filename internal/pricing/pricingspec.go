@@ -2,12 +2,11 @@ package pricing
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	finfocusv1 "github.com/rshade/finfocus-spec/sdk/go/proto/finfocus/v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/rshade/finfocus-plugin-azure-public/internal/logging"
@@ -60,7 +59,11 @@ func (c *Calculator) GetPricingSpec(
 	quote, err := c.quoteResource(ctx, resource, pricingSpecTask)
 	var unsupplied []string
 	if missing, ok := usageOnlyMissing(kind, err); ok {
+		missingErr := err
 		quote, err = c.quoteResource(ctx, withUsagePlaceholders(resource, kind, missing), pricingSpecTask)
+		if err == nil && coreComputesMode(pricingSpecFromQuote(quote).GetBillingMode()) {
+			err = missingErr
+		}
 		unsupplied = missing
 	}
 	if err != nil {
@@ -164,6 +167,18 @@ func specRate(meters []quoteMeter) (string, string, float64) {
 	return billingModePerHour, specUnitHourName, 0
 }
 
+// coreComputesMode reports whether finfocus core turns a spec with this mode
+// into a monthly total (rate * 730, rate * GB, or the flat rate). Such a spec
+// must not be built from a placeholder usage quantity.
+func coreComputesMode(mode string) bool {
+	switch mode {
+	case billingModePerHour, billingModePerGBMonth, billingModePerMonth:
+		return true
+	default:
+		return false
+	}
+}
+
 func isProcessedGBMeter(meter quoteMeter) bool {
 	return strings.EqualFold(strings.TrimSpace(meter.unit), "1 GB")
 }
@@ -217,11 +232,13 @@ func isMonthMeter(meter quoteMeter) bool {
 
 // usagePlaceholders are the usage inputs that change a quote's total but not
 // its unit rate, per resource kind, with a neutral value to quote the rate.
-// A managed disk's size is not one: it picks the disk tier and so the rate.
+// Only kinds whose spec mode finfocus core does not multiply are listed:
+// Cosmos request units and Functions GB-seconds or vCPU-hours. Blob, storage
+// account, and SQL rates are per GB-month or per hour, which core would turn
+// into a monthly total, so a missing size stays InvalidArgument for them.
+// A managed disk's size is not a usage input: it picks the disk tier.
 func usagePlaceholders(kind string) map[string]string {
 	switch kind {
-	case kindBlob, kindStorageAccount, kindSQLDatabase:
-		return map[string]string{tagSizeGB: "1"}
 	case kindCosmosDB:
 		return map[string]string{cosmosTagRUPerSecond: "100", cosmosTagRequestUnits: "1000000"}
 	case kindFunctionApp:
@@ -235,15 +252,12 @@ func usagePlaceholders(kind string) map[string]string {
 // one of them is a usage input of this kind. Region, SKU, tier, and other
 // identity fields keep the InvalidArgument error.
 func usageOnlyMissing(kind string, err error) ([]string, bool) {
-	if status.Code(err) != codes.InvalidArgument {
-		return nil, false
-	}
-	message := status.Convert(err).Message()
-	if !strings.HasPrefix(message, missingFieldsPrefix) {
+	var missing *requiredFieldsError
+	if !errors.As(err, &missing) {
 		return nil, false
 	}
 	placeholders := usagePlaceholders(kind)
-	fields := strings.Split(strings.TrimPrefix(message, missingFieldsPrefix), ", ")
+	fields := missing.fields
 	for _, field := range fields {
 		if _, ok := placeholders[field]; !ok {
 			return nil, false
@@ -296,6 +310,11 @@ func specAssumptions(kind string, quote monthlyQuote, spec *finfocusv1.PricingSp
 func kindAssumptions(kind string, quote monthlyQuote) []string {
 	switch kind {
 	case kindVM:
+		if quote.spot {
+			return []string{
+				"Rate is one Spot instance, which Azure can evict; a scale set multiplies it by the instance count",
+			}
+		}
 		return []string{"Rate is one on-demand instance; a scale set multiplies it by the instance count"}
 	case kindDisk:
 		return []string{"Rate is the monthly price of the disk tier for the requested size"}
@@ -315,10 +334,20 @@ func kindAssumptions(kind string, quote monthlyQuote) []string {
 	case kindCosmosDB:
 		return cosmosAssumptions(quote)
 	case kindLoadBalancer:
-		return []string{"Rate is the included rules meter, covering up to 5 rules; data processed is billed per GB"}
+		return loadBalancerAssumptions(quote)
 	default:
 		return nil
 	}
+}
+
+func loadBalancerAssumptions(quote monthlyQuote) []string {
+	if _, ok := meterByKey(quote.meters, loadBalancerComponentRules); ok {
+		return []string{"Rate is the included rules meter, covering up to 5 rules; data processed is billed per GB"}
+	}
+	if _, ok := meterByKey(quote.meters, loadBalancerComponentData); ok {
+		return []string{"rule_count is 0, so there is no hourly rules charge; rate is per GB of data processed"}
+	}
+	return []string{"rule_count is 0 and no data processed was supplied, so there is no charge"}
 }
 
 func functionAssumptions(quote monthlyQuote) []string {
@@ -377,7 +406,7 @@ func usageInputs(kind string, quote monthlyQuote) [][2]string {
 	case kindFunctionApp:
 		return functionInputs(quote)
 	case kindAKS:
-		return [][2]string{{"node_pool_N_sku", "VM size"}, {"node_pool_N_count", hintUnitCount}}
+		return [][2]string{{"node_pool_N_count", hintUnitCount}}
 	case kindCosmosDB:
 		return cosmosInputs(quote)
 	case kindLoadBalancer:

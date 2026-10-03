@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -10,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,8 +20,10 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
+	finfocusv1 "github.com/rshade/finfocus-spec/sdk/go/proto/finfocus/v1"
 
 	"github.com/rshade/finfocus-plugin-azure-public/internal/azureclient"
+	"github.com/rshade/finfocus-plugin-azure-public/internal/pricing"
 )
 
 //nolint:gochecknoglobals // Test fixtures require package-level state for sync.Once pattern.
@@ -1392,5 +1396,30 @@ func TestParseCacheTTL_NegativeFallsBackToDefault(t *testing.T) {
 				t.Errorf("expected warning log for negative value %q, got none", tt.envValue)
 			}
 		})
+	}
+}
+
+func TestServeConfig_PluginInfo_MatchesGetPluginInfo(t *testing.T) {
+	t.Parallel()
+
+	calc := pricing.NewCalculator(zerolog.Nop())
+	config := serveConfig(calc, 0)
+	want, err := calc.GetPluginInfo(context.Background(), &finfocusv1.GetPluginInfoRequest{})
+	if err != nil {
+		t.Fatalf("GetPluginInfo() error = %v", err)
+	}
+	info := config.PluginInfo
+	if info == nil {
+		t.Fatal("ServeConfig.PluginInfo is nil")
+	}
+	if info.Name != want.GetName() || info.Version != want.GetVersion() {
+		t.Fatalf("ServeConfig name/version = %s/%s, want %s/%s",
+			info.Name, info.Version, want.GetName(), want.GetVersion())
+	}
+	if !slices.Equal(info.Capabilities, pricing.PluginCapabilities()) {
+		t.Fatalf("ServeConfig capabilities = %v, want %v", info.Capabilities, pricing.PluginCapabilities())
+	}
+	if !slices.Equal(info.Providers, want.GetProviders()) {
+		t.Fatalf("ServeConfig providers = %v, want %v", info.Providers, want.GetProviders())
 	}
 }
