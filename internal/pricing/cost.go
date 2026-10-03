@@ -471,13 +471,7 @@ func (c *Calculator) quoteBlob(
 		return monthlyQuote{}, missingFieldsError(missing)
 	}
 
-	result, err := c.fetchPrices(ctx, azureclient.PriceQuery{
-		ArmRegionName: region,
-		ServiceName:   storageServiceName,
-		ProductName:   generalBlockBlobV2Product,
-		SkuName:       sku,
-		CurrencyCode:  descriptorCurrency(resource),
-	}, taskID)
+	result, product, err := c.blobPage(ctx, region, sku, descriptorCurrency(resource), taskID)
 	if err != nil {
 		return monthlyQuote{}, err
 	}
@@ -487,27 +481,68 @@ func (c *Calculator) quoteBlob(
 		return monthlyQuote{}, MapToGRPCStatus(err).Err()
 	}
 
-	return monthlyQuote{
-		unitPrice: perGB,
-		monthly:   monthly,
-		currency:  currency,
-		billingDetail: fmt.Sprintf(
-			"Blob storage %s %.0f GB-month in %s",
+	detail := fmt.Sprintf("Blob storage %s %.0f GB-month in %s", sku, sizeGB, region)
+	if product == legacyBlobStorageProduct {
+		detail += fmt.Sprintf(
+			"; priced from the legacy %s product because %s does not sell %s in %s",
+			legacyBlobStorageProduct,
+			generalBlockBlobV2Product,
 			sku,
-			sizeGB,
 			region,
-		),
-		breakdownKey: breakdownStorage,
-		expiresAt:    result.ExpiresAt,
-		region:       region,
-		sku:          sku,
-		resourceType: resource.GetResourceType(),
+		)
+	}
+
+	return monthlyQuote{
+		unitPrice:     perGB,
+		monthly:       monthly,
+		currency:      currency,
+		billingDetail: detail,
+		breakdownKey:  breakdownStorage,
+		expiresAt:     result.ExpiresAt,
+		region:        region,
+		sku:           sku,
+		resourceType:  resource.GetResourceType(),
 		meters: []quoteMeter{{
 			key:   breakdownStorage,
 			price: perGB,
 			unit:  unit,
 		}},
 	}, nil
+}
+
+// blobPage reads the General Block Blob v2 page for sku. When that product
+// has no Data Stored row for sku in the region, the legacy Blob Storage
+// product is read instead. The returned product names the page used.
+func (c *Calculator) blobPage(
+	ctx context.Context,
+	region, sku, currency, taskID string,
+) (azureclient.CachedResult, string, error) {
+	for _, product := range []string{generalBlockBlobV2Product, legacyBlobStorageProduct} {
+		result, err := c.fetchPrices(ctx, azureclient.PriceQuery{
+			ArmRegionName: region,
+			ServiceName:   storageServiceName,
+			ProductName:   product,
+			SkuName:       sku,
+			CurrencyCode:  currency,
+		}, taskID)
+		if err != nil && status.Code(err) != codes.NotFound {
+			return azureclient.CachedResult{}, "", err
+		}
+		if err != nil {
+			continue
+		}
+		if _, chooseErr := chosenBlobStored(result.Items); chooseErr == nil {
+			return result, product, nil
+		}
+	}
+	return azureclient.CachedResult{}, "", status.Errorf(
+		codes.NotFound,
+		"no blob Data Stored meter for sku %q in %s (%s or %s)",
+		sku,
+		region,
+		generalBlockBlobV2Product,
+		legacyBlobStorageProduct,
+	)
 }
 
 func (c *Calculator) fetchPrices(

@@ -17,6 +17,7 @@ import (
 const (
 	storageServiceName          = "Storage"
 	generalBlockBlobV2Product   = "General Block Blob v2"
+	legacyBlobStorageProduct    = "Blob Storage"
 	storageDataStoredSuffix     = " Data Stored"
 	storageUnitGBMonth          = "1 GB/Month"
 	storagePriceTypeConsumption = "Consumption"

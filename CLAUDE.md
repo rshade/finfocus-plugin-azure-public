@@ -317,9 +317,24 @@ and redundancy.
 `storage/BlobStorage` queries the same `General Block Blob v2` product with
 skuName `{Tier} {Redundancy}` and uses the same marginal bands on meters
 whose name contains `Data Stored`. A size that stays inside the first band
-is `retailPrice * size_gb`. The legacy `Blob Storage` product is not used:
-it has the same LRS, GRS, and RA-GRS prices but no ZRS, GZRS, or RA-GZRS
-rows (Retail Prices API, eastus, 2026-10-03).
+is `retailPrice * size_gb`. When `General Block Blob v2` has no Data Stored
+row for that skuName in the region, the quote reads the legacy `Blob Storage`
+product instead, and `billing_detail` says so. A SKU that neither product
+sells is `NotFound` and names the SKU. The SKU is passed through as given:
+it is not normalized, and the `tier`/`redundancy` tags are not read.
+
+Product coverage, Retail Prices API, 2026-10-03:
+
+- In `eastus`, the legacy product sells only LRS, GRS, and RA-GRS, each at the
+  same price as `General Block Blob v2`. Only `General Block Blob v2` sells
+  ZRS, GZRS, and RA-GZRS.
+- In `israelcentral`, `General Block Blob v2` has no Hot or Cold GRS or RA-GRS
+  rows. Those are priced from the legacy product (Hot GRS 100 GB is
+  6.5494).
+- In `southeastasia3`, `General Block Blob v2` charges about 25% more for Cold
+  GRS and Cold RA-GRS than the legacy product (Cold GRS 0.010125 against
+  0.0081 per GB). The quote uses the `General Block Blob v2` price, because
+  that is what a general-purpose v2 account pays.
 
 ### App Service Plan Cost Estimation
 

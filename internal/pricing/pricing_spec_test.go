@@ -628,8 +628,6 @@ func pricingSpecItems(filter string, fx pricingSpecFX) []azureclient.PriceItem {
 		return fx.blob
 	case strings.Contains(filter, generalBlockBlobV2Product):
 		return fx.storage
-	case strings.Contains(filter, "serviceName eq 'Storage'"):
-		return fx.blob
 	case strings.Contains(filter, "Azure App Service"):
 		return fx.app
 	case strings.Contains(filter, "serviceName eq 'Functions'"):
