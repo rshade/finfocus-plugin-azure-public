@@ -186,10 +186,15 @@ query, err := pricing.MapDescriptorToQuery(desc)
 **Behavior**:
 - Provider is the cloud, `azure`. The Pulumi package (classic `azure` or
   `azure-native`) is the prefix of the resource type, and pricing reads it
-  from there. Hosts before rshade/finfocus#1645 send the package prefix as the
-  provider, so the plugin also advertises and accepts `azure-native`. Issue #84
-  stops advertising it once #1645 ships, and keeps accepting it from older
-  hosts. See finfocus-spec PR #614.
+  from there. The plugin advertises only `azure` (`PluginInfo().Providers`
+  and the manifests). FinFocus normalizes the prefix to the cloud from the
+  first release after v0.4.0 (rshade/finfocus#1645), so Azure Native
+  resources match by provider. v0.4.0 and older send `azure-native`, match no
+  plugin, and reach this one through core's fallback to all plugins
+  (FinFocus v0.4.0 `internal/engine/engine.go:441-459`). The plugin still
+  accepts `azure-native`, and
+  `TestCostRPCs_AzureNativeTokens_SameForBothProviders` checks both providers
+  give the same answer. See finfocus-spec PR #614.
 - Resource type matching is case-insensitive and includes type tokens such as `azure:compute/linuxVirtualMachine:LinuxVirtualMachine`, `azure:compute/managedDisk:ManagedDisk`, `azure:storage/account:Account`, `azure:storage/blob:Blob`, `azure:appservice/servicePlan:ServicePlan`, `azure:mssql/database:Database`, `azure-native:compute:VirtualMachine`, `azure-native:compute:Disk`, `azure-native:storage:StorageAccount`, `azure-native:web:AppServicePlan`, `azure-native:web:WebApp` with `kind=FunctionApp`, `azure-native:containerservice:ManagedCluster`, `azure-native:sql:Database`, `azure-native:documentdb:DatabaseAccount`, and `azure-native:network:LoadBalancer`. Windows virtual machines and the real scale-set tokens are quoted. `EstimateCost` sees `kind` on `azure-native:web:WebApp`. A managed disk pricing spec rate uses `per_month`
 - Tag fallback: `Tags["region"]` and `Tags["sku"]` when primary fields empty
 - Primary fields always take precedence over tags
@@ -502,9 +507,9 @@ missing fields is supported and not configuration-valid. An unknown type is
 not supported, and the RPC still returns a response. The OData filter is
 logged, not returned. Field mappings start unsupported, and only a field a
 successful `GetProjectedCost` fills is marked supported. An empty provider is
-taken from the type token: `azure-native:` is azure-native, and `azure:` or a
-bare canonical type such as `compute/VirtualMachine` is azure. Both mean the
-Azure cloud; the package only selects property names. Another cloud's
+taken from the type token: `azure-native:`, `azure:`, or a bare canonical type
+such as `compute/VirtualMachine` all give the cloud `azure`; the package stays
+in the resource type and only selects property names. Another cloud's
 token stays unsupported. `finfocus plugin inspect <plugin> <type>` sends only
 the type, so it now gets the field mappings and `configuration_errors` naming
 the required fields (for example `missing required fields: region, sku`).
@@ -635,12 +640,6 @@ converted in-memory view instead.
 
 Known gaps against the spec schema, filed as FinFocus spec #611:
 
-- `azure-native` is listed in `supported_providers`, which the schema
-  rejects. Provider keys are clouds (finfocus-spec PR #614). Azure Native
-  types belong under the `azure` key, as they already are in
-  `supported_resources`. The plugin lists `azure-native` only because hosts
-  before rshade/finfocus#1645 route by the package prefix; issue #84 removes
-  it once #1645 ships.
 - The `methods` list in the schema allows five names, so `EstimateCost`,
   `DryRun`, and `GetPluginInfo` are served but not listed.
 - Per-type input fields have no manifest field, and core reads none. DryRun

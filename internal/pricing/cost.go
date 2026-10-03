@@ -704,7 +704,9 @@ func isBlobStorageResourceType(lower string) bool {
 }
 
 // acceptedAzureProvider reports whether core's provider is this plugin's cloud.
-// azure-native is the Pulumi token prefix. The priced cloud is still Azure.
+// finfocus with rshade/finfocus#1645 sends azure for every Azure resource;
+// older releases send the Pulumi package prefix azure-native, which is still
+// accepted. Pricing reads the package from the resource type, never from here.
 func acceptedAzureProvider(provider string) bool {
 	switch strings.ToLower(strings.TrimSpace(provider)) {
 	case providerAzure, providerAzureNative:

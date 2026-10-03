@@ -89,7 +89,7 @@ func PluginInfo() *pluginsdk.PluginInfo {
 		Name:         "azure-public",
 		Version:      pluginVersion,
 		SpecVersion:  pluginsdk.SpecVersion,
-		Providers:    []string{providerAzure, providerAzureNative},
+		Providers:    []string{providerAzure},
 		Metadata:     map[string]string{pluginMetadataType: pluginTypePublicPricing},
 		Capabilities: PluginCapabilities(),
 	}
@@ -556,10 +556,11 @@ func (c *Calculator) HandleDryRun(
 
 // dryRunDescriptor fills an empty provider from the resource type token.
 // `finfocus plugin inspect <plugin> <type>` sends DryRun with the resource type
-// only. An azure-native token means azure-native; an azure token or a bare
-// canonical type such as compute/VirtualMachine means azure. Another cloud's
-// token keeps the empty provider and stays unsupported. Supports and the cost
-// RPCs keep requiring the provider, which core always sends there.
+// only. An azure or azure-native token, or a bare canonical type such as
+// compute/VirtualMachine, means the azure cloud; the Pulumi package stays in the
+// resource type. Another cloud's token keeps the empty provider and stays
+// unsupported. Supports and the cost RPCs keep requiring the provider, which
+// core always sends there.
 func dryRunDescriptor(resource *finfocusv1.ResourceDescriptor) *finfocusv1.ResourceDescriptor {
 	if strings.TrimSpace(resource.GetProvider()) != "" {
 		return resource
@@ -567,9 +568,9 @@ func dryRunDescriptor(resource *finfocusv1.ResourceDescriptor) *finfocusv1.Resou
 	resourceType := strings.ToLower(strings.TrimSpace(resource.GetResourceType()))
 	var provider string
 	switch {
-	case strings.HasPrefix(resourceType, providerAzureNative+":"):
-		provider = providerAzureNative
-	case strings.HasPrefix(resourceType, providerAzure+":"), !strings.Contains(resourceType, ":"):
+	case strings.HasPrefix(resourceType, providerAzureNative+":"),
+		strings.HasPrefix(resourceType, providerAzure+":"),
+		!strings.Contains(resourceType, ":"):
 		provider = providerAzure
 	default:
 		return resource

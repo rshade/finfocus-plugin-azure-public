@@ -16,8 +16,7 @@
   "specification": {
     "specVersion": "0.7.1",
     "supportedProviders": [
-      "azure",
-      "azure-native"
+      "azure"
     ],
     "supportedResources": {
       "azure": {

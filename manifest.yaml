@@ -17,7 +17,6 @@ specification:
     specversion: 0.7.1
     supportedproviders:
         - azure
-        - azure-native
     supportedresources:
         azure:
             resourcetypes:
