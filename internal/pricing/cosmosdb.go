@@ -205,9 +205,12 @@ func cosmosProvisionedQuote(
 	}
 	ruCost := spec.ru / float64(block) * ruItem.RetailPrice * pluginsdk.HoursPerMonth
 	components := map[string]float64{cosmosComponentRU: ruCost}
-	meters := []quoteMeter{
-		{key: cosmosComponentRU, price: ruItem.RetailPrice, unit: ruItem.UnitOfMeasure},
-	}
+	meters := []quoteMeter{{
+		key:      cosmosComponentRU,
+		price:    ruItem.RetailPrice,
+		unit:     ruItem.UnitOfMeasure,
+		specUnit: fmt.Sprintf("%d RU/s per hour", block),
+	}}
 	if spec.sizeSet {
 		stored, storedErr := cosmosStorageItem(result.Items, spec)
 		if storedErr != nil {
@@ -242,7 +245,7 @@ func cosmosServerlessQuote(
 		cosmosComponentRU: cost,
 	})
 	quote.meters = []quoteMeter{
-		{key: cosmosComponentRU, price: item.RetailPrice, unit: item.UnitOfMeasure},
+		{key: cosmosComponentRU, price: item.RetailPrice, unit: item.UnitOfMeasure, specUnit: specUnitMillionRU},
 	}
 	return quote, nil
 }

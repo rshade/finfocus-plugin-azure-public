@@ -304,6 +304,7 @@ func TestGetPricingSpec_SQLZoneRedundant_ListsOneStorageMeter(t *testing.T) {
 		"compute":                 sqlTestUnitHour,
 		"storage":                 sqlTestUnitGBMonth,
 		"zone_redundancy_compute": sqlTestUnitHour,
+		"size_gb":                 "GB",
 	})
 	if spec.GetBillingMode() != specBillingPerHour || spec.GetRatePerUnit() != computeItem.RetailPrice {
 		t.Fatalf("billing_mode/rate = %s/%v, want %s/%v",

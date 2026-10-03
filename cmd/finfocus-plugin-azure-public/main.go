@@ -130,6 +130,7 @@ func run() error {
 			Metadata: map[string]string{
 				"type": "public-pricing-fallback",
 			},
+			Capabilities: pricing.PluginCapabilities(),
 		},
 	}
 

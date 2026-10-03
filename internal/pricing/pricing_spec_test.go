@@ -147,12 +147,14 @@ func TestGetPricingSpecPremiumFunctions(t *testing.T) {
 		ResourceType: "web/FunctionApp",
 		Region:       "eastus",
 	}, pricingSpecWant{
-		billingMode: specBillingPerHour,
-		unit:        specUnitHour,
+		billingMode: billingModePerVCPUHour,
+		unit:        specUnitVCPUHour,
 		rate:        fx.vcpuItem.RetailPrice,
 		hints: map[string]string{
-			"vcpu":   fx.vcpuItem.UnitOfMeasure,
-			"memory": fx.memoryItem.UnitOfMeasure,
+			"vcpu":       fx.vcpuItem.UnitOfMeasure,
+			"memory":     fx.memoryItem.UnitOfMeasure,
+			"vcpu_count": "vCPU",
+			"memory_gib": "GiB",
 		},
 		reject: []float64{
 			fx.memoryItem.RetailPrice,
@@ -340,12 +342,15 @@ func addComputeStorageWants(t *testing.T, fx pricingSpecFX, wants map[string]pri
 	})
 	wants["storage/ManagedDisk"] = monthSpec(fx.diskItem, map[string]string{
 		"storage": fx.diskItem.UnitOfMeasure,
+		"size_gb": "GB",
 	})
 	wants["storage/BlobStorage"] = gbMonthSpec(fx.blobItem, map[string]string{
 		"storage": fx.blobItem.UnitOfMeasure,
+		"size_gb": "GB",
 	}, fx.blobItem.RetailPrice*100)
 	wants["storage/StorageAccount"] = gbMonthSpec(fx.storageItem, map[string]string{
 		"storage": fx.storageItem.UnitOfMeasure,
+		"size_gb": "GB",
 	}, fx.storageItem.RetailPrice*100)
 }
 
@@ -371,11 +376,12 @@ func addPlatformWants(t *testing.T, fx pricingSpecFX, wants map[string]pricingSp
 	}
 
 	wants["web/AppServicePlan"] = hourlySpec(fx.appItem, map[string]string{
-		"compute": fx.appItem.UnitOfMeasure,
+		"compute":     fx.appItem.UnitOfMeasure,
+		"workerCount": "count",
 	})
 	wants["web/FunctionApp"] = pricingSpecWant{
 		billingMode: specBillingPerSecond,
-		unit:        fx.gbItem.UnitOfMeasure,
+		unit:        specUnitGBSecond,
 		rate:        fx.gbItem.RetailPrice,
 		hints: map[string]string{
 			"executions": fx.execItem.UnitOfMeasure,
@@ -384,16 +390,20 @@ func addPlatformWants(t *testing.T, fx pricingSpecFX, wants map[string]pricingSp
 		reject: []float64{0, fx.execItem.RetailPrice, fx.gbItem.RetailPrice * pluginsdk.HoursPerMonth},
 	}
 	wants["network/LoadBalancer"] = hourlySpec(fx.lbItem, map[string]string{
-		"rules": fx.lbItem.UnitOfMeasure,
+		"rules":             fx.lbItem.UnitOfMeasure,
+		"rule_count":        "count",
+		"data_processed_gb": "GB",
 	})
 	wants["containerservice/KubernetesCluster"] = pricingSpecWant{
 		billingMode: specBillingPerHour,
 		unit:        specUnitHour,
 		rate:        fx.aksItem.RetailPrice,
 		hints: map[string]string{
-			"control_plane":    fx.aksItem.UnitOfMeasure,
-			"node_pool_pool_1": fx.nodeItem.UnitOfMeasure,
-			"node_pool_pool_2": fx.nodeItem.UnitOfMeasure,
+			"control_plane":     fx.aksItem.UnitOfMeasure,
+			"node_pool_pool_1":  fx.nodeItem.UnitOfMeasure,
+			"node_pool_pool_2":  fx.nodeItem.UnitOfMeasure,
+			"node_pool_N_sku":   "VM size",
+			"node_pool_N_count": "count",
 		},
 		reject: []float64{
 			fx.nodeItem.RetailPrice,
@@ -420,6 +430,7 @@ func addDataWants(t *testing.T, fx pricingSpecFX, wants map[string]pricingSpecWa
 		hints: map[string]string{
 			"compute": fx.sqlComputeItem.UnitOfMeasure,
 			"storage": fx.sqlStorageItem.UnitOfMeasure,
+			"size_gb": "GB",
 		},
 		reject: []float64{
 			fx.sqlStorageItem.RetailPrice,
@@ -427,12 +438,14 @@ func addDataWants(t *testing.T, fx pricingSpecFX, wants map[string]pricingSpecWa
 		},
 	}
 	wants["cosmosdb/Account"] = pricingSpecWant{
-		billingMode: specBillingPerHour,
-		unit:        specUnitHour,
+		billingMode: billingModePerRU,
+		unit:        "100 RU/s per hour",
 		rate:        fx.cosmosRU.RetailPrice,
 		hints: map[string]string{
-			"ru":      fx.cosmosRU.UnitOfMeasure,
-			"storage": fx.cosmosStored.UnitOfMeasure,
+			"ru":            fx.cosmosRU.UnitOfMeasure,
+			"storage":       fx.cosmosStored.UnitOfMeasure,
+			"ru_per_second": "RU/s",
+			"size_gb":       "GB",
 		},
 		reject: []float64{
 			fx.cosmosStored.RetailPrice,

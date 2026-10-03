@@ -123,10 +123,10 @@ does not.
 
 - [x] [#43](https://github.com/rshade/finfocus-plugin-azure-public/issues/43)
   Implement DryRun validation RPC [S]
-- [ ] [#44](https://github.com/rshade/finfocus-plugin-azure-public/issues/44)
+- [x] [#44](https://github.com/rshade/finfocus-plugin-azure-public/issues/44)
   Implement GetPricingSpec RPC for plugin discovery [M]
 - DryRun: Validate descriptors without API calls, preview OData filter
-- PricingSpec: Machine-readable schema of supported resource types
+- PricingSpec: per-resource rate, assumptions, and usage hints; capabilities and `plugin inspect` for discovery
 
 **App Service & Functions:**
 
@@ -304,14 +304,14 @@ The following features violate architectural constraints defined in
 | Pre-release: Caching Layer | Complete | 4/4 (100%) |
 | v0.1.0 - Core Estimation | Active | 8/8 (100%) |
 | v0.2.0 - Quality & Testing | Active | 3/4 (75%) |
-| v0.3.0 - Extended Services | Active | 5/6 (83%) |
+| v0.3.0 - Extended Services | Complete | 6/6 (100%) |
 
 <!-- markdownlint-enable MD013 -->
 
-**Completed Issues**: #1-#20, #42, #43, #45, #47-#52, #54-#57, #59-#61
+**Completed Issues**: #1-#20, #42-#45, #47-#52, #54-#57, #59-#61
 
-**Checklist still open here**: 44, 46, and 53.
-Item 44 returns one pricing spec. Item 46 has no `charge_type` field, and
+**Checklist still open here**: 46 and 53.
+Item 46 has no `charge_type` field, and
 `commitment_discount_type` stays empty. Item 53 waits on owner values.
 
 **Known limitations**: item 43 has no filter field on `DryRunResponse`.

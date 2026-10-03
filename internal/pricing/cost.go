@@ -75,6 +75,9 @@ type quoteMeter struct {
 	// count is how many units of this meter the quote bills at once, such as
 	// the instances of a scale set. Zero means one.
 	count float64
+	// specUnit, when set, is the PricingSpec unit for this meter's price,
+	// such as "100 RU/s per hour" for a Cosmos block meter.
+	specUnit string
 }
 
 type actualWindow struct {
@@ -774,12 +777,12 @@ func requireFields(region, sku string) error {
 	return nil
 }
 
+// missingFieldsPrefix starts every missingFieldsError message.
+// GetPricingSpec reads the field list back from it.
+const missingFieldsPrefix = "missing required field(s): "
+
 func missingFieldsError(fields []string) error {
-	return status.Errorf(
-		codes.InvalidArgument,
-		"missing required field(s): %s",
-		strings.Join(fields, ", "),
-	)
+	return status.Error(codes.InvalidArgument, missingFieldsPrefix+strings.Join(fields, ", "))
 }
 
 // selectBlobStoredMonthly bills Data Stored in marginal volume bands.

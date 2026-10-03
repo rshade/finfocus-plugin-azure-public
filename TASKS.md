@@ -1166,10 +1166,11 @@ Issues #48 and #49 are closed by PR #70, which adds live integration tests in
 | --- | --- | --- |
 | [#53](https://github.com/rshade/finfocus-plugin-azure-public/issues/53) | Pricing accuracy vs the Azure Pricing Calculator | **AZ-3.8** BLOCKED-ON-INPUT. Every `owner_monthly_usd` cell is empty. |
 | [#46](https://github.com/rshade/finfocus-plugin-azure-public/issues/46) | FOCUS 1.3 column alignment | **AZ-2.14** emits a record. `charge_type` has no proto field. `commitment_discount_type` stays empty. |
-| [#44](https://github.com/rshade/finfocus-plugin-azure-public/issues/44) | GetPricingSpec for plugin discovery | **AZ-2.11** returns one spec for the quoted resource, not a catalog. |
 
 **Summary** (updated 2026-10-03):
-- Three issues stay open. The reasons are in the table.
+- Two issues stay open. The reasons are in the table. #44 closes with
+  explicit capabilities, `plugin inspect` support, and pricing spec
+  assumptions and usage hints; core reads no type catalog.
 - Standard Load Balancer rules are quoted. NAT Gateway, virtual machine scale
   sets, Cache for Redis, and database servers for PostgreSQL and MySQL have
   no issue and are not priced.
@@ -1229,7 +1230,7 @@ Issues #48 and #49 are closed by PR #70, which adds live integration tests in
 11. **Spec-first issues (#44, #46)**: #45 and #47 are delivered on
     `price_options` and `region_prices`. #43 is resolved and closed:
     `DryRunResponse` has no filter field by spec design, so the filter is
-    logged. #44 returns one pricing spec. #46 still has no `charge_type`
+    logged. #44 is resolved without a spec change. #46 still has no `charge_type`
     field.
 12. **Blob SKU normalization (follow-up from #79)**: `storage/BlobStorage`
     passes the SKU into `skuName eq` exactly as given. The live API matches

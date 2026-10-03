@@ -148,10 +148,21 @@ func TestSpecRate_EveryBranch_ReturnsListedBillingMode(t *testing.T) {
 			},
 			want: billingModePerSecond,
 		},
+		{
+			name:   "cosmos request units",
+			meters: []quoteMeter{{key: cosmosComponentRU, unit: cosmosUnitPerHour, specUnit: "100 RU/s per hour"}},
+			want:   billingModePerRU,
+		},
+		{
+			name:   "premium vcpu",
+			meters: []quoteMeter{{key: breakdownVCPU, unit: appServiceUnitHour}, {key: breakdownMemory}},
+			want:   billingModePerVCPUHour,
+		},
 		{name: "hourly", meters: []quoteMeter{{unit: appServiceUnitHour}}, want: billingModePerHour},
 		{name: "storage", meters: []quoteMeter{{unit: storageUnitGBMonth}}, want: billingModePerGBMonth},
 		{name: "monthly", meters: []quoteMeter{{unit: "1/Month"}}, want: billingModePerMonth},
-		{name: "other unit", meters: []quoteMeter{{unit: "1M"}}, want: billingModePerRU},
+		{name: "processed data", meters: []quoteMeter{{unit: loadBalancerUnitData}}, want: billingModePerDataGB},
+		{name: "unrecognised unit", meters: []quoteMeter{{unit: "1M"}}, want: billingModeNone},
 		{name: "no meters", meters: nil, want: billingModePerHour},
 	}
 	seen := make(map[string]bool, len(modes))
@@ -160,6 +171,12 @@ func TestSpecRate_EveryBranch_ReturnsListedBillingMode(t *testing.T) {
 			got, _, _ := specRate(tt.meters)
 			if got != tt.want {
 				t.Fatalf("specRate mode = %q, want %q", got, tt.want)
+			}
+			if got == billingModeNone {
+				if listed[got] {
+					t.Fatalf("specBillingModes lists the %q fallback", got)
+				}
+				return
 			}
 			if !listed[got] {
 				t.Fatalf("specRate returned %q, which specBillingModes does not list", got)
