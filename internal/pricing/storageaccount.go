@@ -23,6 +23,9 @@ const (
 
 	storageSKUPartCount = 2
 
+	storagePerformanceStandard = "Standard"
+	storageDefaultAccessTier   = "Hot"
+
 	storageAccountResourceSegment = "storage/storageaccount"
 )
 
@@ -46,6 +49,8 @@ var storageAccountRedundancy = map[string]string{
 	"gzrs":    "GZRS",
 	"ra-grs":  "RA-GRS",
 	"ra-gzrs": "RA-GZRS",
+	"ragrs":   "RA-GRS",
+	"ragzrs":  "RA-GZRS",
 }
 
 func (c *Calculator) quoteStorageAccount(
@@ -130,16 +135,48 @@ func isStorageAccountResourceType(lower string) bool {
 }
 
 // storageAccountSKU resolves "{Tier} {Redundancy}". Sku and Tags["sku"] win.
-// Otherwise the SKU is built from tier (or access_tier) and redundancy.
-// An empty result means the caller should report a missing sku.
+// An ARM SKU such as native sku.name Standard_GRS takes its access tier from
+// accessTier, default Hot. Next are the classic Pulumi accountTier,
+// accountReplicationType, and accessTier. Otherwise the SKU is built from
+// tier (or access_tier) and redundancy. Premium performance is not General
+// Block Blob v2 and is an error. An empty result means a missing sku.
 func storageAccountSKU(resource *finfocusv1.ResourceDescriptor) (string, error) {
+	tags := resource.GetTags()
 	if sku := strings.TrimSpace(resource.GetSku()); sku != "" {
-		return canonicalStorageAccountSKU(sku)
+		return storageSKUFromValue(sku, tags)
 	}
-	if sku := firstNonEmptyTag(resource.GetTags(), "sku"); sku != "" {
-		return canonicalStorageAccountSKU(sku)
+	if sku := firstNonEmptyTag(tags, "sku"); sku != "" {
+		return storageSKUFromValue(sku, tags)
 	}
-	return storageAccountSKUFromTags(resource.GetTags())
+	if replication := pulumiTag(tags, "accountReplicationType"); replication != "" {
+		return storageSKUFromARM(pulumiTag(tags, "accountTier"), replication, tags)
+	}
+	return storageAccountSKUFromTags(tags)
+}
+
+func storageSKUFromValue(raw string, tags map[string]string) (string, error) {
+	trimmed := strings.TrimSpace(raw)
+	performance, replication, ok := strings.Cut(trimmed, "_")
+	if ok && !strings.Contains(trimmed, " ") {
+		return storageSKUFromARM(performance, replication, tags)
+	}
+	return canonicalStorageAccountSKU(trimmed)
+}
+
+func storageSKUFromARM(performance, replication string, tags map[string]string) (string, error) {
+	if performance != "" && !strings.EqualFold(performance, storagePerformanceStandard) {
+		return "", fmt.Errorf(
+			"unsupported storage performance %q: only %s is priced from %s",
+			performance,
+			storagePerformanceStandard,
+			generalBlockBlobV2Product,
+		)
+	}
+	access := pulumiTag(tags, "accessTier")
+	if access == "" {
+		access = storageDefaultAccessTier
+	}
+	return canonicalStorageAccountSKU(access + " " + replication)
 }
 
 func storageAccountSKUFromTags(tags map[string]string) (string, error) {

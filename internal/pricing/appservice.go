@@ -30,7 +30,9 @@ const (
 	appServiceMeterSuffix    = " App"
 	appServiceLinuxMarker    = "linux"
 	appServiceOSWindows      = "Windows"
+	appServiceOSLinux        = "Linux"
 	appServiceOSTag          = "os"
+	appServiceOSTypeTag      = "osType"
 	functionsPremiumProduct  = "Premium Functions"
 	functionsProductStandard = "Functions"
 	functionsMeterExecutions = "Standard Total Executions"
@@ -76,11 +78,15 @@ func (c *Calculator) quoteAppServicePlan(
 	taskID string,
 ) (monthlyQuote, error) {
 	region := descriptorRegion(resource)
-	sku := descriptorSKU(resource)
+	sku := appServicePlanSKU(resource)
 	if err := requireFields(region, sku); err != nil {
 		return monthlyQuote{}, err
 	}
 	windows, err := descriptorWindows(resource)
+	if err != nil {
+		return monthlyQuote{}, err
+	}
+	workers, err := appServicePlanWorkers(resource.GetTags())
 	if err != nil {
 		return monthlyQuote{}, err
 	}
@@ -96,9 +102,9 @@ func (c *Calculator) quoteAppServicePlan(
 
 	return monthlyQuote{
 		unitPrice:     item.RetailPrice,
-		monthly:       item.RetailPrice * pluginsdk.HoursPerMonth,
+		monthly:       item.RetailPrice * pluginsdk.HoursPerMonth * float64(workers),
 		currency:      itemCurrency(item),
-		billingDetail: appServiceBillingDetail(resource, windows, sku, region),
+		billingDetail: appServiceBillingDetail(resource, windows, sku, region, workers),
 		breakdownKey:  breakdownCompute,
 		expiresAt:     result.ExpiresAt,
 		region:        region,
@@ -316,15 +322,29 @@ func functionConsumptionSKU(sku string) bool {
 
 // descriptorWindows reports whether tag os selects Windows. An empty os is
 // Linux. Any other non-empty value is InvalidArgument and names that value.
+// When os is empty, the classic Pulumi osType is read: Windows or Linux.
+// WindowsContainer is InvalidArgument.
 func descriptorWindows(resource *finfocusv1.ResourceDescriptor) (bool, error) {
-	osName := strings.TrimSpace(resource.GetTags()[appServiceOSTag])
+	tags := resource.GetTags()
+	osName := strings.TrimSpace(tags[appServiceOSTag])
 	if osName == "" {
-		return false, nil
+		return pulumiOSTypeWindows(pulumiTag(tags, appServiceOSTypeTag))
 	}
 	if strings.EqualFold(osName, appServiceOSWindows) {
 		return true, nil
 	}
 	return false, status.Errorf(codes.InvalidArgument, "unsupported os %q", osName)
+}
+
+func pulumiOSTypeWindows(osType string) (bool, error) {
+	switch {
+	case osType == "" || strings.EqualFold(osType, appServiceOSLinux):
+		return false, nil
+	case strings.EqualFold(osType, appServiceOSWindows):
+		return true, nil
+	default:
+		return false, status.Errorf(codes.InvalidArgument, "unsupported %s %q", appServiceOSTypeTag, osType)
+	}
 }
 
 // selectAppServicePlanItem chooses the hourly Consumption plan meter.
@@ -558,7 +578,12 @@ func meterQuote(
 	}
 }
 
-func appServiceBillingDetail(resource *finfocusv1.ResourceDescriptor, windows bool, sku, region string) string {
+func appServiceBillingDetail(
+	resource *finfocusv1.ResourceDescriptor,
+	windows bool,
+	sku, region string,
+	workers int,
+) string {
 	osName := "Linux"
 	if windows {
 		osName = appServiceOSWindows
@@ -567,7 +592,11 @@ func appServiceBillingDetail(resource *finfocusv1.ResourceDescriptor, windows bo
 	if isFunctionAppResourceType(strings.ToLower(resource.GetResourceType())) {
 		kind = "Function App dedicated plan"
 	}
-	return fmt.Sprintf("%s %s %s in %s, 730 hrs/month", kind, osName, sku, region)
+	detail := fmt.Sprintf("%s %s %s in %s, 730 hrs/month", kind, osName, sku, region)
+	if workers > 1 {
+		detail = fmt.Sprintf("%s, %d workers", detail, workers)
+	}
+	return detail
 }
 
 func itemCurrency(item azureclient.PriceItem) string {

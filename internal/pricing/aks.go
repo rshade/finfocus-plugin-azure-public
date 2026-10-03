@@ -180,27 +180,26 @@ func (c *Calculator) aksPoolCost(
 	return quote.monthly * float64(pool.count), quote.expiresAt, meter, nil
 }
 
-// aksControlPlane reads the tier from SKU, Tags["sku"], or Tags["tier"].
-// support=lts selects Standard Long Term Support. That support value with
-// Free is InvalidArgument. Any other tier, including Automatic, is rejected.
+// aksControlPlane reads the tier from Pulumi sku.tier or skuTier, then SKU,
+// Tags["sku"], or Tags["tier"]. support=lts or supportPlan=AKSLongTermSupport
+// selects Standard Long Term Support. That support value with Free is
+// InvalidArgument. Any other tier, including Automatic and Base, is rejected.
 // Free returns its meter name for the note only; quoteAKS prices it at 0.
 func aksControlPlane(resource *finfocusv1.ResourceDescriptor) (string, string, error) {
-	raw := strings.TrimSpace(resource.GetSku())
-	if raw == "" {
-		raw = firstNonEmptyTag(resource.GetTags(), "sku", aksTierTag)
-	}
+	raw := aksTier(resource)
 	if raw == "" {
 		return "", "", missingFieldsError([]string{aksTierTag})
 	}
 
-	lts := strings.EqualFold(strings.TrimSpace(resource.GetTags()[aksSupportTag]), aksSupportLTS)
+	support := aksSupport(resource.GetTags())
+	lts := support != ""
 	switch strings.ToLower(raw) {
 	case aksTierFree:
 		if lts {
 			return "", "", status.Errorf(
 				codes.InvalidArgument,
 				"support %q is invalid for tier %q",
-				resource.GetTags()[aksSupportTag],
+				support,
 				raw,
 			)
 		}
@@ -418,11 +417,17 @@ func aksSnake(name string) string {
 }
 
 func aksBillingDetail(tier, region string, pools int) string {
-	subject := "control plane"
-	if pools > 0 {
-		subject = "control plane and node pools"
+	var detail string
+	if pools == 0 {
+		detail = fmt.Sprintf(
+			"AKS %s control plane in %s, 730 hrs/month; node pools not included "+
+				"(set node_pool_N_sku and node_pool_N_count)",
+			tier,
+			region,
+		)
+	} else {
+		detail = fmt.Sprintf("AKS %s control plane and node pools in %s, 730 hrs/month", tier, region)
 	}
-	detail := fmt.Sprintf("AKS %s %s in %s, 730 hrs/month", tier, subject, region)
 	if tier == aksLabelFree {
 		detail += "; " + aksFreeTierNote
 	}
