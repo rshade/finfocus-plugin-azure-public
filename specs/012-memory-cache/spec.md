@@ -243,10 +243,13 @@ to approximately now + configured TTL.
   resources trigger Azure API calls. Results are merged before
   returning to the caller.
 - What happens when the Azure API fails during a cache miss?
-  The error propagates directly to the caller. Errors are
+  The error propagates directly to the caller. Failures are
   never cached. The next request for the same key retries the
   Azure API. The existing retry logic in the HTTP client
   handles transient failures before the cache layer sees them.
+  An HTTP 200 price page with zero rows is not a failure: it
+  may be cached as a negative entry for at most one hour
+  (issue #75).
 
 ## Requirements *(mandatory)*
 
@@ -296,9 +299,12 @@ to approximately now + configured TTL.
   expiresAtTTL`. For a cache hit: `expires_at =
   min(createdAt + expiresAtTTL, internalExpiresAt)`,
   ensuring L2 callers never hold data longer than L1.
-- **FR-015**: System MUST NOT cache error responses. Only
-  successful pricing results are stored. API failures
-  propagate to the caller and the next request retries.
+- **FR-015**: System MUST NOT cache API failures (HTTP
+  errors, request failures, invalid bodies, the pagination
+  limit). They propagate to the caller and the next request
+  retries. An HTTP 200 price page with zero rows MAY be
+  cached as a negative entry that returns not found, for at
+  most one hour or the L1 TTL when shorter (issue #75).
 
 ### Key Entities
 

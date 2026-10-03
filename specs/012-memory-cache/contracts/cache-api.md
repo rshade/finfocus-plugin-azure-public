@@ -92,8 +92,11 @@ func NewCachedClient(
 // the underlying Client, caches the result, and returns
 // it with a fresh ExpiresAt.
 //
-// Errors from the Azure API are never cached (FR-015).
-// The next call for the same key retries the API.
+// Failures from the Azure API are never cached (FR-015).
+// The next call for the same key retries the API. An
+// HTTP 200 price page with zero rows is cached as a
+// negative entry for at most one hour and returns
+// ErrNotFound (issue #75).
 //
 // Returns CachedResult instead of raw []PriceItem so
 // the caller can read ExpiresAt for gRPC responses.

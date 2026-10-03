@@ -1,6 +1,7 @@
 package azureclient
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -219,16 +220,36 @@ func (c *Client) fetchPage(ctx context.Context, requestURL string) ([]PriceItem,
 		)
 	}
 
-	var priceResp PriceResponse
-	if decodeErr := json.Unmarshal(bodyBytes, &priceResp); decodeErr != nil {
-		snippet := string(bodyBytes)
-		if len(snippet) > maxSnippetLen {
-			snippet = snippet[:maxSnippetLen]
-		}
+	snippet := string(bodyBytes)
+	if len(snippet) > maxSnippetLen {
+		snippet = snippet[:maxSnippetLen]
+	}
+
+	// Decode Items separately so a body without an Items array (an error
+	// envelope, {} or null) is rejected instead of reading as an empty page,
+	// which CachedClient would cache.
+	var page struct {
+		Items        json.RawMessage `json:"Items"`
+		NextPageLink string          `json:"NextPageLink"`
+	}
+	if decodeErr := json.Unmarshal(bodyBytes, &page); decodeErr != nil {
+		return nil, "", fmt.Errorf("%w: %w (response: %s)", ErrInvalidResponse, decodeErr, snippet)
+	}
+	if !isJSONArray(page.Items) {
+		return nil, "", fmt.Errorf("%w: response has no Items array (response: %s)", ErrInvalidResponse, snippet)
+	}
+
+	var items []PriceItem
+	if decodeErr := json.Unmarshal(page.Items, &items); decodeErr != nil {
 		return nil, "", fmt.Errorf("%w: %w (response: %s)", ErrInvalidResponse, decodeErr, snippet)
 	}
 
-	return priceResp.Items, priceResp.NextPageLink, nil
+	return items, page.NextPageLink, nil
+}
+
+func isJSONArray(raw json.RawMessage) bool {
+	trimmed := bytes.TrimSpace(raw)
+	return len(trimmed) > 0 && trimmed[0] == '['
 }
 
 // validateConfig validates the client configuration.

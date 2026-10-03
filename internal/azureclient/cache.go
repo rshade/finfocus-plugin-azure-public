@@ -15,6 +15,7 @@ const (
 	defaultCacheMaxSize = 1000
 	defaultCacheTTL     = 24 * time.Hour
 	defaultExpiresAtTTL = 4 * time.Hour
+	defaultNegativeTTL  = time.Hour
 
 	statsRequestInterval = 1000
 	statsTimeInterval    = 5 * time.Minute
@@ -30,9 +31,13 @@ type CachedResult struct {
 }
 
 // CacheConfig configures CachedClient behavior.
+//
+// NegativeTTL bounds how long an empty price page (an HTTP 200 with zero
+// rows) is remembered. Zero means one hour. The value is capped at TTL.
 type CacheConfig struct {
 	MaxSize      int
 	TTL          time.Duration
+	NegativeTTL  time.Duration
 	ExpiresAtTTL time.Duration
 	Logger       zerolog.Logger
 }
@@ -42,6 +47,7 @@ func DefaultCacheConfig() CacheConfig {
 	return CacheConfig{
 		MaxSize:      defaultCacheMaxSize,
 		TTL:          defaultCacheTTL,
+		NegativeTTL:  defaultNegativeTTL,
 		ExpiresAtTTL: defaultExpiresAtTTL,
 		Logger:       zerolog.Nop(),
 	}
@@ -55,11 +61,12 @@ type CacheStats struct {
 
 // CachedClient wraps Client with an in-memory thread-safe LRU cache.
 type CachedClient struct {
-	client *Client
-	cache  *expirable.LRU[string, CachedResult]
-	config CacheConfig
-	logger zerolog.Logger
-	stats  CacheStats
+	client      *Client
+	cache       *expirable.LRU[string, CachedResult]
+	config      CacheConfig
+	negativeTTL time.Duration
+	logger      zerolog.Logger
+	stats       CacheStats
 
 	requests    atomic.Int64
 	lastStatsNS atomic.Int64
@@ -80,24 +87,29 @@ func NewCachedClient(client *Client, config CacheConfig) (*CachedClient, error) 
 	if config.ExpiresAtTTL < 0 {
 		return nil, fmt.Errorf("%w: ExpiresAtTTL must be >= 0", ErrInvalidConfig)
 	}
+	if config.NegativeTTL < 0 {
+		return nil, fmt.Errorf("%w: NegativeTTL must be >= 0", ErrInvalidConfig)
+	}
 
 	cc := &CachedClient{
-		client:   client,
-		config:   config,
-		logger:   config.Logger,
-		disabled: config.MaxSize == 0 || config.TTL == 0,
+		client:      client,
+		config:      config,
+		negativeTTL: effectiveNegativeTTL(config.TTL, config.NegativeTTL),
+		logger:      config.Logger,
+		disabled:    config.MaxSize == 0 || config.TTL == 0,
 	}
 	cc.lastStatsNS.Store(time.Now().UnixNano())
 
 	if !cc.disabled {
 		onEvict := func(key string, value CachedResult) {
 			reason := "lru"
-			if time.Since(value.CreatedAt) >= config.TTL {
+			if time.Since(value.CreatedAt) >= cc.entryTTL(value) {
 				reason = "expired"
 			}
 			cc.logger.Debug().
 				Str("cache_key", key).
 				Str("eviction_reason", reason).
+				Bool("negative", value.noData).
 				Msg("cache entry evicted")
 		}
 		cc.cache = expirable.NewLRU[string, CachedResult](config.MaxSize, onEvict, config.TTL)
@@ -107,12 +119,16 @@ func NewCachedClient(client *Client, config CacheConfig) (*CachedClient, error) 
 }
 
 // GetPrices returns cached pricing data when available and fresh.
+//
+// An empty price page (HTTP 200, zero rows) is cached as a negative entry for
+// the negative TTL and returned as ErrNotFound. Failed requests are never
+// cached.
 func (cc *CachedClient) GetPrices(ctx context.Context, query PriceQuery) (CachedResult, error) {
 	key := CacheKey(query)
 
 	if !cc.disabled {
-		if cached, ok := cc.cache.Get(key); ok {
-			cc.recordHit(key)
+		if cached, ok := cc.lookup(key); ok {
+			cc.recordHit(key, cached.noData)
 			if cached.noData {
 				return CachedResult{}, fmt.Errorf("%s: %w", formatQueryContext(query), errNoPricingData)
 			}
@@ -124,7 +140,7 @@ func (cc *CachedClient) GetPrices(ctx context.Context, query PriceQuery) (Cached
 	items, err := cc.client.GetPrices(ctx, query)
 	if err != nil {
 		if !cc.disabled && errors.Is(err, errNoPricingData) {
-			cc.cache.Add(key, CachedResult{noData: true})
+			cc.cache.Add(key, CachedResult{noData: true, CreatedAt: time.Now()})
 		}
 		return CachedResult{}, err
 	}
@@ -150,6 +166,35 @@ func (cc *CachedClient) GetPrices(ctx context.Context, query PriceQuery) (Cached
 	return result, nil
 }
 
+// lookup returns a fresh cache entry. A negative entry older than the
+// negative TTL is removed and reported as absent.
+func (cc *CachedClient) lookup(key string) (CachedResult, bool) {
+	cached, ok := cc.cache.Get(key)
+	if !ok {
+		return CachedResult{}, false
+	}
+	if cached.noData && time.Since(cached.CreatedAt) >= cc.negativeTTL {
+		cc.cache.Remove(key)
+		return CachedResult{}, false
+	}
+	return cached, true
+}
+
+func (cc *CachedClient) entryTTL(value CachedResult) time.Duration {
+	if value.noData {
+		return cc.negativeTTL
+	}
+	return cc.config.TTL
+}
+
+// effectiveNegativeTTL applies the one-hour default and caps the result at ttl.
+func effectiveNegativeTTL(ttl, negative time.Duration) time.Duration {
+	if negative <= 0 {
+		negative = defaultNegativeTTL
+	}
+	return min(negative, ttl)
+}
+
 // Stats returns cache hit/miss counters.
 func (cc *CachedClient) Stats() *CacheStats {
 	return &cc.stats
@@ -171,12 +216,13 @@ func (cc *CachedClient) Close() {
 	cc.client.Close()
 }
 
-func (cc *CachedClient) recordHit(key string) {
+func (cc *CachedClient) recordHit(key string, negative bool) {
 	hits := cc.stats.Hits.Add(1)
 	total := cc.requests.Add(1)
 
 	cc.logger.Debug().
 		Str("cache_key", key).
+		Bool("negative", negative).
 		Msg("cache hit")
 
 	cc.maybeLogStats(total, hits)

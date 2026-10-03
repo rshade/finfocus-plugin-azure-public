@@ -548,7 +548,7 @@ new one.
 | --- | --- | --- |
 | `FINFOCUS_PLUGIN_PORT` | 0 (ephemeral) | gRPC listen port |
 | `FINFOCUS_LOG_LEVEL` | info | Log level (debug, info, warn, error) |
-| `FINFOCUS_CACHE_TTL` | 24h | Cache TTL duration (e.g., "10s", "1h", "0s" to disable) |
+| `FINFOCUS_CACHE_TTL` | 24h | Cache TTL duration (e.g., "10s", "1h", "0s" to disable). Empty price pages are cached for at most one hour, or this TTL when shorter |
 | `SKIP_INTEGRATION` | (unset) | Set to "true" to skip integration tests |
 | `FINFOCUS_BILLING_ACCOUNT_ID` | (unset) | FOCUS billing account id used when the request id is empty. Empty leaves the actual-cost record unset |
 
@@ -581,13 +581,24 @@ Cache behavior:
 - L1 cache: in-process LRU+TTL (default 1000 entries, 24h TTL)
 - L2 hint: `CachedResult.ExpiresAt` (default 4h) propagated to gRPC projected/actual cost responses
 - TTL override: `FINFOCUS_CACHE_TTL` env var parsed in `main.go` (e.g., "10s", "1h", "0s" to disable)
-- Eviction logging: debug-level structured logs with `cache_key` and `eviction_reason` ("lru" or "expired")
+- Eviction logging: debug-level structured logs with `cache_key`,
+  `eviction_reason` ("lru" or "expired"), and `negative`. Cache hit logs
+  also carry `negative`
 - Failed responses are never cached: HTTP 404, 429, 5xx, request failures,
   invalid bodies, and the pagination limit are re-requested
-- An HTTP 200 page with zero rows is cached as a negative entry for the L1
-  TTL. A later lookup counts as a hit and returns `ErrNotFound` with query
-  context, without calling Azure. A VM quote's Reservation query is empty for
-  sizes such as `Standard_B1s`, so this saves one request per quote
+- A 200 body is a price page only when it has an `Items` JSON array. Azure's
+  empty answer is `{"Items":[],"NextPageLink":null,"Count":0,...}`. A body
+  without that array (`{}`, `null`, `"Items":null`, or an `{"Error":...}`
+  envelope) is `ErrInvalidResponse` and is not cached
+- An HTTP 200 price page with zero rows is cached as a negative entry. A
+  later lookup counts as a hit and returns `ErrNotFound` with query context,
+  without calling Azure. A VM quote's Reservation query is empty for sizes
+  such as `Standard_B1s`, so this saves one request per quote
+- Negative entries expire after `CacheConfig.NegativeTTL` (default one
+  hour, capped at the L1 TTL), not the 24-hour TTL. A SKU that Azure
+  publishes after an empty answer stays invisible until that entry expires
+  or the process restarts. Negative entries share the LRU slots with real
+  price pages
 - Stats: `cachedClient.Stats().Hits.Load()` / `cachedClient.Stats().Misses.Load()`
 
 ## Zerolog

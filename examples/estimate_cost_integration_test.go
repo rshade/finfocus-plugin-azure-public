@@ -124,6 +124,7 @@ func TestEstimateCost_VMOnDemand_MatchesLiveReference(t *testing.T) {
 	for _, size := range []string{"Standard_B1s", "Standard_D2s_v3"} {
 		t.Run(size, func(t *testing.T) {
 			t.Cleanup(rateLimitDelay)
+			reference := linuxOnDemandVMRate(t, "eastus", size)
 			calc, _ := newTestCalculator(t)
 
 			resp := estimateCost(t, calc, "azure:compute/virtualMachine:VirtualMachine", map[string]any{
@@ -132,7 +133,6 @@ func TestEstimateCost_VMOnDemand_MatchesLiveReference(t *testing.T) {
 			})
 			assertStandardUSD(t, resp)
 
-			reference := linuxOnDemandVMRate(t, "eastus", size)
 			expectedMonthly := reference.RetailPrice * pluginsdk.HoursPerMonth
 			assertMatchesLive(t, resp.GetCostMonthly(), expectedMonthly)
 			t.Logf("%s eastus: $%.4f/month (live %q %g/h → $%.2f)",
@@ -195,6 +195,7 @@ func TestEstimateCost_ManagedDisk_MatchesLiveReference(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.diskType, func(t *testing.T) {
 			t.Cleanup(rateLimitDelay)
+			reference := managedDiskRate(t, "eastus", tt.product, tt.tierSKU)
 			calc, _ := newTestCalculator(t)
 
 			resp := estimateCost(t, calc, "azure:storage/managedDisk:ManagedDisk", map[string]any{
@@ -202,9 +203,10 @@ func TestEstimateCost_ManagedDisk_MatchesLiveReference(t *testing.T) {
 				"disk_type": tt.diskType,
 				"size_gb":   tt.sizeGB,
 			})
+			// Disks are list-price Consumption rows, so they share the VM
+			// on-demand STANDARD category check.
 			assertStandardUSD(t, resp)
 
-			reference := managedDiskRate(t, "eastus", tt.product, tt.tierSKU)
 			assertMatchesLive(t, resp.GetCostMonthly(), reference.RetailPrice)
 			t.Logf("%s %d GB eastus: $%.4f/month (live %q $%g/month)",
 				tt.diskType, tt.sizeGB, resp.GetCostMonthly(), reference.MeterName, reference.RetailPrice)
