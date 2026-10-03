@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -484,8 +485,25 @@ func TestGetActualCostDiskAndBlob(t *testing.T) {
 func newPricingCalc(t *testing.T, items []azureclient.PriceItem) *Calculator {
 	t.Helper()
 
+	calc, _ := newCapturingPricingCalc(t, items)
+	return calc
+}
+
+// newCapturingPricingCalc is newPricingCalc that also returns the $filter of
+// every request the fake server received, in order.
+func newCapturingPricingCalc(t *testing.T, items []azureclient.PriceItem) (*Calculator, func() []string) {
+	t.Helper()
+
+	var (
+		mu      sync.Mutex
+		filters []string
+	)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		matched := retailFakeItems(r.URL.Query().Get("$filter"), items)
+		filter := r.URL.Query().Get("$filter")
+		mu.Lock()
+		filters = append(filters, filter)
+		mu.Unlock()
+		matched := retailFakeItems(filter, items)
 		resp := azureclient.PriceResponse{Items: matched, Count: len(matched)}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
@@ -496,15 +514,27 @@ func newPricingCalc(t *testing.T, items []azureclient.PriceItem) *Calculator {
 
 	cached := newCalculatorTestCachedClient(t, server.URL)
 	t.Cleanup(func() { cached.Close() })
-	return NewCalculator(zerolog.Nop(), cached)
+	seen := func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		return append([]string(nil), filters...)
+	}
+	return NewCalculator(zerolog.Nop(), cached), seen
 }
 
-// retailFakeItems applies the productName and skuName conditions of an OData
-// filter the way the Retail Prices API would, so a query for the wrong
-// product finds no rows offline.
+var (
+	productNameFilter = regexp.MustCompile(`\bproductName eq '((?:[^']|'')*)'`)
+	skuNameFilter     = regexp.MustCompile(`\bskuName eq '((?:[^']|'')*)'`)
+)
+
+// retailFakeItems keeps the rows that match the productName and skuName
+// conditions of an OData filter, comparing exactly (the live API is
+// case-sensitive). Only those two fields are applied, only the first
+// condition for each field is read, and an or between conditions is not
+// understood. Every other field is left to the selectors under test.
 func retailFakeItems(filter string, items []azureclient.PriceItem) []azureclient.PriceItem {
-	product, hasProduct := filterEquals(filter, "productName")
-	sku, hasSKU := filterEquals(filter, "skuName")
+	product, hasProduct := filterEquals(filter, productNameFilter)
+	sku, hasSKU := filterEquals(filter, skuNameFilter)
 	if !hasProduct && !hasSKU {
 		return items
 	}
@@ -522,8 +552,8 @@ func retailFakeItems(filter string, items []azureclient.PriceItem) []azureclient
 	return kept
 }
 
-func filterEquals(filter, field string) (string, bool) {
-	match := regexp.MustCompile(`\b` + field + ` eq '((?:[^']|'')*)'`).FindStringSubmatch(filter)
+func filterEquals(filter string, pattern *regexp.Regexp) (string, bool) {
+	match := pattern.FindStringSubmatch(filter)
 	if match == nil {
 		return "", false
 	}

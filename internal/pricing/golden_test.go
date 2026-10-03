@@ -202,7 +202,7 @@ func newGoldenCalc(t *testing.T, paths ...string) *Calculator {
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		items := pages[0].Items
+		items := retailFakeItems(r.URL.Query().Get("$filter"), pages[0].Items)
 		if len(pages) == 2 {
 			items = sqlItemsForFilter(r.URL.Query().Get("$filter"), pages[0].Items, pages[1].Items)
 		}

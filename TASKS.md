@@ -1215,6 +1215,12 @@ Issues #48 and #49 are closed by PR #70, which adds live integration tests in
     `DryRunResponse` has no filter field by spec design, so the filter is
     logged. #44 returns one pricing spec. #46 still has no `charge_type`
     field.
+12. **Blob SKU normalization (follow-up from #79)**: `storage/BlobStorage`
+    passes the SKU into `skuName eq` exactly as given. The live API matches
+    case-sensitively, so `hot zrs`, `Hot_ZRS`, or `Standard_ZRS` are
+    `NotFound`. The blob path also ignores the `tier`/`redundancy` tags that
+    the storage-account path reads. Reusing `storageAccountSKU` would make
+    the two paths consistent. Not done in #79.
 
 ---
 

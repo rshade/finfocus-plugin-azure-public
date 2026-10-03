@@ -6,11 +6,15 @@
     {
       "currencyCode": "USD",
       "retailPrice": 5.28,
+      "productName": "Premium SSD Managed Disks",
+      "skuName": "P4 LRS",
       "meterName": "P4 LRS Disk"
     },
     {
       "currencyCode": "USD",
       "retailPrice": 19.71,
+      "productName": "Premium SSD Managed Disks",
+      "skuName": "P10 LRS",
       "meterName": "P10 LRS Disk"
     }
   ],
