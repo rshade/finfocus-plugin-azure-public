@@ -103,15 +103,18 @@ replaces `focusServiceCategory`. The categories come from Services.csv:
 | Virtual machine, scale sets | Compute | Virtual Machines |
 | Managed disk | Compute | Virtual Machines |
 | Storage account, Blob | Storage | Storage Platforms |
-| App Service plan | Compute | Other (Compute), see note |
+| App Service plan | Other | Other (Other), see note |
 | Function App | Compute | Serverless Compute |
 | AKS | Compute | Containers |
 | SQL Database | Databases | Relational Databases |
 | Cosmos DB | Databases | NoSQL Databases |
 | Load Balancer | Networking | Application Networking |
 
-App Service plans move to Web / Application Platforms once
-finfocus-spec#612 adds `Web`.
+App Service plans are Web / Application Platforms in FOCUS 1.3. The enum has
+no `Web`, so per finfocus-spec `specs/009-focus-1-2-integration` they send
+`Other` / `Other (Other)` and carry `Web` and `Application Platforms` in
+`x_ServiceCategory` and `x_ServiceSubcategory`. They can move to `Web` once
+finfocus-spec#612 adds it.
 
 Managed disks move from Storage to Compute, matching Microsoft's FOCUS data
 for `microsoft.compute/disks`. This is a visible value change, and the PR

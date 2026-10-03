@@ -83,8 +83,8 @@ queried, not the FOCUS service.
 | Scale set | Virtual Machine Scale Sets | Compute | Virtual Machines |
 | Managed disk | Virtual Machines | Compute | Virtual Machines |
 | Storage account, Blob | Storage Accounts | Storage | Storage Platforms |
-| App Service plan | Azure App Service | Compute | Other (Compute) |
-| Function App on a plan SKU | Azure App Service | Compute | Other (Compute) |
+| App Service plan | Azure App Service | Other (see below) | Other (Other) |
+| Function App on a plan SKU | Azure App Service | Other (see below) | Other (Other) |
 | Function App (Consumption, Premium) | Functions | Compute | Serverless Compute |
 | AKS | Azure Kubernetes Service | Compute | Containers |
 | SQL Database | Azure SQL Database | Databases | Relational Databases |
@@ -92,9 +92,25 @@ queried, not the FOCUS service.
 | Load Balancer | Load Balancer | Networking | Application Networking |
 
 Microsoft maps App Service (`microsoft.web/serverfarms` and `sites`) to `Web` /
-`Application Platforms`. `FocusServiceCategory` has no `Web` value yet
-(rshade/finfocus-spec#612), so the plugin uses the valid pair `Compute` /
-`Other (Compute)` until then.
+`Application Platforms`. `FocusServiceCategory` has no `Web` value. The
+finfocus-spec rule for a category missing from the enum
+(`specs/009-focus-1-2-integration`) is to send `Other` and keep the raw value
+in extended columns. The plugin therefore sends:
+
+| Column | Value |
+| --- | --- |
+| ServiceCategory | `FOCUS_SERVICE_CATEGORY_OTHER` |
+| ServiceSubcategory | `Other (Other)`, the only FOCUS 1.3 child of `Other` |
+| `extended_columns["x_ServiceCategory"]` | `Web` |
+| `extended_columns["x_ServiceSubcategory"]` | `Application Platforms` |
+
+FOCUS 1.3 requires each subcategory to have one parent category, so
+`Compute` / `Other (Compute)` would misstate the service, and
+`Other` / `Application Platforms` would break the parent rule. The `x_` prefix
+is the FOCUS custom-column convention. finfocus core does not read the
+service category today. rshade/finfocus-spec#612 tracks adding the missing
+values. When a release includes `Web`, the plugin can send it directly and
+drop the two columns.
 
 ## Expected SDK warnings
 

@@ -91,6 +91,17 @@ comes before its implementation task and must fail first.
   units, and unset unit prices for blended quotes
 - [x] T021 Update `docs/focus-mapping.md`, CLAUDE.md, and these artifacts
 
+## Phase 10: Category outside the enum (issue #46 close-out)
+
+- [x] T022 Test: `TestBuildFocusRecord_CategoryOutsideEnum_CarriesFocusValuesInExtendedColumns`
+  and the updated service-class table assert App Service plans (and a
+  Function App on a plan SKU) send `Other` / `Other (Other)` with
+  `x_ServiceCategory=Web` and `x_ServiceSubcategory=Application Platforms`
+- [x] T023 Implement: `focusService.rawCategory` and `rawSubcategory`, written
+  through `WithExtension`, following finfocus-spec
+  `specs/009-focus-1-2-integration`
+- [x] T024 Update `docs/focus-mapping.md`, CLAUDE.md, and these artifacts
+
 ## Dependencies
 
 - T002 comes before every implementation task.

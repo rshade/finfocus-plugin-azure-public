@@ -524,8 +524,14 @@ ServiceName, category, and subcategory follow finops-toolkit Services.csv by
 resource type, not the Retail API service: disks are Virtual Machines /
 Compute / Virtual Machines, scale sets are Virtual Machine Scale Sets, storage
 is Storage Accounts, and SQL is Azure SQL Database. App Service plans, and a
-Function App on a plan SKU, are Azure App Service / Compute / Other (Compute)
-until finfocus-spec#612 adds Web. The SDK logs two one-time deprecation
+Function App on a plan SKU, are Web / Application Platforms in FOCUS 1.3, but
+`FocusServiceCategory` has no Web value. Following finfocus-spec
+`specs/009-focus-1-2-integration` (an unlisted category maps to Other, with the
+raw value in extended columns), they are Azure App Service / Other /
+Other (Other), the only FOCUS 1.3 subcategory under Other, plus
+`x_ServiceCategory=Web` and `x_ServiceSubcategory=Application Platforms`.
+finfocus core does not read the category today. finfocus-spec#612 tracks
+adding the missing enum values. The SDK logs two one-time deprecation
 warnings for the provider and publisher columns. `docs/focus-mapping.md` lists
 each column.
 
