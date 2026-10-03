@@ -214,8 +214,9 @@ moves by more than 0.01 fails the test. The procedure is also in
 Tests include rate-limiting delays (12s between API calls) and use ±25%
 tolerance on reference prices to absorb Azure pricing changes. If tests
 fail due to price drift, update the reference constants in
-`examples/estimate_cost_integration_test.go` (run with `-v` to see actual
-prices).
+`examples/estimate_cost_integration_test.go` (virtual machines) or
+`examples/projected_cost_integration_test.go` (App Service, Functions, and
+AKS). Run with `-v` to see actual prices.
 
 To skip integration tests (e.g., in offline environments):
 

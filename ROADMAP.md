@@ -121,7 +121,7 @@ does not.
 
 **Plugin Discovery & Validation:**
 
-- [ ] [#43](https://github.com/rshade/finfocus-plugin-azure-public/issues/43)
+- [x] [#43](https://github.com/rshade/finfocus-plugin-azure-public/issues/43)
   Implement DryRun validation RPC [S]
 - [ ] [#44](https://github.com/rshade/finfocus-plugin-azure-public/issues/44)
   Implement GetPricingSpec RPC for plugin discovery [M]
@@ -130,14 +130,14 @@ does not.
 
 **App Service & Functions:**
 
-- [ ] [#48](https://github.com/rshade/finfocus-plugin-azure-public/issues/48)
+- [x] [#48](https://github.com/rshade/finfocus-plugin-azure-public/issues/48)
   Implement App Service & Azure Functions cost estimation [M]
 - App Service Plans: clear SKU mapping (B1, S1, P1v2, etc.)
 - Functions: consumption pricing based on executions and GB-s
 
 **Azure Kubernetes Service (AKS):**
 
-- [ ] [#49](https://github.com/rshade/finfocus-plugin-azure-public/issues/49)
+- [x] [#49](https://github.com/rshade/finfocus-plugin-azure-public/issues/49)
   Implement AKS cluster cost estimation [M]
 - Reuses VM estimation for node pools (#17)
 - Adds cluster management fee lookup (free vs paid tier)
