@@ -186,6 +186,110 @@ func TestCachedClientGetPrices_ErrorsAreNotCached(t *testing.T) {
 	}
 }
 
+func TestCachedClientGetPrices_EmptyPage_CachedAsNotFound(t *testing.T) {
+	t.Parallel()
+
+	var calls atomic.Int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"Items":[],"Count":0}`))
+	}))
+	defer server.Close()
+
+	cached := newTestCachedClient(t, newTestClient(t, server.URL), CacheConfig{
+		MaxSize:      100,
+		TTL:          time.Hour,
+		ExpiresAtTTL: 4 * time.Hour,
+		Logger:       zerolog.Nop(),
+	})
+	defer cached.Close()
+
+	query := PriceQuery{
+		ArmRegionName: "eastus",
+		ArmSkuName:    "Standard_B1s",
+		CurrencyCode:  "USD",
+		PriceType:     "Reservation",
+	}
+
+	for call := 1; call <= 2; call++ {
+		result, err := cached.GetPrices(context.Background(), query)
+		if !errors.Is(err, ErrNotFound) {
+			t.Fatalf("call %d: expected ErrNotFound, got %v", call, err)
+		}
+		if !strings.Contains(err.Error(), "region=eastus") {
+			t.Fatalf("call %d: error lost query context: %v", call, err)
+		}
+		if len(result.Items) != 0 {
+			t.Fatalf("call %d: expected no items, got %d", call, len(result.Items))
+		}
+	}
+
+	if got := calls.Load(); got != 1 {
+		t.Fatalf("expected one upstream request for an empty page, got %d", got)
+	}
+	if hits, misses := cached.Stats().Hits.Load(), cached.Stats().Misses.Load(); hits != 1 || misses != 1 {
+		t.Fatalf("expected hits=1 misses=1, got hits=%d misses=%d", hits, misses)
+	}
+}
+
+func TestCachedClientGetPrices_FailedResponses_NotCached(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		status  int
+		body    string
+		wantErr error
+	}{
+		{name: "not found status", status: http.StatusNotFound, body: "missing", wantErr: ErrNotFound},
+		{name: "rate limited", status: http.StatusTooManyRequests, body: "slow down", wantErr: ErrRateLimited},
+		{
+			name:    "service unavailable",
+			status:  http.StatusServiceUnavailable,
+			body:    "down",
+			wantErr: ErrServiceUnavailable,
+		},
+		{name: "bad request", status: http.StatusBadRequest, body: "bad filter", wantErr: ErrRequestFailed},
+		{name: "invalid body", status: http.StatusOK, body: "not json", wantErr: ErrInvalidResponse},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var calls atomic.Int64
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				calls.Add(1)
+				w.WriteHeader(tt.status)
+				_, _ = w.Write([]byte(tt.body))
+			}))
+			defer server.Close()
+
+			cached := newTestCachedClient(t, newTestClient(t, server.URL), CacheConfig{
+				MaxSize:      100,
+				TTL:          time.Hour,
+				ExpiresAtTTL: 4 * time.Hour,
+				Logger:       zerolog.Nop(),
+			})
+			defer cached.Close()
+
+			query := PriceQuery{ArmRegionName: "eastus", ArmSkuName: "Standard_B1s", CurrencyCode: "USD"}
+			for call := 1; call <= 2; call++ {
+				if _, err := cached.GetPrices(context.Background(), query); !errors.Is(err, tt.wantErr) {
+					t.Fatalf("call %d: expected %v, got %v", call, tt.wantErr, err)
+				}
+			}
+			if got := calls.Load(); got != 2 {
+				t.Fatalf("expected the failure to be re-requested, got %d upstream calls", got)
+			}
+			if hits := cached.Stats().Hits.Load(); hits != 0 {
+				t.Fatalf("expected no cache hits for a failure, got %d", hits)
+			}
+		})
+	}
+}
+
 func TestCachedClientConcurrentAccess(t *testing.T) {
 	t.Parallel()
 

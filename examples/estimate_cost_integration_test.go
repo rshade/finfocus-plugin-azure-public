@@ -20,14 +20,12 @@ import (
 	"github.com/rshade/finfocus-plugin-azure-public/internal/pricing"
 )
 
-// Reference prices last verified: 2026-03-30 against live Azure API.
-// Update these when Azure adjusts pricing and tests fail.
-// Run failing test with -v to see actual prices returned.
-const (
-	refB1sHourly   = 0.014 // Standard_B1s, eastus (hourly)
-	refD2sv3Hourly = 0.075 // Standard_D2s_v3, eastus (hourly)
-	priceTolerance = 0.25  // ±25%
-)
+// priceTolerance is the band for hand-recorded reference prices. Virtual
+// machine and disk tests read their reference live instead (see
+// live_reference_integration_test.go).
+//
+//nolint:unused // Shared with projected_cost_integration_test.go (open PR #70).
+const priceTolerance = 0.25 // ±25%
 
 func skipIfDisabled(t *testing.T) {
 	t.Helper()
@@ -63,6 +61,7 @@ func newTestCalculator(t *testing.T) (*pricing.Calculator, *azureclient.CachedCl
 	return calc, cachedClient
 }
 
+//nolint:unused // Shared with projected_cost_integration_test.go (open PR #70).
 func assertInRange(t *testing.T, actual, reference float64) {
 	t.Helper()
 	low := reference * (1 - priceTolerance)
@@ -78,115 +77,89 @@ func rateLimitDelay() {
 	time.Sleep(12 * time.Second)
 }
 
+func estimateCost(
+	t *testing.T,
+	calc *pricing.Calculator,
+	resourceType string,
+	attrs map[string]any,
+) *finfocusv1.EstimateCostResponse {
+	t.Helper()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	attributes, err := structpb.NewStruct(attrs)
+	if err != nil {
+		t.Fatalf("failed to create attributes: %v", err)
+	}
+
+	resp, err := calc.EstimateCost(ctx, &finfocusv1.EstimateCostRequest{
+		ResourceType: resourceType,
+		Attributes:   attributes,
+	})
+	if err != nil {
+		t.Fatalf("EstimateCost failed: %v", err)
+	}
+	return resp
+}
+
+func assertStandardUSD(t *testing.T, resp *finfocusv1.EstimateCostResponse) {
+	t.Helper()
+	if resp.GetCostMonthly() <= 0 {
+		t.Fatalf("expected positive monthly cost, got %.4f", resp.GetCostMonthly())
+	}
+	if resp.GetCurrency() != "USD" {
+		t.Errorf("expected currency USD, got %q", resp.GetCurrency())
+	}
+	if got := resp.GetPricingCategory(); got != finfocusv1.FocusPricingCategory_FOCUS_PRICING_CATEGORY_STANDARD {
+		t.Errorf("expected pricing category STANDARD, got %s", got)
+	}
+}
+
 // --- User Story 1: VM Cost Estimation (P1) ---
 
-func TestEstimateCost_VM_StandardB1s(t *testing.T) {
+func TestEstimateCost_VMOnDemand_MatchesLiveReference(t *testing.T) {
 	skipIfDisabled(t)
-	calc, _ := newTestCalculator(t)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	for _, size := range []string{"Standard_B1s", "Standard_D2s_v3"} {
+		t.Run(size, func(t *testing.T) {
+			t.Cleanup(rateLimitDelay)
+			calc, _ := newTestCalculator(t)
 
-	attrs, err := structpb.NewStruct(map[string]any{
-		"location": "eastus",
-		"vmSize":   "Standard_B1s",
-	})
-	if err != nil {
-		t.Fatalf("failed to create attributes: %v", err)
+			resp := estimateCost(t, calc, "azure:compute/virtualMachine:VirtualMachine", map[string]any{
+				"location": "eastus",
+				"vmSize":   size,
+			})
+			assertStandardUSD(t, resp)
+
+			reference := linuxOnDemandVMRate(t, "eastus", size)
+			expectedMonthly := reference.RetailPrice * pluginsdk.HoursPerMonth
+			assertMatchesLive(t, resp.GetCostMonthly(), expectedMonthly)
+			t.Logf("%s eastus: $%.4f/month (live %q %g/h → $%.2f)",
+				size, resp.GetCostMonthly(), reference.MeterName, reference.RetailPrice, expectedMonthly)
+		})
 	}
-
-	resp, err := calc.EstimateCost(ctx, &finfocusv1.EstimateCostRequest{
-		ResourceType: "azure:compute/virtualMachine:VirtualMachine",
-		Attributes:   attrs,
-	})
-	if err != nil {
-		t.Fatalf("EstimateCost failed: %v", err)
-	}
-
-	costMonthly := resp.GetCostMonthly()
-	if costMonthly <= 0 {
-		t.Fatalf("expected positive monthly cost, got %.4f", costMonthly)
-	}
-
-	expectedMonthly := refB1sHourly * pluginsdk.HoursPerMonth
-	assertInRange(t, costMonthly, expectedMonthly)
-	t.Logf("Standard_B1s eastus: $%.4f/month (expected ~$%.2f)", costMonthly, expectedMonthly)
-
-	rateLimitDelay()
 }
 
-func TestEstimateCost_VM_StandardD2sv3(t *testing.T) {
+func TestEstimateCost_VMCacheHit_NoNewMisses(t *testing.T) {
 	skipIfDisabled(t)
-	calc, _ := newTestCalculator(t)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	attrs, err := structpb.NewStruct(map[string]any{
-		"location": "eastus",
-		"vmSize":   "Standard_D2s_v3",
-	})
-	if err != nil {
-		t.Fatalf("failed to create attributes: %v", err)
-	}
-
-	resp, err := calc.EstimateCost(ctx, &finfocusv1.EstimateCostRequest{
-		ResourceType: "azure:compute/virtualMachine:VirtualMachine",
-		Attributes:   attrs,
-	})
-	if err != nil {
-		t.Fatalf("EstimateCost failed: %v", err)
-	}
-
-	costMonthly := resp.GetCostMonthly()
-	if costMonthly <= 0 {
-		t.Fatalf("expected positive monthly cost, got %.4f", costMonthly)
-	}
-
-	expectedMonthly := refD2sv3Hourly * pluginsdk.HoursPerMonth
-	assertInRange(t, costMonthly, expectedMonthly)
-	t.Logf("Standard_D2s_v3 eastus: $%.4f/month (expected ~$%.2f)", costMonthly, expectedMonthly)
-
-	rateLimitDelay()
-}
-
-func TestEstimateCost_VM_CacheHit(t *testing.T) {
-	skipIfDisabled(t)
+	t.Cleanup(rateLimitDelay)
 	calc, cachedClient := newTestCalculator(t)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	attrs, err := structpb.NewStruct(map[string]any{
+	attrs := map[string]any{
 		"location": "eastus",
 		"vmSize":   "Standard_B1s",
-	})
-	if err != nil {
-		t.Fatalf("failed to create attributes: %v", err)
 	}
 
-	req := &finfocusv1.EstimateCostRequest{
-		ResourceType: "azure:compute/virtualMachine:VirtualMachine",
-		Attributes:   attrs,
-	}
-
-	// First call — cache miss (hits live API)
-	resp1, err := calc.EstimateCost(ctx, req)
-	if err != nil {
-		t.Fatalf("first EstimateCost failed: %v", err)
-	}
-
+	resp1 := estimateCost(t, calc, "azure:compute/virtualMachine:VirtualMachine", attrs)
 	missesAfterFirst := cachedClient.Stats().Misses.Load()
+	hitsAfterFirst := cachedClient.Stats().Hits.Load()
 
-	// Second call — should be cache hit
-	resp2, err := calc.EstimateCost(ctx, req)
-	if err != nil {
-		t.Fatalf("second EstimateCost failed: %v", err)
-	}
+	resp2 := estimateCost(t, calc, "azure:compute/virtualMachine:VirtualMachine", attrs)
 
 	hits := cachedClient.Stats().Hits.Load()
-	if hits <= 0 {
-		t.Errorf("expected cache hit on second call, got hits=%d", hits)
+	if hits <= hitsAfterFirst {
+		t.Errorf("expected cache hits on second call, got hits before=%d after=%d", hitsAfterFirst, hits)
 	}
 
 	missesAfterSecond := cachedClient.Stats().Misses.Load()
@@ -202,35 +175,48 @@ func TestEstimateCost_VM_CacheHit(t *testing.T) {
 
 	t.Logf("cache hit verified: hits=%d, misses=%d, cost=$%.4f",
 		hits, missesAfterSecond, resp2.GetCostMonthly())
-
-	// No rateLimitDelay — second call used cache, no API request
 }
 
 // --- User Story 2: Managed Disk Estimation (P2) ---
 
-func TestEstimateCost_Disk_StandardLRS(t *testing.T) {
+func TestEstimateCost_ManagedDisk_MatchesLiveReference(t *testing.T) {
 	skipIfDisabled(t)
 
-	// Known issue: buildFilterQuery applies priceType=Consumption by default,
-	// but Managed Disks are not listed under Consumption in the Azure Retail
-	// Prices API. This causes NotFound for all disk queries against the live API.
-	// Skip until the filter is fixed to support disk pricing.
-	t.Skip("disk pricing returns NotFound against live API" +
-		" — priceType=Consumption filter incompatible with Managed Disks")
-}
+	tests := []struct {
+		diskType string
+		sizeGB   int
+		product  string
+		tierSKU  string
+	}{
+		{diskType: "Standard_LRS", sizeGB: 128, product: "Standard HDD Managed Disks", tierSKU: "S10 LRS"},
+		{diskType: "Premium_SSD_LRS", sizeGB: 128, product: "Premium SSD Managed Disks", tierSKU: "P10 LRS"},
+	}
 
-func TestEstimateCost_Disk_PremiumSSD(t *testing.T) {
-	skipIfDisabled(t)
+	for _, tt := range tests {
+		t.Run(tt.diskType, func(t *testing.T) {
+			t.Cleanup(rateLimitDelay)
+			calc, _ := newTestCalculator(t)
 
-	// Same known issue as TestEstimateCost_Disk_StandardLRS.
-	t.Skip("disk pricing returns NotFound against live API" +
-		" — priceType=Consumption filter incompatible with Managed Disks")
+			resp := estimateCost(t, calc, "azure:storage/managedDisk:ManagedDisk", map[string]any{
+				"location":  "eastus",
+				"disk_type": tt.diskType,
+				"size_gb":   tt.sizeGB,
+			})
+			assertStandardUSD(t, resp)
+
+			reference := managedDiskRate(t, "eastus", tt.product, tt.tierSKU)
+			assertMatchesLive(t, resp.GetCostMonthly(), reference.RetailPrice)
+			t.Logf("%s %d GB eastus: $%.4f/month (live %q $%g/month)",
+				tt.diskType, tt.sizeGB, resp.GetCostMonthly(), reference.MeterName, reference.RetailPrice)
+		})
+	}
 }
 
 // --- User Story 3: Error Handling (P2) ---
 
 func TestEstimateCost_Error_InvalidSKU(t *testing.T) {
 	skipIfDisabled(t)
+	t.Cleanup(rateLimitDelay)
 	calc, _ := newTestCalculator(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -261,8 +247,6 @@ func TestEstimateCost_Error_InvalidSKU(t *testing.T) {
 	}
 
 	t.Logf("invalid SKU correctly returned %s: %s", st.Code(), st.Message())
-
-	rateLimitDelay()
 }
 
 func TestEstimateCost_Error_MissingAttributes(t *testing.T) {

@@ -153,7 +153,7 @@ func (c *Client) GetPrices(ctx context.Context, query PriceQuery) ([]PriceItem, 
 
 	// Check for empty results
 	if len(allItems) == 0 {
-		err := fmt.Errorf("%s: %w: no pricing data", qctx, ErrNotFound)
+		err := fmt.Errorf("%s: %w", qctx, errNoPricingData)
 		c.logError(query, requestURL, -1, ErrNotFound)
 		return nil, err
 	}

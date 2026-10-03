@@ -150,7 +150,7 @@ filter = azureclient.NewFilterBuilder().
 **Error Handling**:
 
 - All errors from `GetPrices()` include query context: `query [region=X sku=Y service=Z] page N: ...`
-- Empty results return `ErrNotFound` with query context
+- Empty results return `ErrNotFound` with query context, and `CachedClient` caches that answer
 - HTTP 404 returns `ErrNotFound` sentinel
 - Use `errors.Is(err, azureclient.ErrNotFound)` etc. for programmatic classification
 - Sentinel errors: `ErrNotFound`, `ErrRateLimited`, `ErrServiceUnavailable`, `ErrRequestFailed`, `ErrInvalidResponse`, `ErrPaginationLimitExceeded`
@@ -582,7 +582,12 @@ Cache behavior:
 - L2 hint: `CachedResult.ExpiresAt` (default 4h) propagated to gRPC projected/actual cost responses
 - TTL override: `FINFOCUS_CACHE_TTL` env var parsed in `main.go` (e.g., "10s", "1h", "0s" to disable)
 - Eviction logging: debug-level structured logs with `cache_key` and `eviction_reason` ("lru" or "expired")
-- Errors are never cached
+- Failed responses are never cached: HTTP 404, 429, 5xx, request failures,
+  invalid bodies, and the pagination limit are re-requested
+- An HTTP 200 page with zero rows is cached as a negative entry for the L1
+  TTL. A later lookup counts as a hit and returns `ErrNotFound` with query
+  context, without calling Azure. A VM quote's Reservation query is empty for
+  sizes such as `Standard_B1s`, so this saves one request per quote
 - Stats: `cachedClient.Stats().Hits.Load()` / `cachedClient.Stats().Misses.Load()`
 
 ## Zerolog
