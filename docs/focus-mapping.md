@@ -110,13 +110,14 @@ FOCUS 1.3 requires each subcategory to have one parent category, so
 is the FOCUS custom-column convention. finfocus core does not read the
 service category today.
 
-Until rshade/finfocus-spec#612 adds the missing values, `x_ServiceCategory`
-and `x_ServiceSubcategory` are the authoritative FOCUS values for these rows.
-A consumer that flattens extended columns sees `ServiceCategory=Other` next to
-`x_ServiceCategory=Web`, and should trust the `x_` column. When a spec release
-includes `Web`, the plugin will send it directly and keep both `x_` columns
-for one more release. Removing them after that is a visible output change for
-anyone who reads them.
+rshade/finfocus-spec#612, which would have added the missing values, was
+closed as not planned. `x_ServiceCategory` and `x_ServiceSubcategory` are
+therefore the lasting carrier of the FOCUS values for these rows, following
+the `finfocus-spec` `specs/009-focus-1-2-integration` rule for an unlisted
+category. A consumer that flattens extended columns sees
+`ServiceCategory=Other` next to `x_ServiceCategory=Web`, and should trust the
+`x_` column. Removing either column is a visible output change for anyone who
+reads them.
 
 ## Expected SDK warnings
 

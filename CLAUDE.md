@@ -241,7 +241,7 @@ Behavior notes:
 - Missing `location/region` or `vmSize/sku` returns `codes.InvalidArgument`
 - Cache hits are served from `CachedClient` with no outbound API request
 - VM `EstimateCost` reads attribute `priority`. `Spot` uses the Linux Spot row and pricing category Dynamic. An empty priority or `Regular` stays the on-demand row and Standard. Any other value is InvalidArgument. When priority is empty, `pricing_model=spot` selects Spot and `pricing_model=consumption` stays on demand.
-- `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.1`). A value without the `v` prefix is rejected by the SDK
+- `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.2`). A value without the `v` prefix is rejected by the SDK
 - `GetPluginInfo` sends the explicit `PluginCapabilities()` list: projected costs, actual costs, pricing spec, estimate cost, and dry run. It also sends metadata `type=public-pricing-fallback`, and the SDK adds the legacy `supports_*` keys. The list is explicit because `Calculator` embeds `UnimplementedCostSourceServiceServer`. Without the list, interface inference in the SDK also advertised batch cost, resolve resource types, recommendations, budgets, and dismiss, and core routed calls to them. `pricing.PluginInfo()` is the one source: `GetPluginInfo` serves it and `cmd/` passes it as `ServeConfig.PluginInfo`, so the name (`azure-public`), version, and capabilities agree
 
 ### Real Pulumi virtual machines
@@ -590,10 +590,10 @@ Function App on a plan SKU, are Web / Application Platforms in FOCUS 1.3, but
 raw value in extended columns), they are Azure App Service / Other /
 Other (Other), the only FOCUS 1.3 subcategory under Other, plus
 `x_ServiceCategory=Web` and `x_ServiceSubcategory=Application Platforms`.
-finfocus core does not read the category today. Until finfocus-spec#612 adds
-the missing enum values, the two `x_` columns are the authoritative FOCUS
-values. Once `Web` exists, the plugin sends it and keeps the `x_` columns for
-one release. Removing them after that is a visible output change. The SDK logs two one-time deprecation
+finfocus core does not read the category today. finfocus-spec#612, which would
+have added the missing enum values, was closed as not planned, so the two `x_`
+columns are the lasting carrier of the FOCUS values, not a stopgap.
+The SDK logs two one-time deprecation
 warnings for the provider and publisher columns. `docs/focus-mapping.md` lists
 each column.
 
@@ -632,23 +632,32 @@ go test ./internal/pricing -run TestExpectedManifest_CommittedFiles -update-mani
 
 Pass the flag to `./internal/pricing` only.
 
-The files use the `pluginsdk.SaveManifest` format: `protojson` JSON keys in
-camel case, YAML keys in lower case, and the installation method as an
-enumeration value. `registry.ValidatePluginManifest` reads snake case keys, so
-it rejects the files on disk at the first required key. The test validates a
-converted in-memory view instead.
+The files are the canonical form `pluginsdk.SaveManifest` writes from
+`finfocus-spec` v0.7.2: snake case keys, the installation method as `binary`,
+keys sorted, and the same bytes for the same manifest. The test compares the
+committed bytes with `pluginsdk.MarshalManifestJSON` and
+`MarshalManifestYAML`, and runs `registry.ValidatePluginManifest` on the JSON
+file as written. `ValidatePluginManifest` reads JSON only, so the YAML file is loaded
+with `pluginsdk.LoadManifest` and validated as its canonical JSON.
 
-Known gaps against the spec schema, filed as FinFocus spec #611:
+`capabilities` is `PluginCapabilities()` under
+`registry.ManifestCapabilityName` (`projected_costs`, `actual_costs`,
+`pricing_spec`, `estimate_cost`, `dry_run`), then `caching`, which has no
+protocol capability. The legacy manifest names `cost_projection`,
+`cost_retrieval`, and `pricing_specs` are not listed because they repeat the
+protocol names. `actual_costs` is a list-price projection times
+`hours / 730`, not billed spend.
 
-- The `methods` list in the schema allows five names, so `EstimateCost`,
-  `DryRun`, and `GetPluginInfo` are served but not listed.
-- Per-type input fields have no manifest field, and core reads none. DryRun
-  `configuration_errors` name the identity fields, and `GetPricingSpec`
-  `metric_hints` name the usage inputs.
+`service_definition.methods` lists the eight `CostSourceService` methods
+`Calculator` serves: `Name`, `Supports`, `GetProjectedCost`, `GetActualCost`,
+`GetPricingSpec`, `EstimateCost`, `GetPluginInfo`, and `DryRun`.
+`TestExpectedManifest_Methods_MatchServedRPCs` calls every RPC in
+`registry.AllServiceMethods()` and fails when a listed one answers
+`Unimplemented` or an unlisted one does not.
 
-`cost_retrieval` matches the `ACTUAL_COSTS` capability that `GetPluginInfo`
-advertises. `GetActualCost` is a list-price projection times `hours / 730`, not
-billed spend.
+Per-type input fields have no manifest field, and core reads none. DryRun
+`configuration_errors` name the identity fields, and `GetPricingSpec`
+`metric_hints` name the usage inputs.
 
 Core reads neither file today. The `goreleaser` archive does not include them,
 and core's flat `registry.Manifest` struct cannot parse the old layout or the
