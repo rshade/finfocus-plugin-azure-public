@@ -977,6 +977,8 @@ next.
 
 #### AZ-7.1 — Real-plan comparison harness (run first)
 
+**Status:** DONE, `go test -count=1 -timeout 120s ./internal/pricing/ -run 'TestRealPulumiPlan$|TestRealPlanDottedVMSize'` passed. `azure/legacyVm` matches both input sets and is the ratchet. Break check: `descriptorSKU` ignored `Sku` and renamed `vmSize` to `instanceSize`; both legacy VM rows failed with missing sku, then the function was restored.
+
 **Description**: Write the test specified in `testdata/pulumi-real/README.md`: for every resource in
 the genuine previews, build a request from `core-view.json` and from a deterministic dotted-key
 flattening of the real inputs, call `GetProjectedCost` through a real gRPC server (offline price
