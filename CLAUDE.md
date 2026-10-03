@@ -481,18 +481,38 @@ Carbon is findings only, in `docs/findings/carbon.md`. No estimator is wired.
 ### Manifest files
 
 `manifest.json` and `manifest.yaml` are generated. Their
-`supported_resources["azure"]` lists `SupportedResourceTypes()` and the
-pricing-spec billing modes. `TestManifestFiles_PluginCatalog_MatchExpected`
-fails when a type is added without regenerating:
+`supported_resources["azure"]` lists `SupportedResourceTypes()` and
+`specBillingModes()`, the modes `specRate` returns. The version is
+`pluginVersion`, the same constant `GetPluginInfo` reports.
+`TestExpectedManifest_CommittedFiles_MatchExpected` fails when a type is added
+without regenerating:
 
 ```bash
-go test ./internal/pricing -run TestManifestFiles -update-manifest
+go test ./internal/pricing -run TestExpectedManifest_CommittedFiles -update-manifest
 ```
 
-Pass the flag to `./internal/pricing` only. `azure-native` stays a provider
-even though the spec schema rejects it (FinFocus spec #611). Core does not
-read `supported_resources` yet. Per-type input fields wait on #611, so #44
-stays open.
+Pass the flag to `./internal/pricing` only.
+
+The files use the `pluginsdk.SaveManifest` format: `protojson` JSON keys in
+camel case, YAML keys in lower case, and the installation method as an
+enumeration value. `registry.ValidatePluginManifest` reads snake case keys, so
+it rejects the files on disk at the first required key. The test validates a
+converted in-memory view instead.
+
+Known gaps against the spec schema, filed as FinFocus spec #611:
+
+- `azure-native` stays a provider even though the schema rejects it.
+- The `methods` list in the schema allows five names, so `EstimateCost`,
+  `DryRun`, and `GetPluginInfo` are served but not listed.
+- Per-type input fields have no field yet, so #44 stays open.
+
+`cost_retrieval` matches the `ACTUAL_COSTS` capability that `GetPluginInfo`
+advertises. `GetActualCost` is a list-price projection times `hours / 730`, not
+billed spend.
+
+Core reads neither file today. The `goreleaser` archive does not include them,
+and core's flat `registry.Manifest` struct cannot parse the old layout or the
+new one.
 
 ## Environment Variables
 

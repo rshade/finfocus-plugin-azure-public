@@ -27,13 +27,6 @@ func TestMain(m *testing.M) {
 			"rewrite testdata/golden/live from the live Retail Prices API",
 		)
 	}
-	if flag.Lookup("update-manifest") == nil {
-		flag.Bool(
-			"update-manifest",
-			false,
-			"rewrite manifest.json and manifest.yaml from the plugin's resource types",
-		)
-	}
 	os.Exit(m.Run())
 }
 

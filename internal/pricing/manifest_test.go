@@ -22,11 +22,30 @@ import (
 // plugin_manifest.schema.json puts on supported_resources resource_types.
 const manifestSchemaMaxResourceTypeLength = 50
 
+//nolint:gochecknoglobals // Test flag; registered once at package init.
+var updateManifest = flag.Bool(
+	"update-manifest",
+	false,
+	"rewrite manifest.json and manifest.yaml from the plugin's resource types",
+)
+
+// manifestSchemaCapabilities is the capabilities enum in the finfocus-spec
+// v0.7.1 plugin_manifest.schema.json. ValidatePluginManifest does not check it.
+func manifestSchemaCapabilities() map[string]bool {
+	return map[string]bool{
+		"cost_retrieval": true, "cost_projection": true, "pricing_specs": true,
+		"historical_data": true, "real_time_data": true, "batch_processing": true,
+		"rate_limiting": true, "caching": true, "encryption": true,
+		"compression": true, "filtering": true, "aggregation": true,
+		"multi_tenancy": true, "audit_logging": true,
+	}
+}
+
 func expectedManifest() *finfocusv1.PluginManifest {
 	return &finfocusv1.PluginManifest{
 		Metadata: &finfocusv1.PluginMetadata{
 			Name:        "azure-public",
-			Version:     "0.1.0",
+			Version:     pluginVersion,
 			Description: "Estimates Azure resource costs from the public Azure Retail Prices API",
 			Author:      "Richard Shade",
 			Repository:  "https://github.com/rshade/finfocus-plugin-azure-public",
@@ -39,14 +58,18 @@ func expectedManifest() *finfocusv1.PluginManifest {
 			SupportedResources: map[string]*finfocusv1.ProviderResources{
 				providerAzure: {
 					ResourceTypes: SupportedResourceTypes(),
-					BillingModes:  manifestBillingModes(),
+					BillingModes:  specBillingModes(),
 				},
 			},
+			// cost_retrieval matches the ACTUAL_COSTS capability GetPluginInfo
+			// advertises; GetActualCost is a list-price projection, not billed spend.
 			Capabilities: []string{"cost_projection", "cost_retrieval", "pricing_specs", "caching"},
 			ServiceDefinition: &finfocusv1.ServiceDefinition{
 				ServiceName: "CostSourceService",
 				PackageName: "finfocus.v1",
-				Methods:     []string{"Name", "Supports", "GetProjectedCost", "GetActualCost", "GetPricingSpec"},
+				// The schema enum allows only these five; EstimateCost, DryRun and
+				// GetPluginInfo are served but cannot be listed (finfocus-spec#611).
+				Methods: []string{"Name", "Supports", "GetProjectedCost", "GetActualCost", "GetPricingSpec"},
 			},
 		},
 		Installation: &finfocusv1.InstallationSpec{
@@ -55,24 +78,12 @@ func expectedManifest() *finfocusv1.PluginManifest {
 	}
 }
 
-func manifestBillingModes() []string {
-	modes := []string{
-		billingModePerHour,
-		billingModePerGBMonth,
-		billingModePerMonth,
-		billingModePerSecond,
-		billingModePerRU,
-	}
-	sort.Strings(modes)
-	return modes
-}
-
-func TestManifestFiles_PluginCatalog_MatchExpected(t *testing.T) {
+func TestExpectedManifest_CommittedFiles_MatchExpected(t *testing.T) {
 	want := expectedManifest()
 	for _, name := range []string{"manifest.json", "manifest.yaml"} {
 		t.Run(name, func(t *testing.T) {
 			path := filepath.Join("..", "..", name)
-			if updateManifestRequested() {
+			if *updateManifest {
 				writeManifest(t, path, want)
 			}
 
@@ -83,7 +94,7 @@ func TestManifestFiles_PluginCatalog_MatchExpected(t *testing.T) {
 			if !proto.Equal(got, want) {
 				t.Fatalf(
 					"%s is out of date with the plugin catalog\ngot:  %v\nwant: %v\n"+
-						"regenerate with: go test ./internal/pricing -run TestManifestFiles -update-manifest",
+						"regenerate with: go test ./internal/pricing -run TestExpectedManifest_CommittedFiles -update-manifest",
 					name, got, want,
 				)
 			}
@@ -106,13 +117,69 @@ func TestExpectedManifest_ResourceTypesAndModes_FitSchemaLimits(t *testing.T) {
 			t.Errorf("billing mode %q is not a finfocus-spec billing mode", mode)
 		}
 	}
+	allowed := manifestSchemaCapabilities()
+	for _, capability := range expectedManifest().GetSpecification().GetCapabilities() {
+		if !allowed[capability] {
+			t.Errorf("capability %q is not in the manifest schema enum", capability)
+		}
+	}
 }
 
-// The registry validator reads snake_case keys and lowercase installation
-// methods, and its provider list has no azure-native, while SaveManifest
-// writes protojson camelCase and enum names. This test checks the registry
-// view of the manifest, with azure-native left out on purpose (filed as
-// rshade/finfocus-spec#611).
+func TestSpecRate_EveryBranch_ReturnsListedBillingMode(t *testing.T) {
+	modes := specBillingModes()
+	if !sort.StringsAreSorted(modes) {
+		t.Fatalf("specBillingModes is not sorted: %v", modes)
+	}
+	listed := make(map[string]bool, len(modes))
+	for _, mode := range modes {
+		listed[mode] = true
+	}
+
+	tests := []struct {
+		name   string
+		meters []quoteMeter
+		want   string
+	}{
+		{
+			name: "consumption gb-second",
+			meters: []quoteMeter{
+				{key: breakdownExecutions, unit: "10"},
+				{key: breakdownGBSeconds, unit: "1 GB Second"},
+			},
+			want: billingModePerSecond,
+		},
+		{name: "hourly", meters: []quoteMeter{{unit: appServiceUnitHour}}, want: billingModePerHour},
+		{name: "storage", meters: []quoteMeter{{unit: storageUnitGBMonth}}, want: billingModePerGBMonth},
+		{name: "monthly", meters: []quoteMeter{{unit: "1/Month"}}, want: billingModePerMonth},
+		{name: "other unit", meters: []quoteMeter{{unit: "1M"}}, want: billingModePerRU},
+		{name: "no meters", meters: nil, want: billingModePerHour},
+	}
+	seen := make(map[string]bool, len(modes))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, _, _ := specRate(tt.meters)
+			if got != tt.want {
+				t.Fatalf("specRate mode = %q, want %q", got, tt.want)
+			}
+			if !listed[got] {
+				t.Fatalf("specRate returned %q, which specBillingModes does not list", got)
+			}
+		})
+		seen[tt.want] = true
+	}
+	for _, mode := range modes {
+		if !seen[mode] {
+			t.Errorf("specBillingModes lists %q, which no specRate branch returns", mode)
+		}
+	}
+}
+
+// The committed files use the SaveManifest format (protojson camelCase JSON,
+// lowercased-key YAML, the installation method as an enum), so
+// registry.ValidatePluginManifest rejects them at the first required key. This
+// test validates a converted in-memory view instead: snake_case keys, a
+// lowercase installation method, and azure-native left out, because the schema
+// rejects it (rshade/finfocus-spec#611).
 func TestExpectedManifest_RegistryView_PassesRegistryValidation(t *testing.T) {
 	view := registryManifestView(t, expectedManifest())
 	if err := registry.ValidatePluginManifest(view); err != nil {
@@ -131,7 +198,10 @@ func registryManifestView(t *testing.T, m *finfocusv1.PluginManifest) []byte {
 		t.Fatalf("unmarshal manifest: %v", err)
 	}
 
-	spec, _ := doc["specification"].(map[string]any)
+	spec, ok := doc["specification"].(map[string]any)
+	if !ok {
+		t.Fatal("manifest has no specification object")
+	}
 	var providers []any
 	for _, p := range m.GetSpecification().GetSupportedProviders() {
 		if p != providerAzureNative {
@@ -140,7 +210,10 @@ func registryManifestView(t *testing.T, m *finfocusv1.PluginManifest) []byte {
 	}
 	spec["supported_providers"] = providers
 
-	install, _ := doc["installation"].(map[string]any)
+	install, ok := doc["installation"].(map[string]any)
+	if !ok {
+		t.Fatal("manifest has no installation object")
+	}
 	method := m.GetInstallation().GetInstallationMethod().String()
 	install["installation_method"] = strings.ToLower(strings.TrimPrefix(method, "INSTALLATION_METHOD_"))
 
@@ -149,11 +222,6 @@ func registryManifestView(t *testing.T, m *finfocusv1.PluginManifest) []byte {
 		t.Fatalf("marshal registry view: %v", err)
 	}
 	return view
-}
-
-func updateManifestRequested() bool {
-	f := flag.Lookup("update-manifest")
-	return f != nil && f.Value.String() == "true"
 }
 
 func writeManifest(t *testing.T, path string, m *finfocusv1.PluginManifest) {
@@ -177,7 +245,8 @@ func writeManifest(t *testing.T, path string, m *finfocusv1.PluginManifest) {
 	if !strings.HasSuffix(string(data), "\n") {
 		data = append(data, '\n')
 	}
-	if err = os.WriteFile(path, data, 0o644); err != nil {
+	// SaveManifest created the file 0o600; WriteFile keeps that mode.
+	if err = os.WriteFile(path, data, 0o600); err != nil {
 		t.Fatalf("write %s: %v", path, err)
 	}
 }

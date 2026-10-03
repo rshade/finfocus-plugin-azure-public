@@ -84,6 +84,18 @@ func metersForSpec(quote monthlyQuote) []quoteMeter {
 	}}
 }
 
+// specBillingModes lists every billing mode specRate can return, sorted.
+// The manifest's supported_resources billing_modes is built from it.
+func specBillingModes() []string {
+	return []string{
+		billingModePerGBMonth,
+		billingModePerHour,
+		billingModePerMonth,
+		billingModePerRU,
+		billingModePerSecond,
+	}
+}
+
 func specRate(meters []quoteMeter) (string, string, float64) {
 	if gb, ok := consumptionGBSecond(meters); ok {
 		return billingModePerSecond, gb.unit, gb.price

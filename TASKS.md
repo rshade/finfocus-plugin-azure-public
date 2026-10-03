@@ -53,6 +53,9 @@ A virtual machine quote returns `price_options` ([spec issue 588](https://github
 - `.goreleaser.yaml` is present (AZ-3.3)
 - Release workflow files are present
 - release-please configuration is present
+- `pluginVersion` (`internal/pricing/calculator.go`) is hard-coded at `0.1.0`;
+  release-please has no `extra-files` entry, so a release does not bump it or
+  the manifest files
 - No version tag in this run (AZ-5.1 is SKIPPED)
 - The core registry file was not edited
 
