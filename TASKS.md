@@ -1077,32 +1077,24 @@ plan, never zero and never an "unsupported" that hides the reason.
 
 **Acceptance Criteria**: all function and web app rows pass the `needs_parent_resource` rule.
 
-#### AZ-7.10 — Core issue drafts
+#### AZ-7.10 — Check the filed core issues
 
-**Description**: The core's strict pre-flight check needs a non-empty SKU and region, so a resource
-with an empty SKU never reaches the plugin; and the core flattens nested objects to a bare name.
-These are core changes, not spec changes (aws-public copes with the same flattening in its own
-plugin code, and the spec's `mapping` package was never extended for any provider). Write them in
-`.superpowers/issue-drafts/` (not filed): (1) a per-type SKU and region source for Azure type tokens (`sku` means a different
-property per type; before and after table from `core-view.json` against `core-view-proposed.json`);
-(2) additive dotted-key flattening of nested inputs, keeping today's collapsed value, with the tag
-count caps; (3) plan-wide resolution of child to parent (region from the server, plan SKU for apps,
-cluster for node pools, account for Cosmos children).
+**Description**: The core changes are filed in `rshade/finfocus`: #1608 (additive dotted tag keys for
+nested inputs), #1609 (per-type Azure SKU source) and #1610 (cross-resource references from
+`propertyDependencies`). Do not draft or file them again. As AZ-7.1 to AZ-7.9 show real behaviour, compare it
+with what those issues claim and write any correction or missing fact as a draft in
+`.superpowers/issue-drafts/` for the owner. Pay attention to the double-counting invariant in #1610 and the
+tag cap and secret-leaf rules in #1608.
 
-**Acceptance Criteria**: three drafts, each with evidence, a proposal, a compatibility note and
-acceptance criteria.
+**Acceptance Criteria**: a list of confirmed claims and discrepancies in the report, each with evidence.
 
-#### AZ-7.11 — Spec docs-only draft
+#### AZ-7.11 — Check the spec docs change
 
-**Description**: The spec is generic and says nothing about how Pulumi inputs reach `tags`. Draft
-(not filed) one docs issue for `finfocus-spec`: the properties-to-tags contract (scalar rules, nested
-maps as dotted keys, arrays, the legacy `map[...]` collapse, `__` keys filtered, the tag count
-caps, and that `EstimateCostRequest.attributes` carries the structured form), and strict against
-lenient request validation for hosts. Do not propose Azure key lists, credential names, a parent
-reference, or any proto field: the 2026-10-02 genericity audit found each already solved in a plugin
-or the core.
+**Description**: The spec docs issue is `rshade/finfocus-spec` #609, with the pull request #610 (documents what
+the host sends in `tags` today, and marks dotted keys as a recommendation). Do not file anything. Compare the
+PR's text with what you observe through `core-view.json` and the plugin tests, and list any discrepancy.
 
-**Acceptance Criteria**: one docs draft with a before and after example from `core-view.json`.
+**Acceptance Criteria**: a list of confirmed statements and discrepancies in the report.
 
 #### AZ-7.12 — Review fixes
 

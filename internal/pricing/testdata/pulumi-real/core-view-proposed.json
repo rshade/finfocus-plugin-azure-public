@@ -1,0 +1,1102 @@
+{
+  "assumptions": [
+    "old collapsed top-level tags are kept",
+    "keys starting with __ are dropped",
+    "values equal to the preview sentinel are reference placeholders and are not copied"
+  ],
+  "purpose": "core-view AFTER the proposed core changes (dotted nested tags, per-type SKU source); a proposal",
+  "resources": {
+    "azure-native/aks": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "Standard",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "agentPoolProfiles": "system",
+        "agentPoolProfiles.0.count": "3",
+        "agentPoolProfiles.0.enableAutoScaling": "true",
+        "agentPoolProfiles.0.maxCount": "6",
+        "agentPoolProfiles.0.minCount": "3",
+        "agentPoolProfiles.0.mode": "System",
+        "agentPoolProfiles.0.name": "system",
+        "agentPoolProfiles.0.osDiskSizeGB": "128",
+        "agentPoolProfiles.0.osDiskType": "Managed",
+        "agentPoolProfiles.0.osType": "Linux",
+        "agentPoolProfiles.0.vmSize": "Standard_D4s_v5",
+        "azureApiVersion": "2025-09-01",
+        "dnsPrefix": "probe",
+        "identity": "SystemAssigned",
+        "identity.type": "SystemAssigned",
+        "location": "westeurope",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "resourceName": "aks5a78bdbf",
+        "sku": "Base",
+        "sku.name": "Base",
+        "sku.tier": "Standard"
+      },
+      "type": "azure-native:containerservice:ManagedCluster",
+      "unresolved_reference_keys": [
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/aksPool": {
+      "provider": "azure-native",
+      "region": "",
+      "sku": "Standard_D8s_v5",
+      "tags": {
+        "agentPoolName": "spot",
+        "azureApiVersion": "2025-09-01",
+        "count": "2",
+        "mode": "User",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "resourceName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "scaleSetEvictionPolicy": "Delete",
+        "scaleSetPriority": "Spot",
+        "spotMaxPrice": "-1",
+        "vmSize": "Standard_D8s_v5"
+      },
+      "type": "azure-native:containerservice:AgentPool",
+      "unresolved_reference_keys": [
+        "resourceGroupName",
+        "resourceName"
+      ]
+    },
+    "azure-native/app": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "azureApiVersion": "2025-05-01",
+        "kind": "app,linux",
+        "location": "westeurope",
+        "name": "appc2a8b562",
+        "reserved": "true",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "serverFarmId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "siteConfig": "NODE|20-lts",
+        "siteConfig.linuxFxVersion": "NODE|20-lts"
+      },
+      "type": "azure-native:web:WebApp",
+      "unresolved_reference_keys": [
+        "resourceGroupName",
+        "serverFarmId"
+      ]
+    },
+    "azure-native/cosmos": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "accountName": "cosmosba44005c",
+        "azureApiVersion": "2025-10-15",
+        "consistencyPolicy": "Session",
+        "consistencyPolicy.defaultConsistencyLevel": "Session",
+        "databaseAccountOfferType": "Standard",
+        "enableMultipleWriteLocations": "true",
+        "kind": "GlobalDocumentDB",
+        "location": "westeurope",
+        "locations": "map[failoverPriority:0 isZoneRedundant:false locationName:westeurope],map[failoverPriority:1 isZoneRedundant:true locationName:northeurope]",
+        "locations.0.failoverPriority": "0",
+        "locations.0.isZoneRedundant": "false",
+        "locations.0.locationName": "westeurope",
+        "locations.1.failoverPriority": "1",
+        "locations.1.isZoneRedundant": "true",
+        "locations.1.locationName": "northeurope",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9"
+      },
+      "type": "azure-native:cosmosdb:DatabaseAccount",
+      "unresolved_reference_keys": [
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/cosmosContainer": {
+      "provider": "azure-native",
+      "region": "",
+      "sku": "",
+      "tags": {
+        "accountName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "azureApiVersion": "2025-10-15",
+        "containerName": "cosmosContainer",
+        "databaseName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "options": "4000",
+        "options.autoscaleSettings.maxThroughput": "4000",
+        "resource": "items",
+        "resource.id": "items",
+        "resource.partitionKey.kind": "Hash",
+        "resource.partitionKey.paths.0": "/id",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9"
+      },
+      "type": "azure-native:cosmosdb:SqlResourceSqlContainer",
+      "unresolved_reference_keys": [
+        "accountName",
+        "databaseName",
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/cosmosDb": {
+      "provider": "azure-native",
+      "region": "",
+      "sku": "",
+      "tags": {
+        "accountName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "azureApiVersion": "2025-10-15",
+        "databaseName": "cosmosDb",
+        "options": "400",
+        "options.throughput": "400",
+        "resource": "appdb",
+        "resource.id": "appdb",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9"
+      },
+      "type": "azure-native:cosmosdb:SqlResourceSqlDatabase",
+      "unresolved_reference_keys": [
+        "accountName",
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/disk": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "Premium_LRS",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "azureApiVersion": "2024-03-02",
+        "creationData": "Empty",
+        "creationData.createOption": "Empty",
+        "diskName": "diskb0b06976",
+        "diskSizeGB": "256",
+        "location": "westeurope",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sku": "Premium_LRS",
+        "sku.name": "Premium_LRS"
+      },
+      "type": "azure-native:compute:Disk",
+      "unresolved_reference_keys": [
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/funcApp": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "azureApiVersion": "2025-05-01",
+        "kind": "functionapp,linux",
+        "location": "westeurope",
+        "name": "funcApp32b16755",
+        "reserved": "true",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "serverFarmId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9"
+      },
+      "type": "azure-native:web:WebApp",
+      "unresolved_reference_keys": [
+        "resourceGroupName",
+        "serverFarmId"
+      ]
+    },
+    "azure-native/lb": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "Standard",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "azureApiVersion": "2024-05-01",
+        "loadBalancerName": "lb12efa42f",
+        "location": "westeurope",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sku": "Standard",
+        "sku.name": "Standard",
+        "sku.tier": "Regional"
+      },
+      "type": "azure-native:network:LoadBalancer",
+      "unresolved_reference_keys": [
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/linuxVm": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "Standard_D4s_v5",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "azureApiVersion": "2024-11-01",
+        "billingProfile": "0.05",
+        "billingProfile.maxPrice": "0.05",
+        "evictionPolicy": "Deallocate",
+        "hardwareProfile": "Standard_D4s_v5",
+        "hardwareProfile.vmSize": "Standard_D4s_v5",
+        "location": "westeurope",
+        "networkProfile": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/x/providers/Microsoft.Network/networkInterfaces/nic",
+        "networkProfile.networkInterfaces.0.id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/x/providers/Microsoft.Network/networkInterfaces/nic",
+        "osProfile": "map[adminPassword:FAKE-PASSWORD adminUsername:azureuser computerName:lin linuxConfiguration:map[disablePasswordAuthentication:false]]",
+        "osProfile.adminPassword": "FAKE-PASSWORD",
+        "osProfile.adminUsername": "azureuser",
+        "osProfile.computerName": "lin",
+        "osProfile.linuxConfiguration.disablePasswordAuthentication": "false",
+        "priority": "Spot",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "storageProfile": "map[imageReference:map[offer:0001-com-ubuntu-server-jammy publisher:Canonical sku:22_04-lts version:latest] osDisk:map[createOption:FromImage diskSizeGB:128 managedDisk:map[storageAccountType:Premium_LRS]]]",
+        "storageProfile.imageReference.offer": "0001-com-ubuntu-server-jammy",
+        "storageProfile.imageReference.publisher": "Canonical",
+        "storageProfile.imageReference.sku": "22_04-lts",
+        "storageProfile.imageReference.version": "latest",
+        "storageProfile.osDisk.createOption": "FromImage",
+        "storageProfile.osDisk.diskSizeGB": "128",
+        "storageProfile.osDisk.managedDisk.storageAccountType": "Premium_LRS",
+        "vmName": "linuxVm221d3bd9",
+        "zones": "1",
+        "zones.0": "1"
+      },
+      "type": "azure-native:compute:VirtualMachine",
+      "unresolved_reference_keys": [
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/nat": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "Standard",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "azureApiVersion": "2024-05-01",
+        "location": "westeurope",
+        "natGatewayName": "natbd4dbad2",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sku": "Standard",
+        "sku.name": "Standard",
+        "zones": "1",
+        "zones.0": "1"
+      },
+      "type": "azure-native:network:NatGateway",
+      "unresolved_reference_keys": [
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/plan": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "P1v3",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "azureApiVersion": "2025-05-01",
+        "kind": "linux",
+        "location": "westeurope",
+        "name": "plan6b27401e",
+        "reserved": "true",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sku": "P1v3",
+        "sku.capacity": "2",
+        "sku.name": "P1v3",
+        "sku.tier": "PremiumV3"
+      },
+      "type": "azure-native:web:AppServicePlan",
+      "unresolved_reference_keys": [
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/sqlDb": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "GP_Gen5",
+      "tags": {
+        "azureApiVersion": "2023-08-01",
+        "databaseName": "sqlDb",
+        "licenseType": "BasePrice",
+        "location": "westeurope",
+        "maxSizeBytes": "68719476736",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "serverName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sku": "GP_Gen5",
+        "sku.capacity": "4",
+        "sku.family": "Gen5",
+        "sku.name": "GP_Gen5",
+        "sku.tier": "GeneralPurpose",
+        "zoneRedundant": "true"
+      },
+      "type": "azure-native:sql:Database",
+      "unresolved_reference_keys": [
+        "resourceGroupName",
+        "serverName"
+      ]
+    },
+    "azure-native/sqlServer": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "administratorLogin": "sqladmin",
+        "administratorLoginPassword": "FAKE-PASSWORD",
+        "azureApiVersion": "2023-08-01",
+        "location": "westeurope",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "serverName": "sqlServerb8afc627"
+      },
+      "type": "azure-native:sql:Server",
+      "unresolved_reference_keys": [
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/storage": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "Standard_GRS",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "accessTier": "Cool",
+        "accountName": "storage64552b07",
+        "azureApiVersion": "2024-01-01",
+        "kind": "StorageV2",
+        "location": "westeurope",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sku": "Standard_GRS",
+        "sku.name": "Standard_GRS"
+      },
+      "type": "azure-native:storage:StorageAccount",
+      "unresolved_reference_keys": [
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/vmNoLocation": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "Standard_B2s",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "azureApiVersion": "2024-11-01",
+        "hardwareProfile": "Standard_B2s",
+        "hardwareProfile.vmSize": "Standard_B2s",
+        "location": "westeurope",
+        "networkProfile": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/x/providers/Microsoft.Network/networkInterfaces/nic3",
+        "networkProfile.networkInterfaces.0.id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/x/providers/Microsoft.Network/networkInterfaces/nic3",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "storageProfile": "map[imageReference:map[offer:0001-com-ubuntu-server-jammy publisher:Canonical sku:22_04-lts version:latest] osDisk:map[createOption:FromImage]]",
+        "storageProfile.imageReference.offer": "0001-com-ubuntu-server-jammy",
+        "storageProfile.imageReference.publisher": "Canonical",
+        "storageProfile.imageReference.sku": "22_04-lts",
+        "storageProfile.imageReference.version": "latest",
+        "storageProfile.osDisk.createOption": "FromImage",
+        "vmName": "vmNoLocation778beb82"
+      },
+      "type": "azure-native:compute:VirtualMachine",
+      "unresolved_reference_keys": [
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/vmss": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "Standard_D2s_v5",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "azureApiVersion": "2024-11-01",
+        "location": "westeurope",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sku": "Standard_D2s_v5",
+        "sku.capacity": "3",
+        "sku.name": "Standard_D2s_v5",
+        "sku.tier": "Standard",
+        "upgradePolicy": "Manual",
+        "upgradePolicy.mode": "Manual",
+        "virtualMachineProfile": "map[billingProfile:map[maxPrice:-1] evictionPolicy:Delete osProfile:map[adminPassword:FAKE-PASSWORD adminUsername:azureuser computerNamePrefix:vmss linuxConfiguration:map[disablePasswordAuthentication:false]] priority:Spot storageProfile:map[imageReference:map[offer:0001-com-ubuntu-server-jammy publisher:Canonical sku:22_04-lts version:latest] osDisk:map[createOption:FromImage managedDisk:map[storageAccountType:Standard_LRS]]]]",
+        "virtualMachineProfile.billingProfile.maxPrice": "-1",
+        "virtualMachineProfile.evictionPolicy": "Delete",
+        "virtualMachineProfile.osProfile.adminPassword": "FAKE-PASSWORD",
+        "virtualMachineProfile.osProfile.adminUsername": "azureuser",
+        "virtualMachineProfile.osProfile.computerNamePrefix": "vmss",
+        "virtualMachineProfile.osProfile.linuxConfiguration.disablePasswordAuthentication": "false",
+        "virtualMachineProfile.priority": "Spot",
+        "virtualMachineProfile.storageProfile.imageReference.offer": "0001-com-ubuntu-server-jammy",
+        "virtualMachineProfile.storageProfile.imageReference.publisher": "Canonical",
+        "virtualMachineProfile.storageProfile.imageReference.sku": "22_04-lts",
+        "virtualMachineProfile.storageProfile.imageReference.version": "latest",
+        "virtualMachineProfile.storageProfile.osDisk.createOption": "FromImage",
+        "virtualMachineProfile.storageProfile.osDisk.managedDisk.storageAccountType": "Standard_LRS",
+        "vmScaleSetName": "vmss2838c2fa"
+      },
+      "type": "azure-native:compute:VirtualMachineScaleSet",
+      "unresolved_reference_keys": [
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/winPlan": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "S1",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "azureApiVersion": "2025-05-01",
+        "location": "westeurope",
+        "name": "winPlan25230845",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sku": "S1",
+        "sku.name": "S1",
+        "sku.tier": "Standard"
+      },
+      "type": "azure-native:web:AppServicePlan",
+      "unresolved_reference_keys": [
+        "resourceGroupName"
+      ]
+    },
+    "azure-native/windowsVm": {
+      "provider": "azure-native",
+      "region": "westeurope",
+      "sku": "Standard_D4s_v5",
+      "tags": {
+        "__createBeforeDelete": "true",
+        "azureApiVersion": "2024-11-01",
+        "hardwareProfile": "Standard_D4s_v5",
+        "hardwareProfile.vmSize": "Standard_D4s_v5",
+        "licenseType": "Windows_Server",
+        "location": "westeurope",
+        "networkProfile": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/x/providers/Microsoft.Network/networkInterfaces/nic2",
+        "networkProfile.networkInterfaces.0.id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/x/providers/Microsoft.Network/networkInterfaces/nic2",
+        "osProfile": "map[adminPassword:FAKE-PASSWORD adminUsername:azureuser computerName:win windowsConfiguration:map[provisionVMAgent:true]]",
+        "osProfile.adminPassword": "FAKE-PASSWORD",
+        "osProfile.adminUsername": "azureuser",
+        "osProfile.computerName": "win",
+        "osProfile.windowsConfiguration.provisionVMAgent": "true",
+        "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "storageProfile": "map[imageReference:map[offer:WindowsServer publisher:MicrosoftWindowsServer sku:2022-datacenter-azure-edition version:latest] osDisk:map[createOption:FromImage managedDisk:map[storageAccountType:StandardSSD_LRS]]]",
+        "storageProfile.imageReference.offer": "WindowsServer",
+        "storageProfile.imageReference.publisher": "MicrosoftWindowsServer",
+        "storageProfile.imageReference.sku": "2022-datacenter-azure-edition",
+        "storageProfile.imageReference.version": "latest",
+        "storageProfile.osDisk.createOption": "FromImage",
+        "storageProfile.osDisk.managedDisk.storageAccountType": "StandardSSD_LRS",
+        "vmName": "windowsVm6893d579"
+      },
+      "type": "azure-native:compute:VirtualMachine",
+      "unresolved_reference_keys": [
+        "resourceGroupName"
+      ]
+    },
+    "azure/aks": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "Standard",
+      "tags": {
+        "__defaults": "nodeOsUpgradeChannel,roleBasedAccessControlEnabled,runCommandEnabled,supportPlan",
+        "defaultNodePool": "system",
+        "defaultNodePool.name": "system",
+        "defaultNodePool.nodeCount": "3",
+        "defaultNodePool.osDiskSizeGb": "128",
+        "defaultNodePool.osDiskType": "Managed",
+        "defaultNodePool.scaleDownMode": "Delete",
+        "defaultNodePool.type": "VirtualMachineScaleSets",
+        "defaultNodePool.vmSize": "Standard_D4s_v5",
+        "dnsPrefix": "probe",
+        "identity": "map[__defaults:[] type:SystemAssigned]",
+        "identity.type": "SystemAssigned",
+        "location": "westeurope",
+        "name": "aks-probe",
+        "nodeOsUpgradeChannel": "NodeImage",
+        "resourceGroupName": "rg-probe",
+        "roleBasedAccessControlEnabled": "true",
+        "runCommandEnabled": "true",
+        "skuTier": "Standard",
+        "supportPlan": "KubernetesOfficial"
+      },
+      "type": "azure:containerservice/kubernetesCluster:KubernetesCluster",
+      "unresolved_reference_keys": []
+    },
+    "azure/aksPool": {
+      "provider": "azure",
+      "region": "",
+      "sku": "Standard_D8s_v5",
+      "tags": {
+        "__defaults": "mode,osType,scaleDownMode",
+        "evictionPolicy": "Delete",
+        "kubernetesClusterId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "mode": "User",
+        "name": "spot",
+        "nodeCount": "2",
+        "osType": "Linux",
+        "priority": "Spot",
+        "scaleDownMode": "Delete",
+        "spotMaxPrice": "-1",
+        "vmSize": "Standard_D8s_v5"
+      },
+      "type": "azure:containerservice/kubernetesClusterNodePool:KubernetesClusterNodePool",
+      "unresolved_reference_keys": [
+        "kubernetesClusterId"
+      ]
+    },
+    "azure/cosmos": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "",
+      "tags": {
+        "__defaults": "accessKeyMetadataWritesEnabled,defaultIdentityType,minimalTlsVersion,publicNetworkAccessEnabled",
+        "accessKeyMetadataWritesEnabled": "true",
+        "consistencyPolicy": "map[__defaults:[maxIntervalInSeconds maxStalenessPrefix] consistencyLevel:Session maxIntervalInSeconds:5 maxStalenessPrefix:100]",
+        "consistencyPolicy.consistencyLevel": "Session",
+        "consistencyPolicy.maxIntervalInSeconds": "5",
+        "consistencyPolicy.maxStalenessPrefix": "100",
+        "defaultIdentityType": "FirstPartyIdentity",
+        "geoLocations": "map[__defaults:[] failoverPriority:0 location:westeurope],map[__defaults:[] failoverPriority:1 location:northeurope zoneRedundant:true]",
+        "geoLocations.0.failoverPriority": "0",
+        "geoLocations.0.location": "westeurope",
+        "geoLocations.1.failoverPriority": "1",
+        "geoLocations.1.location": "northeurope",
+        "geoLocations.1.zoneRedundant": "true",
+        "kind": "GlobalDocumentDB",
+        "location": "westeurope",
+        "minimalTlsVersion": "Tls12",
+        "multipleWriteLocationsEnabled": "true",
+        "name": "cosmos-probe",
+        "offerType": "Standard",
+        "publicNetworkAccessEnabled": "true",
+        "resourceGroupName": "rg-probe"
+      },
+      "type": "azure:cosmosdb/account:Account",
+      "unresolved_reference_keys": []
+    },
+    "azure/cosmosContainer": {
+      "provider": "azure",
+      "region": "",
+      "sku": "",
+      "tags": {
+        "__defaults": "partitionKeyKind",
+        "accountName": "cosmos-probe",
+        "autoscaleSettings": "map[__defaults:[] maxThroughput:4000]",
+        "autoscaleSettings.maxThroughput": "4000",
+        "databaseName": "appdb",
+        "name": "items",
+        "partitionKeyKind": "Hash",
+        "partitionKeyPaths": "/id",
+        "partitionKeyPaths.0": "/id",
+        "resourceGroupName": "rg-probe"
+      },
+      "type": "azure:cosmosdb/sqlContainer:SqlContainer",
+      "unresolved_reference_keys": []
+    },
+    "azure/cosmosDb": {
+      "provider": "azure",
+      "region": "",
+      "sku": "",
+      "tags": {
+        "__defaults": "",
+        "accountName": "cosmos-probe",
+        "name": "appdb",
+        "resourceGroupName": "rg-probe",
+        "throughput": "400"
+      },
+      "type": "azure:cosmosdb/sqlDatabase:SqlDatabase",
+      "unresolved_reference_keys": []
+    },
+    "azure/disk": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "Premium_LRS",
+      "tags": {
+        "__defaults": "publicNetworkAccessEnabled",
+        "createOption": "Empty",
+        "diskSizeGb": "256",
+        "location": "westeurope",
+        "name": "disk-probe",
+        "publicNetworkAccessEnabled": "true",
+        "resourceGroupName": "rg-probe",
+        "storageAccountType": "Premium_LRS"
+      },
+      "type": "azure:compute/managedDisk:ManagedDisk",
+      "unresolved_reference_keys": []
+    },
+    "azure/lb": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "Standard",
+      "tags": {
+        "__defaults": "",
+        "location": "westeurope",
+        "name": "lb-probe",
+        "resourceGroupName": "rg-probe",
+        "sku": "Standard",
+        "skuTier": "Regional"
+      },
+      "type": "azure:lb/loadBalancer:LoadBalancer",
+      "unresolved_reference_keys": []
+    },
+    "azure/legacyVm": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "Standard_DS2_v2",
+      "tags": {
+        "__defaults": "",
+        "location": "westeurope",
+        "name": "vm-legacy",
+        "networkInterfaceIds": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "osProfile": "map[__defaults:[] adminPassword:[secret] adminUsername:azureuser computerName:legacy]",
+        "osProfile.adminPassword": "[secret]",
+        "osProfile.adminUsername": "azureuser",
+        "osProfile.computerName": "legacy",
+        "osProfileLinuxConfig": "map[__defaults:[] disablePasswordAuthentication:false]",
+        "osProfileLinuxConfig.disablePasswordAuthentication": "false",
+        "resourceGroupName": "rg-probe",
+        "storageImageReference": "map[__defaults:[] offer:0001-com-ubuntu-server-jammy publisher:Canonical sku:22_04-lts version:latest]",
+        "storageImageReference.offer": "0001-com-ubuntu-server-jammy",
+        "storageImageReference.publisher": "Canonical",
+        "storageImageReference.sku": "22_04-lts",
+        "storageImageReference.version": "latest",
+        "storageOsDisk": "osdisk",
+        "storageOsDisk.createOption": "FromImage",
+        "storageOsDisk.managedDiskType": "Standard_LRS",
+        "storageOsDisk.name": "osdisk",
+        "vmSize": "Standard_DS2_v2"
+      },
+      "type": "azure:compute/virtualMachine:VirtualMachine",
+      "unresolved_reference_keys": [
+        "networkInterfaceIds.0"
+      ]
+    },
+    "azure/linuxApp": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "",
+      "tags": {
+        "__defaults": "clientCertificateMode,enabled,ftpPublishBasicAuthenticationEnabled,publicNetworkAccessEnabled,webdeployPublishBasicAuthenticationEnabled",
+        "clientCertificateMode": "Required",
+        "enabled": "true",
+        "ftpPublishBasicAuthenticationEnabled": "true",
+        "location": "westeurope",
+        "name": "app-linux-probe",
+        "publicNetworkAccessEnabled": "true",
+        "resourceGroupName": "rg-probe",
+        "servicePlanId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "siteConfig": "map[__defaults:[alwaysOn ftpsState loadBalancingMode managedPipelineMode minimumTlsVersion scmMinimumTlsVersion use32BitWorker] alwaysOn:true ftpsState:Disabled loadBalancingMode:LeastRequests managedPipelineMode:Integrated minimumTlsVersion:1.2 scmMinimumTlsVersion:1.2 use32BitWorker:true]",
+        "siteConfig.alwaysOn": "true",
+        "siteConfig.ftpsState": "Disabled",
+        "siteConfig.loadBalancingMode": "LeastRequests",
+        "siteConfig.managedPipelineMode": "Integrated",
+        "siteConfig.minimumTlsVersion": "1.2",
+        "siteConfig.scmMinimumTlsVersion": "1.2",
+        "siteConfig.use32BitWorker": "true",
+        "webdeployPublishBasicAuthenticationEnabled": "true"
+      },
+      "type": "azure:appservice/linuxWebApp:LinuxWebApp",
+      "unresolved_reference_keys": [
+        "servicePlanId"
+      ]
+    },
+    "azure/linuxFunc": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "",
+      "tags": {
+        "__defaults": "builtinLoggingEnabled,enabled,ftpPublishBasicAuthenticationEnabled,functionsExtensionVersion,publicNetworkAccessEnabled,webdeployPublishBasicAuthenticationEnabled",
+        "builtinLoggingEnabled": "true",
+        "enabled": "true",
+        "ftpPublishBasicAuthenticationEnabled": "true",
+        "functionsExtensionVersion": "~4",
+        "location": "westeurope",
+        "name": "func-linux-probe",
+        "publicNetworkAccessEnabled": "true",
+        "resourceGroupName": "rg-probe",
+        "servicePlanId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "siteConfig": "map[__defaults:[ftpsState loadBalancingMode managedPipelineMode minimumTlsVersion scmMinimumTlsVersion] ftpsState:Disabled loadBalancingMode:LeastRequests managedPipelineMode:Integrated minimumTlsVersion:1.2 scmMinimumTlsVersion:1.2]",
+        "siteConfig.ftpsState": "Disabled",
+        "siteConfig.loadBalancingMode": "LeastRequests",
+        "siteConfig.managedPipelineMode": "Integrated",
+        "siteConfig.minimumTlsVersion": "1.2",
+        "siteConfig.scmMinimumTlsVersion": "1.2",
+        "storageAccountAccessKey": "[secret]",
+        "storageAccountName": "stprobe001",
+        "webdeployPublishBasicAuthenticationEnabled": "true"
+      },
+      "type": "azure:appservice/linuxFunctionApp:LinuxFunctionApp",
+      "unresolved_reference_keys": [
+        "servicePlanId"
+      ]
+    },
+    "azure/linuxVm": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "Standard_D4s_v5",
+      "tags": {
+        "__defaults": "extensionsTimeBudget,platformFaultDomain",
+        "adminPassword": "[secret]",
+        "adminUsername": "azureuser",
+        "disablePasswordAuthentication": "false",
+        "evictionPolicy": "Deallocate",
+        "extensionsTimeBudget": "PT1H30M",
+        "location": "westeurope",
+        "maxBidPrice": "0.05",
+        "name": "vm-linux",
+        "networkInterfaceIds": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "osDisk": "map[__defaults:[] caching:ReadWrite diskSizeGb:128 storageAccountType:Premium_LRS]",
+        "osDisk.caching": "ReadWrite",
+        "osDisk.diskSizeGb": "128",
+        "osDisk.storageAccountType": "Premium_LRS",
+        "platformFaultDomain": "-1",
+        "priority": "Spot",
+        "resourceGroupName": "rg-probe",
+        "size": "Standard_D4s_v5",
+        "sourceImageReference": "map[__defaults:[] offer:0001-com-ubuntu-server-jammy publisher:Canonical sku:22_04-lts version:latest]",
+        "sourceImageReference.offer": "0001-com-ubuntu-server-jammy",
+        "sourceImageReference.publisher": "Canonical",
+        "sourceImageReference.sku": "22_04-lts",
+        "sourceImageReference.version": "latest",
+        "zone": "1"
+      },
+      "type": "azure:compute/linuxVirtualMachine:LinuxVirtualMachine",
+      "unresolved_reference_keys": [
+        "networkInterfaceIds.0"
+      ]
+    },
+    "azure/linuxVmRegular": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "Standard_B2s",
+      "tags": {
+        "__defaults": "extensionsTimeBudget,platformFaultDomain,priority",
+        "adminPassword": "[secret]",
+        "adminUsername": "azureuser",
+        "disablePasswordAuthentication": "false",
+        "extensionsTimeBudget": "PT1H30M",
+        "location": "westeurope",
+        "name": "vm-linux-regular",
+        "networkInterfaceIds": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "osDisk": "map[__defaults:[] caching:ReadWrite storageAccountType:Standard_LRS]",
+        "osDisk.caching": "ReadWrite",
+        "osDisk.storageAccountType": "Standard_LRS",
+        "platformFaultDomain": "-1",
+        "priority": "Regular",
+        "resourceGroupName": "rg-probe",
+        "size": "Standard_B2s",
+        "sourceImageReference": "map[__defaults:[] offer:0001-com-ubuntu-server-jammy publisher:Canonical sku:22_04-lts version:latest]",
+        "sourceImageReference.offer": "0001-com-ubuntu-server-jammy",
+        "sourceImageReference.publisher": "Canonical",
+        "sourceImageReference.sku": "22_04-lts",
+        "sourceImageReference.version": "latest"
+      },
+      "type": "azure:compute/linuxVirtualMachine:LinuxVirtualMachine",
+      "unresolved_reference_keys": [
+        "networkInterfaceIds.0"
+      ]
+    },
+    "azure/nat": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "Standard",
+      "tags": {
+        "__defaults": "idleTimeoutInMinutes",
+        "idleTimeoutInMinutes": "4",
+        "location": "westeurope",
+        "name": "nat-probe",
+        "resourceGroupName": "rg-probe",
+        "skuName": "Standard",
+        "zones": "1",
+        "zones.0": "1"
+      },
+      "type": "azure:network/natGateway:NatGateway",
+      "unresolved_reference_keys": []
+    },
+    "azure/nic": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "",
+      "tags": {
+        "__defaults": "",
+        "ipConfigurations": "internal",
+        "ipConfigurations.0.name": "internal",
+        "ipConfigurations.0.privateIpAddressAllocation": "Dynamic",
+        "ipConfigurations.0.privateIpAddressVersion": "IPv4",
+        "location": "westeurope",
+        "name": "nic-probe",
+        "resourceGroupName": "rg-probe"
+      },
+      "type": "azure:network/networkInterface:NetworkInterface",
+      "unresolved_reference_keys": [
+        "ipConfigurations.0.subnetId"
+      ]
+    },
+    "azure/plan": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "P1v3",
+      "tags": {
+        "__defaults": "",
+        "location": "westeurope",
+        "name": "plan-linux",
+        "osType": "Linux",
+        "resourceGroupName": "rg-probe",
+        "skuName": "P1v3",
+        "workerCount": "2"
+      },
+      "type": "azure:appservice/servicePlan:ServicePlan",
+      "unresolved_reference_keys": []
+    },
+    "azure/sqlDb": {
+      "provider": "azure",
+      "region": "",
+      "sku": "GP_Gen5_4",
+      "tags": {
+        "__defaults": "createMode,geoBackupEnabled,storageAccountType,transparentDataEncryptionEnabled",
+        "createMode": "Default",
+        "geoBackupEnabled": "true",
+        "licenseType": "BasePrice",
+        "maxSizeGb": "64",
+        "name": "db-probe",
+        "serverId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "skuName": "GP_Gen5_4",
+        "storageAccountType": "Geo",
+        "transparentDataEncryptionEnabled": "true",
+        "zoneRedundant": "true"
+      },
+      "type": "azure:mssql/database:Database",
+      "unresolved_reference_keys": [
+        "serverId"
+      ]
+    },
+    "azure/sqlDbNoSku": {
+      "provider": "azure",
+      "region": "",
+      "sku": "GP_S_Gen5_2",
+      "tags": {
+        "__defaults": "createMode,geoBackupEnabled,storageAccountType,transparentDataEncryptionEnabled",
+        "autoPauseDelayInMinutes": "60",
+        "createMode": "Default",
+        "geoBackupEnabled": "true",
+        "maxSizeGb": "32",
+        "minCapacity": "0.5",
+        "name": "db-serverless",
+        "serverId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "skuName": "GP_S_Gen5_2",
+        "storageAccountType": "Geo",
+        "transparentDataEncryptionEnabled": "true"
+      },
+      "type": "azure:mssql/database:Database",
+      "unresolved_reference_keys": [
+        "serverId"
+      ]
+    },
+    "azure/sqlServer": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "",
+      "tags": {
+        "__defaults": "connectionPolicy,minimumTlsVersion,publicNetworkAccessEnabled",
+        "administratorLogin": "sqladmin",
+        "administratorLoginPassword": "[secret]",
+        "connectionPolicy": "Default",
+        "location": "westeurope",
+        "minimumTlsVersion": "1.2",
+        "name": "sql-probe",
+        "publicNetworkAccessEnabled": "true",
+        "resourceGroupName": "rg-probe",
+        "version": "12.0"
+      },
+      "type": "azure:mssql/server:Server",
+      "unresolved_reference_keys": []
+    },
+    "azure/storage": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "Standard_GRS",
+      "tags": {
+        "__defaults": "allowNestedItemsToBePublic,dnsEndpointType,httpsTrafficOnlyEnabled,localUserEnabled,minTlsVersion,publicNetworkAccessEnabled,queueEncryptionKeyType,sharedAccessKeyEnabled,tableEncryptionKeyType",
+        "accessTier": "Cool",
+        "accountKind": "StorageV2",
+        "accountReplicationType": "GRS",
+        "accountTier": "Standard",
+        "allowNestedItemsToBePublic": "true",
+        "dnsEndpointType": "Standard",
+        "httpsTrafficOnlyEnabled": "true",
+        "localUserEnabled": "true",
+        "location": "westeurope",
+        "minTlsVersion": "TLS1_2",
+        "name": "stprobe001",
+        "publicNetworkAccessEnabled": "true",
+        "queueEncryptionKeyType": "Service",
+        "resourceGroupName": "rg-probe",
+        "sharedAccessKeyEnabled": "true",
+        "tableEncryptionKeyType": "Service"
+      },
+      "type": "azure:storage/account:Account",
+      "unresolved_reference_keys": []
+    },
+    "azure/subnet": {
+      "provider": "azure",
+      "region": "",
+      "sku": "",
+      "tags": {
+        "__defaults": "defaultOutboundAccessEnabled,privateEndpointNetworkPolicies,privateLinkServiceNetworkPoliciesEnabled",
+        "addressPrefixes": "10.0.1.0/24",
+        "addressPrefixes.0": "10.0.1.0/24",
+        "defaultOutboundAccessEnabled": "true",
+        "name": "subnet-probe",
+        "privateEndpointNetworkPolicies": "Disabled",
+        "privateLinkServiceNetworkPoliciesEnabled": "true",
+        "resourceGroupName": "rg-probe",
+        "virtualNetworkName": "vnet-probe"
+      },
+      "type": "azure:network/subnet:Subnet",
+      "unresolved_reference_keys": []
+    },
+    "azure/vmss": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "Standard_D2s_v5",
+      "tags": {
+        "__defaults": "extensionOperationsEnabled,extensionsTimeBudget,overprovision,priority,provisionVmAgent,singlePlacementGroup,upgradeMode",
+        "adminPassword": "[secret]",
+        "adminUsername": "azureuser",
+        "disablePasswordAuthentication": "false",
+        "extensionOperationsEnabled": "true",
+        "extensionsTimeBudget": "PT1H30M",
+        "instances": "3",
+        "location": "westeurope",
+        "name": "vmss-probe",
+        "networkInterfaces": "nic",
+        "networkInterfaces.0.ipConfigurations.0.name": "internal",
+        "networkInterfaces.0.ipConfigurations.0.primary": "true",
+        "networkInterfaces.0.ipConfigurations.0.version": "IPv4",
+        "networkInterfaces.0.name": "nic",
+        "networkInterfaces.0.primary": "true",
+        "osDisk": "map[__defaults:[] caching:ReadWrite storageAccountType:Standard_LRS]",
+        "osDisk.caching": "ReadWrite",
+        "osDisk.storageAccountType": "Standard_LRS",
+        "overprovision": "true",
+        "priority": "Regular",
+        "provisionVmAgent": "true",
+        "resourceGroupName": "rg-probe",
+        "singlePlacementGroup": "true",
+        "sku": "Standard_D2s_v5",
+        "sourceImageReference": "map[__defaults:[] offer:0001-com-ubuntu-server-jammy publisher:Canonical sku:22_04-lts version:latest]",
+        "sourceImageReference.offer": "0001-com-ubuntu-server-jammy",
+        "sourceImageReference.publisher": "Canonical",
+        "sourceImageReference.sku": "22_04-lts",
+        "sourceImageReference.version": "latest",
+        "upgradeMode": "Manual"
+      },
+      "type": "azure:compute/linuxVirtualMachineScaleSet:LinuxVirtualMachineScaleSet",
+      "unresolved_reference_keys": [
+        "networkInterfaces.0.ipConfigurations.0.subnetId"
+      ]
+    },
+    "azure/vnet": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "",
+      "tags": {
+        "__defaults": "privateEndpointVnetPolicies",
+        "addressSpaces": "10.0.0.0/16",
+        "addressSpaces.0": "10.0.0.0/16",
+        "location": "westeurope",
+        "name": "vnet-probe",
+        "privateEndpointVnetPolicies": "Disabled",
+        "resourceGroupName": "rg-probe"
+      },
+      "type": "azure:network/virtualNetwork:VirtualNetwork",
+      "unresolved_reference_keys": []
+    },
+    "azure/winApp": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "",
+      "tags": {
+        "__defaults": "clientCertificateMode,enabled,ftpPublishBasicAuthenticationEnabled,publicNetworkAccessEnabled,webdeployPublishBasicAuthenticationEnabled",
+        "clientCertificateMode": "Required",
+        "enabled": "true",
+        "ftpPublishBasicAuthenticationEnabled": "true",
+        "location": "westeurope",
+        "name": "app-win-probe",
+        "publicNetworkAccessEnabled": "true",
+        "resourceGroupName": "rg-probe",
+        "servicePlanId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "siteConfig": "map[__defaults:[alwaysOn ftpsState loadBalancingMode managedPipelineMode minimumTlsVersion scmMinimumTlsVersion use32BitWorker] alwaysOn:true ftpsState:Disabled loadBalancingMode:LeastRequests managedPipelineMode:Integrated minimumTlsVersion:1.2 scmMinimumTlsVersion:1.2 use32BitWorker:true]",
+        "siteConfig.alwaysOn": "true",
+        "siteConfig.ftpsState": "Disabled",
+        "siteConfig.loadBalancingMode": "LeastRequests",
+        "siteConfig.managedPipelineMode": "Integrated",
+        "siteConfig.minimumTlsVersion": "1.2",
+        "siteConfig.scmMinimumTlsVersion": "1.2",
+        "siteConfig.use32BitWorker": "true",
+        "webdeployPublishBasicAuthenticationEnabled": "true"
+      },
+      "type": "azure:appservice/windowsWebApp:WindowsWebApp",
+      "unresolved_reference_keys": [
+        "servicePlanId"
+      ]
+    },
+    "azure/winFunc": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "",
+      "tags": {
+        "__defaults": "builtinLoggingEnabled,enabled,ftpPublishBasicAuthenticationEnabled,functionsExtensionVersion,publicNetworkAccessEnabled,webdeployPublishBasicAuthenticationEnabled",
+        "builtinLoggingEnabled": "true",
+        "enabled": "true",
+        "ftpPublishBasicAuthenticationEnabled": "true",
+        "functionsExtensionVersion": "~4",
+        "location": "westeurope",
+        "name": "func-win-probe",
+        "publicNetworkAccessEnabled": "true",
+        "resourceGroupName": "rg-probe",
+        "servicePlanId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "siteConfig": "map[__defaults:[ftpsState loadBalancingMode managedPipelineMode minimumTlsVersion scmMinimumTlsVersion use32BitWorker] ftpsState:Disabled loadBalancingMode:LeastRequests managedPipelineMode:Integrated minimumTlsVersion:1.2 scmMinimumTlsVersion:1.2 use32BitWorker:true]",
+        "siteConfig.ftpsState": "Disabled",
+        "siteConfig.loadBalancingMode": "LeastRequests",
+        "siteConfig.managedPipelineMode": "Integrated",
+        "siteConfig.minimumTlsVersion": "1.2",
+        "siteConfig.scmMinimumTlsVersion": "1.2",
+        "siteConfig.use32BitWorker": "true",
+        "storageAccountAccessKey": "[secret]",
+        "storageAccountName": "stprobe001",
+        "webdeployPublishBasicAuthenticationEnabled": "true"
+      },
+      "type": "azure:appservice/windowsFunctionApp:WindowsFunctionApp",
+      "unresolved_reference_keys": [
+        "servicePlanId"
+      ]
+    },
+    "azure/winPlan": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "S1",
+      "tags": {
+        "__defaults": "",
+        "location": "westeurope",
+        "name": "plan-win",
+        "osType": "Windows",
+        "resourceGroupName": "rg-probe",
+        "skuName": "S1"
+      },
+      "type": "azure:appservice/servicePlan:ServicePlan",
+      "unresolved_reference_keys": []
+    },
+    "azure/windowsVm": {
+      "provider": "azure",
+      "region": "westeurope",
+      "sku": "Standard_D4s_v5",
+      "tags": {
+        "__defaults": "extensionsTimeBudget,platformFaultDomain,priority",
+        "adminPassword": "[secret]",
+        "adminUsername": "azureuser",
+        "extensionsTimeBudget": "PT1H30M",
+        "licenseType": "Windows_Server",
+        "location": "westeurope",
+        "name": "vm-win",
+        "networkInterfaceIds": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "osDisk": "map[__defaults:[] caching:ReadWrite storageAccountType:StandardSSD_LRS]",
+        "osDisk.caching": "ReadWrite",
+        "osDisk.storageAccountType": "StandardSSD_LRS",
+        "platformFaultDomain": "-1",
+        "priority": "Regular",
+        "resourceGroupName": "rg-probe",
+        "size": "Standard_D4s_v5",
+        "sourceImageReference": "map[__defaults:[] offer:WindowsServer publisher:MicrosoftWindowsServer sku:2022-datacenter-azure-edition version:latest]",
+        "sourceImageReference.offer": "WindowsServer",
+        "sourceImageReference.publisher": "MicrosoftWindowsServer",
+        "sourceImageReference.sku": "2022-datacenter-azure-edition",
+        "sourceImageReference.version": "latest"
+      },
+      "type": "azure:compute/windowsVirtualMachine:WindowsVirtualMachine",
+      "unresolved_reference_keys": [
+        "networkInterfaceIds.0"
+      ]
+    }
+  }
+}
