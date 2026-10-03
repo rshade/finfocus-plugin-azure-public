@@ -45,6 +45,11 @@ that release records 0.1.0 as already shipped, so the next feature becomes
 0.2.0. Do not edit `CHANGELOG.md`. Release Please owns it. Do not tag the
 release from the task list. AZ-5.1 stays skipped.
 
+CI markdownlint (`.github/workflows/lint-prose.yml`) does not lint
+`CHANGELOG.md`. Release Please writes it with `*` bullets and double blank
+lines, so a release pull request would fail MD004 and MD012 on text no one
+may edit.
+
 ## Active Technologies
 - **Language**: Go 1.25.5 (002-grpc-server-port)
 - **Storage**: N/A - stateless plugin (002-grpc-server-port)

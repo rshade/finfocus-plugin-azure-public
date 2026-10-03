@@ -19,7 +19,7 @@ jobs:
           install_args: node npm:markdownlint-cli2
 
       - name: Run markdownlint
-        run: markdownlint-cli2 "README.md" "TASKS.md" "CHANGELOG.md" "CONTEXT.md" "ROADMAP.md" "IMPLEMENTATION_SUMMARY.md" "docs/**/*.md"
+        run: markdownlint-cli2 "README.md" "TASKS.md" "CONTEXT.md" "ROADMAP.md" "IMPLEMENTATION_SUMMARY.md" "docs/**/*.md"
 
   vale:
     name: Vale (Google style)
