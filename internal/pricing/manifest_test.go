@@ -105,32 +105,23 @@ func TestExpectedManifest_CommittedFiles_MatchExpected(t *testing.T) {
 	}
 }
 
-// ValidatePluginManifest reads JSON only. The YAML file is validated through
-// the canonical JSON of what LoadManifest reads from it, as the SDK documents.
-func TestExpectedManifest_CommittedFiles_PassRegistryValidation(t *testing.T) {
-	for _, name := range []string{"manifest.json", "manifest.yaml"} {
-		t.Run(name, func(t *testing.T) {
-			path := filepath.Join("..", "..", name)
-			data, err := os.ReadFile(path)
-			if err != nil {
-				t.Fatalf("read %s: %v", name, err)
-			}
-			if filepath.Ext(path) == ".yaml" {
-				loaded, loadErr := pluginsdk.LoadManifest(path)
-				if loadErr != nil {
-					t.Fatalf("load %s: %v", name, loadErr)
-				}
-				data = marshalManifest(t, "manifest.json", loaded)
-			}
-			if err = registry.ValidatePluginManifest(data); err != nil {
-				t.Fatalf("registry validation of %s: %v", name, err)
-			}
-		})
+// ValidatePluginManifest reads JSON only. manifest.yaml is covered by its byte
+// equality with MarshalManifestYAML of the same manifest.
+func TestExpectedManifest_CommittedJSON_PassesRegistryValidation(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "manifest.json"))
+	if err != nil {
+		t.Fatalf("read manifest.json: %v", err)
+	}
+	if err = registry.ValidatePluginManifest(data); err != nil {
+		t.Fatalf("registry validation of manifest.json: %v", err)
 	}
 }
 
-// Every CostSourceService RPC the manifest leaves out must answer
-// Unimplemented, and every one it lists must not.
+// The manifest lists the RPCs Calculator implements. An RPC is unimplemented
+// only when it returns the generated stub's error: served RPCs also answer
+// Unimplemented for an unsupported resource type. RPCs that pluginsdk.Server
+// answers itself (the BatchCost fallback, empty ResolveResourceTypes and
+// GetRecommendations) are not listed, matching the GetPluginInfo capabilities.
 func TestExpectedManifest_Methods_MatchServedRPCs(t *testing.T) {
 	listed := make(map[string]bool)
 	for _, m := range expectedManifest().GetSpecification().GetServiceDefinition().GetMethods() {
@@ -156,7 +147,8 @@ func TestExpectedManifest_Methods_MatchServedRPCs(t *testing.T) {
 			if e, ok := out[len(out)-1].Interface().(error); ok {
 				err = e
 			}
-			unimplemented := status.Code(err) == codes.Unimplemented
+			st, _ := status.FromError(err)
+			unimplemented := st.Code() == codes.Unimplemented && st.Message() == "method "+name+" not implemented"
 			if listed[name] && unimplemented {
 				t.Fatalf("%s is listed but answers Unimplemented: %v", name, err)
 			}
