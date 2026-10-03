@@ -57,6 +57,10 @@ func (c *Calculator) Name() string {
 	return "azure-public"
 }
 
+// pluginVersion is the version GetPluginInfo reports and the manifest files
+// carry. Release Please does not bump it (no extra-files entry).
+const pluginVersion = "0.1.0"
+
 // GetPluginInfo returns metadata about the plugin including name, version,
 // spec version, and supported cloud providers.
 func (c *Calculator) GetPluginInfo(
@@ -68,7 +72,7 @@ func (c *Calculator) GetPluginInfo(
 
 	return &finfocusv1.GetPluginInfoResponse{
 		Name:        "azure-public",
-		Version:     "0.1.0",
+		Version:     pluginVersion,
 		SpecVersion: pluginsdk.SpecVersion,
 		Providers:   []string{providerAzure, providerAzureNative},
 	}, nil
