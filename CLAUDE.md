@@ -230,7 +230,7 @@ Behavior notes:
 - Missing `location/region` or `vmSize/sku` returns `codes.InvalidArgument`
 - Cache hits are served from `CachedClient` with no outbound API request
 - VM `EstimateCost` reads attribute `priority`. `Spot` uses the Linux Spot row and pricing category Dynamic. An empty priority stays the on-demand row and Standard. Any other value is InvalidArgument. When priority is empty, `pricing_model=spot` selects Spot and `pricing_model=consumption` stays on demand.
-- `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.0`). A value without the `v` prefix is rejected by the SDK
+- `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.1`). A value without the `v` prefix is rejected by the SDK
 
 ### Managed Disk Cost Estimation
 

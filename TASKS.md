@@ -2,8 +2,8 @@
 
 <!-- markdownlint-disable MD013 MD060 MD031 MD032 MD029 -->
 
-**Current branch**: `main` | **Target**: v0.1.0 |
-**Updated**: 2026-10-02. No release tag.
+**Current branch**: `run/grok-20261003` | **Target**: v0.1.0 |
+**Updated**: 2026-10-03. No release tag.
 
 ## Current State Summary
 
@@ -13,7 +13,7 @@
 - **Tests**: `go test -count=1 -v ./...` passed after AZ-6.10. The only skips are nine accuracy cases. Each names `owner_monthly_usd`.
 - **Linting**: the 2026-09-30 note of two findings is obsolete. Re-run `make lint` for a fresh result.
 - **Go version**: 1.27.1, committed
-- **Spec version**: `github.com/rshade/finfocus-spec` `v0.7.1-0.20261002115132-9eccf57a87b5`. `pluginsdk.SpecVersion` is still `v0.7.0`.
+- **Spec version**: `github.com/rshade/finfocus-spec` `v0.7.1`. `pluginsdk.SpecVersion` is `v0.7.1`.
 
 ### RPC Implementation Status
 

@@ -35,4 +35,4 @@ This document defines the technical guardrails and architectural scope of the `f
 *   **Language**: Go 1.27.1
 *   **Transport**: `github.com/hashicorp/go-retryablehttp`
 *   **Protocol**: `google.golang.org/grpc`
-*   **Spec**: `github.com/rshade/finfocus-spec` (v0.7.0)
+*   **Spec**: `github.com/rshade/finfocus-spec` (v0.7.1)

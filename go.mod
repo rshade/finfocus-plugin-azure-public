@@ -6,7 +6,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/rs/zerolog v1.35.1
-	github.com/rshade/finfocus-spec v0.7.1-0.20261002115132-9eccf57a87b5
+	github.com/rshade/finfocus-spec v0.7.1
 	github.com/stretchr/testify v1.12.1
 	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12
