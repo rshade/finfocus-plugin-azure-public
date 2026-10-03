@@ -32,11 +32,13 @@ specification:
                 - web/AppServicePlan
                 - web/FunctionApp
             billingmodes:
+                - per_data_transfer_gb
                 - per_gb_month
                 - per_hour
                 - per_month
                 - per_ru
                 - per_second
+                - per_vcpu_hour
             regions: []
     capabilities:
         - cost_projection

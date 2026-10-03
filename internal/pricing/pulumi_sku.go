@@ -28,7 +28,7 @@ const (
 
 // workerCountTags are classic workerCount, then native sku.capacity.
 func workerCountTags() []string {
-	return []string{"workerCount", skuCapacityTag}
+	return []string{tagWorkerCount, skuCapacityTag}
 }
 
 // pulumiTag is firstNonEmptyTag that also skips the unknown placeholder and

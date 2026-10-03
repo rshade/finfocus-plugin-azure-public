@@ -11,6 +11,7 @@ import (
 	finfocusv1 "github.com/rshade/finfocus-spec/sdk/go/proto/finfocus/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/rshade/finfocus-plugin-azure-public/internal/azureclient"
 	"github.com/rshade/finfocus-plugin-azure-public/internal/logging"
@@ -61,8 +62,28 @@ func (c *Calculator) Name() string {
 // carry. Release Please does not bump it (no extra-files entry).
 const pluginVersion = "0.1.0"
 
+const (
+	pluginMetadataType      = "type"
+	pluginTypePublicPricing = "public-pricing-fallback"
+)
+
+// PluginCapabilities lists the RPCs this plugin really serves. It is explicit
+// because Calculator embeds UnimplementedCostSourceServiceServer, which makes
+// the SDK's interface inference report every optional capability, including
+// BATCH_COST and RESOLVE_RESOURCE_TYPES that finfocus core then calls.
+func PluginCapabilities() []finfocusv1.PluginCapability {
+	return []finfocusv1.PluginCapability{
+		finfocusv1.PluginCapability_PLUGIN_CAPABILITY_PROJECTED_COSTS,
+		finfocusv1.PluginCapability_PLUGIN_CAPABILITY_ACTUAL_COSTS,
+		finfocusv1.PluginCapability_PLUGIN_CAPABILITY_PRICING_SPEC,
+		finfocusv1.PluginCapability_PLUGIN_CAPABILITY_ESTIMATE_COST,
+		finfocusv1.PluginCapability_PLUGIN_CAPABILITY_DRY_RUN,
+	}
+}
+
 // GetPluginInfo returns metadata about the plugin including name, version,
-// spec version, and supported cloud providers.
+// spec version, supported cloud providers, and its explicit capabilities.
+// The SDK server adds the legacy supports_* metadata keys from Capabilities.
 func (c *Calculator) GetPluginInfo(
 	ctx context.Context,
 	_ *finfocusv1.GetPluginInfoRequest,
@@ -71,10 +92,12 @@ func (c *Calculator) GetPluginInfo(
 	log.Info().Msg("handling GetPluginInfo request")
 
 	return &finfocusv1.GetPluginInfoResponse{
-		Name:        "azure-public",
-		Version:     pluginVersion,
-		SpecVersion: pluginsdk.SpecVersion,
-		Providers:   []string{providerAzure, providerAzureNative},
+		Name:         "azure-public",
+		Version:      pluginVersion,
+		SpecVersion:  pluginsdk.SpecVersion,
+		Providers:    []string{providerAzure, providerAzureNative},
+		Metadata:     map[string]string{pluginMetadataType: pluginTypePublicPricing},
+		Capabilities: PluginCapabilities(),
 	}, nil
 }
 
@@ -502,7 +525,7 @@ func (c *Calculator) HandleDryRun(
 		return nil, status.Error(codes.InvalidArgument, "resource descriptor is required")
 	}
 
-	query, err := MapDescriptorToQuery(req.GetResource())
+	query, err := MapDescriptorToQuery(dryRunDescriptor(req.GetResource()))
 	if errors.Is(err, ErrUnsupportedResourceType) {
 		return unsupportedDryRunResponse(), nil
 	}
@@ -514,6 +537,34 @@ func (c *Calculator) HandleDryRun(
 	log.Debug().Str("odata_filter", filter).Msg("odata filter omitted from DryRunResponse")
 
 	return supportedDryRunResponse(), nil
+}
+
+// dryRunDescriptor fills an empty provider from the resource type token.
+// `finfocus plugin inspect <plugin> <type>` sends DryRun with the resource type
+// only. An azure-native token means azure-native; an azure token or a bare
+// canonical type such as compute/VirtualMachine means azure. Another cloud's
+// token keeps the empty provider and stays unsupported. Supports and the cost
+// RPCs keep requiring the provider, which core always sends there.
+func dryRunDescriptor(resource *finfocusv1.ResourceDescriptor) *finfocusv1.ResourceDescriptor {
+	if strings.TrimSpace(resource.GetProvider()) != "" {
+		return resource
+	}
+	resourceType := strings.ToLower(strings.TrimSpace(resource.GetResourceType()))
+	var provider string
+	switch {
+	case strings.HasPrefix(resourceType, providerAzureNative+":"):
+		provider = providerAzureNative
+	case strings.HasPrefix(resourceType, providerAzure+":"), !strings.Contains(resourceType, ":"):
+		provider = providerAzure
+	default:
+		return resource
+	}
+	inferred, ok := proto.Clone(resource).(*finfocusv1.ResourceDescriptor)
+	if !ok {
+		return resource
+	}
+	inferred.Provider = provider
+	return inferred
 }
 
 func supportedDryRunResponse() *finfocusv1.DryRunResponse {
