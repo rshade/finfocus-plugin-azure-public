@@ -229,6 +229,11 @@ Live meter checks are opt-in and are not part of CI:
 ./scripts/live-check.sh
 ```
 
+`TestCalculatorAccuracy` checks the plugin against Azure Pricing Calculator
+values, within 5 percent. The values come from the calculator's own backend,
+not from the Retail Prices API. To refresh them, see "Updating calculator
+values" in `internal/pricing/testdata/oracle/README.md`.
+
 ## Development
 
 See [CLAUDE.md](CLAUDE.md) for development commands and guidelines.

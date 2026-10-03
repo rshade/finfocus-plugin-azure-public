@@ -1,23 +1,23 @@
 case_id,calculator_configuration,owner_monthly_usd,read_on,notes
-vm_ondemand_linux:Standard_D2s_v3:eastus,"Virtual Machines, Linux, D2s_v3, eastus, pay-as-you-go, 730 hours",,,
-vm_ondemand_linux:Standard_B2s:westeurope,"Virtual Machines, Linux, B2s, westeurope, pay-as-you-go, 730 hours",,,
-vm_ondemand_linux:Standard_E8s_v5:japaneast,"Virtual Machines, Linux, E8s_v5, japaneast, pay-as-you-go, 730 hours",,,
-vm_spot_linux:Standard_D2s_v3:eastus,"Virtual Machines, Linux, D2s_v3, eastus, Spot, 730 hours",,,
-vm_spot_linux:Standard_D4s_v5:westeurope,"Virtual Machines, Linux, D4s_v5, westeurope, Spot, 730 hours",,,
-managed_disk:P10 LRS:eastus,"Managed Disks, P10 LRS, 1 disk, eastus, disk only (no operations, no mount)",,,
-managed_disk:P30 LRS:eastus,"Managed Disks, P30 LRS, 1 disk, eastus, disk only (no operations, no mount)",,,
-managed_disk:E10 ZRS:eastus,"Managed Disks, E10 ZRS, 1 disk, eastus, disk only (no operations, no mount)",,,
-managed_disk:P10 LRS:westeurope,"Managed Disks, P10 LRS, 1 disk, westeurope, disk only (no operations, no mount)",,,
-blob:Hot LRS:100gb:eastus,"Storage account, block blob, general purpose v2, Hot LRS, 100 GB stored, no operations, eastus",,,
-blob:Hot LRS:60000gb:eastus,"Storage account, block blob, general purpose v2, Hot LRS, 60000 GB stored, no operations, eastus",,,
-blob:Cool LRS:100gb:eastus,"Storage account, block blob, general purpose v2, Cool LRS, 100 GB stored, no operations, eastus",,,
-app_service_plan:P1 v3:linux:eastus,"App Service plan, Linux, P1 v3, 1 instance, eastus, 730 hours",,,
-app_service_plan:P1 v3:windows:eastus,"App Service plan, Windows, P1 v3, 1 instance, eastus, 730 hours",,,
-aks_control_plane_standard:eastus,"AKS, Standard tier cluster management only, no node pools, eastus",,,
-aks_control_plane_free:eastus,"AKS, Free tier cluster management only, no node pools, eastus",,,
-sql_gp_gen5:2vcore:100gb:nozr:eastus,"Azure SQL Database single database, General Purpose, provisioned, Gen5, 2 vCore, 100 GB, zone redundant False, license included, eastus",,,
-sql_gp_gen5:4vcore:250gb:nozr:eastus,"Azure SQL Database single database, General Purpose, provisioned, Gen5, 4 vCore, 250 GB, zone redundant False, license included, eastus",,,
-sql_gp_gen5:2vcore:100gb:zr:eastus,"Azure SQL Database single database, General Purpose, provisioned, Gen5, 2 vCore, 100 GB, zone redundant True, license included, eastus",,,
-cosmos_manual:400ru:eastus,"Cosmos DB, provisioned throughput, standard manual, 400 RU/s, single region, no storage, eastus",,,
-cosmos_autoscale:4000ru:eastus,"Cosmos DB, provisioned throughput, autoscale, max 4000 RU/s, single region, no storage, eastus",,,
-functions_consumption:3000000exec:600000gbs:eastus,"Functions, Consumption plan, 3000000 executions per month, 600000 GB-s per month, eastus",,,
+vm_ondemand_linux:Standard_D2s_v3:eastus,"Virtual Machines, Linux, D2s_v3, eastus, pay-as-you-go, 730 hours",70.08,2026-10-03,linux-d2sv3-standard perhour 0.096 x 730; source https://azure.microsoft.com/api/v3/pricing/virtual-machines/calculator/
+vm_ondemand_linux:Standard_B2s:westeurope,"Virtual Machines, Linux, B2s, westeurope, pay-as-you-go, 730 hours",35.04,2026-10-03,linux-b2s-standard perhour 0.048 x 730; source https://azure.microsoft.com/api/v3/pricing/virtual-machines/calculator/
+vm_ondemand_linux:Standard_E8s_v5:japaneast,"Virtual Machines, Linux, E8s_v5, japaneast, pay-as-you-go, 730 hours",443.84,2026-10-03,linux-e8sv5-standard perhour 0.608 x 730; source https://azure.microsoft.com/api/v3/pricing/virtual-machines/calculator/
+vm_spot_linux:Standard_D2s_v3:eastus,"Virtual Machines, Linux, D2s_v3, eastus, Spot, 730 hours",13.74,2026-10-03,linux-d2sv3-standard perhourspot 0.018816 x 730; source https://azure.microsoft.com/api/v3/pricing/virtual-machines/calculator/
+vm_spot_linux:Standard_D4s_v5:westeurope,"Virtual Machines, Linux, D4s_v5, westeurope, Spot, 730 hours",31.03,2026-10-03,linux-d4sv5-standard perhourspot 0.042504 x 730; source https://azure.microsoft.com/api/v3/pricing/virtual-machines/calculator/
+managed_disk:P10 LRS:eastus,"Managed Disks, P10 LRS, 1 disk, eastus, disk only (no operations, no mount)",19.71,2026-10-03,"premiumssd-p10-lrs monthly 19.71, disk only; source https://azure.microsoft.com/api/v2/pricing/managed-disks/calculator/"
+managed_disk:P30 LRS:eastus,"Managed Disks, P30 LRS, 1 disk, eastus, disk only (no operations, no mount)",135.17,2026-10-03,"premiumssd-p30-lrs monthly 135.17, disk only; source https://azure.microsoft.com/api/v2/pricing/managed-disks/calculator/"
+managed_disk:E10 ZRS:eastus,"Managed Disks, E10 ZRS, 1 disk, eastus, disk only (no operations, no mount)",14.40,2026-10-03,"standardssd-e10-zrs monthly 14.4, disk only; source https://azure.microsoft.com/api/v2/pricing/managed-disks/calculator/"
+managed_disk:P10 LRS:westeurope,"Managed Disks, P10 LRS, 1 disk, westeurope, disk only (no operations, no mount)",21.68,2026-10-03,"premiumssd-p10-lrs monthly 21.68, disk only; source https://azure.microsoft.com/api/v2/pricing/managed-disks/calculator/"
+blob:Hot LRS:100gb:eastus,"Storage account, block blob, general purpose v2, Hot LRS, 100 GB stored, no operations, eastus",2.10,2026-10-03,general-purpose-v2-block-blob-structured-hot-lrs graduated pergb x 100 GB; source https://azure.microsoft.com/api/v3/pricing/storage/calculator/
+blob:Hot LRS:60000gb:eastus,"Storage account, block blob, general purpose v2, Hot LRS, 60000 GB stored, no operations, eastus",1251.20,2026-10-03,general-purpose-v2-block-blob-structured-hot-lrs graduated pergb x 60000 GB; source https://azure.microsoft.com/api/v3/pricing/storage/calculator/
+blob:Cool LRS:100gb:eastus,"Storage account, block blob, general purpose v2, Cool LRS, 100 GB stored, no operations, eastus",1.50,2026-10-03,general-purpose-v2-block-blob-structured-cool-lrs pergb 0.015 x 100 GB; source https://azure.microsoft.com/api/v3/pricing/storage/calculator/
+app_service_plan:P1 v3:linux:eastus,"App Service plan, Linux, P1 v3, 1 instance, eastus, 730 hours",113.15,2026-10-03,"linux-premiumv3-p1v3-payg hourly 0.155 x 730, 1 instance; source https://azure.microsoft.com/api/v2/pricing/app-service/calculator/"
+app_service_plan:P1 v3:windows:eastus,"App Service plan, Windows, P1 v3, 1 instance, eastus, 730 hours",229.95,2026-10-03,"windows-premiumv3-p1v3-payg hourly 0.315 x 730, 1 instance; source https://azure.microsoft.com/api/v2/pricing/app-service/calculator/"
+aks_control_plane_standard:eastus,"AKS, Standard tier cluster management only, no node pools, eastus",73.00,2026-10-03,sla perhour 0.1 x 730; source https://azure.microsoft.com/api/v3/pricing/kubernetes-service/calculator/
+aks_control_plane_free:eastus,"AKS, Free tier cluster management only, no node pools, eastus",0.00,2026-10-03,"slaOption no-sla-free-non-production has no offer, cluster management 0; source https://azure.microsoft.com/api/v3/pricing/kubernetes-service/calculator/"
+sql_gp_gen5:2vcore:100gb:nozr:eastus,"Azure SQL Database single database, General Purpose, provisioned, Gen5, 2 vCore, 100 GB, zone redundant False, license included, eastus",233.74,2026-10-03,single-vcore-general-purpose-gen5-local-2 0.304434 x 730 + local-storage 0.115 x 100 GB; source https://azure.microsoft.com/api/v3/pricing/azure-sql-database/calculator/
+sql_gp_gen5:4vcore:250gb:nozr:eastus,"Azure SQL Database single database, General Purpose, provisioned, Gen5, 4 vCore, 250 GB, zone redundant False, license included, eastus",473.22,2026-10-03,single-vcore-general-purpose-gen5-local-4 0.608868 x 730 + local-storage 0.115 x 250 GB; source https://azure.microsoft.com/api/v3/pricing/azure-sql-database/calculator/
+sql_gp_gen5:2vcore:100gb:zr:eastus,"Azure SQL Database single database, General Purpose, provisioned, Gen5, 2 vCore, 100 GB, zone redundant True, license included, eastus",378.58,2026-10-03,(single-vcore-general-purpose-gen5-local-2 0.304434 + single-vcore-general-purpose-gen5-zone-2 0.18266) x 730 + zone-storage 0.23 x 100 GB; source https://azure.microsoft.com/api/v3/pricing/azure-sql-database/calculator/
+cosmos_manual:400ru:eastus,"Cosmos DB, provisioned throughput, standard manual, 400 RU/s, single region, no storage, eastus",23.36,2026-10-03,single perhour 0.008 per 100 RU/s x 730; source https://azure.microsoft.com/api/v3/pricing/cosmos-db/calculator/
+cosmos_autoscale:4000ru:eastus,"Cosmos DB, provisioned throughput, autoscale, max 4000 RU/s, single region, no storage, eastus",350.40,2026-10-03,"single perhour 0.008 x autoscaleMultiplier 1.5 per 100 RU/s x 730, 100% utilization of max; source https://azure.microsoft.com/api/v3/pricing/cosmos-db/calculator/"
+functions_consumption:3000000exec:600000gbs:eastus,"Functions, Consumption plan, 3000000 executions per month, 600000 GB-s per month, eastus",3.60,2026-10-03,"requests-payg per million + compute-payg per GB-s, free grant bands applied; source https://azure.microsoft.com/api/v2/pricing/functions/calculator/"
