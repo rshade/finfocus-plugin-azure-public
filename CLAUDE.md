@@ -636,9 +636,9 @@ The files are the canonical form `pluginsdk.SaveManifest` writes from
 `finfocus-spec` v0.7.2: snake case keys, the installation method as `binary`,
 keys sorted, and the same bytes for the same manifest. The test compares the
 committed bytes with `pluginsdk.MarshalManifestJSON` and
-`MarshalManifestYAML`, and runs `registry.ValidatePluginManifest` on the JSON
-file as written. `ValidatePluginManifest` reads JSON only, so the YAML file is loaded
-with `pluginsdk.LoadManifest` and validated as its canonical JSON.
+`MarshalManifestYAML`, and runs `registry.ValidatePluginManifest` on
+`manifest.json` as written. `ValidatePluginManifest` reads JSON only;
+`manifest.yaml` is covered by its byte equality with `MarshalManifestYAML`.
 
 `capabilities` is `PluginCapabilities()` under
 `registry.ManifestCapabilityName` (`projected_costs`, `actual_costs`,
@@ -652,8 +652,14 @@ protocol names. `actual_costs` is a list-price projection times
 `Calculator` serves: `Name`, `Supports`, `GetProjectedCost`, `GetActualCost`,
 `GetPricingSpec`, `EstimateCost`, `GetPluginInfo`, and `DryRun`.
 `TestExpectedManifest_Methods_MatchServedRPCs` calls every RPC in
-`registry.AllServiceMethods()` and fails when a listed one answers
-`Unimplemented` or an unlisted one does not.
+`registry.AllServiceMethods()` on `Calculator`. An RPC counts as unimplemented
+only when it returns the generated stub error (`method X not implemented`),
+because served RPCs also answer `Unimplemented` for an unsupported resource
+type. The test fails when a listed RPC returns the stub or an unlisted one does
+not. `pluginsdk.Server` answers some RPCs itself: `BatchCost` falls back to
+`GetProjectedCost` per resource, and `ResolveResourceTypes` and
+`GetRecommendations` return empty responses. Those are not listed, matching the
+capabilities `GetPluginInfo` advertises, so core does not route them here.
 
 Per-type input fields have no manifest field, and core reads none. DryRun
 `configuration_errors` name the identity fields, and `GetPricingSpec`
