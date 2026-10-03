@@ -113,10 +113,9 @@ Control-plane rows are selected locally from product
 
 - `Standard` uses meter `Standard Uptime SLA`. Tag `support=lts` uses
   `Standard Long Term Support` instead.
-- `Free` uses meter `FreeTierInfrastructureCost Uptime SLA`. Two rows share
-  that meter. The row with `effectiveEndDate` set is closed. The open row has
-  an empty `effectiveEndDate` and is not `0`. Monthly cost is that open
-  `retailPrice` times 730.
+- `Free` has a 0 control plane and does not read this page. The fixture
+  keeps two `FreeTierInfrastructureCost Uptime SLA` rows (one closed, one
+  open and not `0`) so the tests prove the open meter is not billed.
 - Tier `Automatic` is rejected. `Azure Kubernetes Service - Automatic` meters
   are not control-plane prices.
 

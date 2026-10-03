@@ -7,6 +7,7 @@ import (
 	"math"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,7 +27,6 @@ const (
 	refFunctionsPremiumVCPUHour  = 0.173    // Premium vCPU Duration, unit 1 Hour
 	refFunctionsPremiumGiBHour   = 0.0123   // Premium Memory Duration, unit 1 GiB Hour
 	refAKSStandardHourly         = 0.10     // Standard Uptime SLA
-	refAKSFreeHourly             = 0.05     // FreeTierInfrastructureCost Uptime SLA, open row
 	refAKSNodeD2sv3Hourly        = 0.096    // Standard_D2s_v3 Linux on-demand node
 
 	functionsFreeExecutions = 1_000_000
@@ -148,7 +148,7 @@ func TestGetProjectedCost_AKSStandardOneNodePool_SumsControlPlaneAndNodes(t *tes
 		resp.GetCostPerMonth(), breakdown["control_plane"], breakdown["node_pool_system"])
 }
 
-func TestGetProjectedCost_AKSFreeTier_QuotesOpenMeter(t *testing.T) {
+func TestGetProjectedCost_AKSFreeTierOneNodePool_ControlPlaneIsZero(t *testing.T) {
 	skipIfDisabled(t)
 	t.Cleanup(rateLimitDelay)
 	calc, _ := newTestCalculator(t)
@@ -158,10 +158,23 @@ func TestGetProjectedCost_AKSFreeTier_QuotesOpenMeter(t *testing.T) {
 		ResourceType: "containerservice/KubernetesCluster",
 		Region:       "eastus",
 		Sku:          "Free",
+		Tags: map[string]string{
+			"node_pool_1_name":  "system",
+			"node_pool_1_sku":   "Standard_D2s_v3",
+			"node_pool_1_count": "1",
+		},
 	})
-	assertBreakdownKeys(t, resp, "control_plane")
-	assertInRange(t, resp.GetCostPerMonth(), refAKSFreeHourly*pluginsdk.HoursPerMonth)
-	t.Logf("AKS Free eastus control plane: $%.4f/month", resp.GetCostPerMonth())
+	assertBreakdownKeys(t, resp, "control_plane", "node_pool_system")
+
+	breakdown := resp.GetCostBreakdown()
+	if breakdown["control_plane"] != 0 {
+		t.Fatalf("free control_plane = %.4f, want 0", breakdown["control_plane"])
+	}
+	assertInRange(t, breakdown["node_pool_system"], refAKSNodeD2sv3Hourly*pluginsdk.HoursPerMonth)
+	if !strings.Contains(resp.GetBillingDetail(), "FreeTierInfrastructureCost") {
+		t.Fatalf("billing_detail = %q, want the unbilled Free meter note", resp.GetBillingDetail())
+	}
+	t.Logf("AKS Free eastus, 1x Standard_D2s_v3: $%.4f/month (control_plane=0)", resp.GetCostPerMonth())
 }
 
 // projectedCost calls GetProjectedCost against the live API and checks the
