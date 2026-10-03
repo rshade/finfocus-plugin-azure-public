@@ -1137,20 +1137,18 @@ write `superpowers-run-report.md` with the Not delivered register and the assump
 
 ### Open issues
 
-Closed on `main` by earlier commits: #42, #45, #47, #50, #51, #54, #55, #56, #57, #59, #60, #61.
-This change closes #52. #46 stays open.
+Closed on `main` by earlier commits: #42, #43, #45, #47, #50, #51, #52, #54, #55, #56, #57, #59, #60, #61.
+This change closes #48 and #49 with live integration tests in
+`examples/projected_cost_integration_test.go`.
 
 | # | Title | Why it stays open |
 | --- | --- | --- |
 | [#53](https://github.com/rshade/finfocus-plugin-azure-public/issues/53) | Pricing accuracy vs the Azure Pricing Calculator | **AZ-3.8** BLOCKED-ON-INPUT. Every `owner_monthly_usd` cell is empty. |
-| [#49](https://github.com/rshade/finfocus-plugin-azure-public/issues/49) | AKS cluster cost estimation | **AZ-2.6** quotes AKS. Free tier uses the live 0.05 USD per hour meter. |
-| [#48](https://github.com/rshade/finfocus-plugin-azure-public/issues/48) | App Service and Functions cost estimation | **AZ-2.5** quotes plans and Consumption. `EP1` and Flex are `InvalidArgument`. |
 | [#46](https://github.com/rshade/finfocus-plugin-azure-public/issues/46) | FOCUS 1.3 column alignment | **AZ-2.14** emits a record. `charge_type` has no proto field. `commitment_discount_type` stays empty. |
 | [#44](https://github.com/rshade/finfocus-plugin-azure-public/issues/44) | GetPricingSpec for plugin discovery | **AZ-2.11** returns one spec for the quoted resource, not a catalog. |
-| [#43](https://github.com/rshade/finfocus-plugin-azure-public/issues/43) | DryRun validation RPC | **AZ-2.10** validates and does not call Azure. `DryRunResponse` has no filter field. |
 
-**Summary** (updated 2026-10-02):
-- Six issues stay open. The reasons are in the table.
+**Summary** (updated 2026-10-03):
+- Three issues stay open. The reasons are in the table.
 - Standard Load Balancer rules are quoted. NAT Gateway, virtual machine scale
   sets, Cache for Redis, and database servers for PostgreSQL and MySQL have
   no issue and are not priced.
