@@ -874,7 +874,7 @@ hour is effective from 2026-10-01: confirm it against the live API and handle it
 
 **Acceptance Criteria**: live queries pasted, tests updated, behaviour documented.
 
-**Status:** DONE, `go test -count=1 -run 'TestGetProjectedCostCosmosServerlessOmitsStorageMeter|TestGetProjectedCostAKSFreeOpenMeter' ./internal/pricing/` passed. Live AKS filter on service `Azure Kubernetes Service` and meter `FreeTierInfrastructureCost Uptime SLA` returned one open row at 0.05 USD per hour, effective 2026-10-01, month 36.50. Live Cosmos filter on that request-unit product returned only meter `1M RUs` at 0.25 USD per `1M`. The quote note says that product publishes no storage meter. Not delivered: a storage component for that product, because the live API has none.
+**Status:** DONE, `go test -count=1 -run 'TestGetProjectedCostCosmosServerlessOmitsStorageMeter|TestGetProjectedCostAKSFreeOpenMeter' ./internal/pricing/` passed. Live AKS filter on service `Azure Kubernetes Service` and meter `FreeTierInfrastructureCost Uptime SLA` returned one open row at 0.05 USD per hour, effective 2026-10-01, month 36.50. Live Cosmos filter on that request-unit product returned only meter `1M RUs` at 0.25 USD per `1M`. The quote note says that product publishes no storage meter. Not delivered: a storage component for that product, because the live API has none. Superseded for AKS by PR #70 (2026-10-02): the Free control plane is now 0 with a note, because the published AKS pricing page and the Pricing Calculator show no Free-tier charge; the meter is reported, not billed.
 
 #### AZ-6.9 — Load Balancer (stretch AZ-2.9)
 
@@ -1043,8 +1043,9 @@ no `kind` and no `reserved` is Windows. Multiply by the worker count.
 (not `sku.name`, which is `Base` or `Automatic`) and `agentPoolProfiles[]`. Today the core flattens
 the pools to a bare name, so node pools need the dotted form: price the control plane and say that
 node pools were not included when the data is missing. Node pool child resources are
-`needs_parent_resource`. Free tier: the live `FreeTierInfrastructureCost` meter is not proven
-billable: say so in the response and the register, never quote it as a fact.
+`needs_parent_resource`. Free tier: done in PR #70. The control plane is 0, and the response names the
+live `FreeTierInfrastructureCost` meter as not billed, because the published
+pricing page and the Pricing Calculator show no Free-tier charge.
 
 **Acceptance Criteria**: the AKS rows pass; the register has the Free tier assumption.
 

@@ -132,36 +132,89 @@ func TestGetProjectedCostAKSStandardTwoPools(t *testing.T) {
 	}
 }
 
-func TestGetProjectedCostAKSFreeOpenMeter(t *testing.T) {
+func TestGetProjectedCost_AKSFreeTier_PricesControlPlaneAtZero(t *testing.T) {
 	t.Parallel()
 
-	loaded := loadRetailFixture(t, aksFixturePath)
-	open, closed := splitAKSMeter(t, loaded.Items, aksFreeMeter)
-	if len(closed) == 0 {
-		t.Fatal("free meter has no row with effectiveEndDate set")
-	}
+	aksLoaded := loadRetailFixture(t, aksFixturePath)
+	vmLoaded := loadRetailFixture(t, vmFixturePath)
+	open := requireOpenAKSMeter(t, aksLoaded.Items, aksFreeMeter)
 	if open.RetailPrice == 0 {
-		t.Fatal("open free retail price is zero")
+		t.Fatal("fixture free meter is already zero; the test would not prove the meter is ignored")
 	}
+	vm := fixtureVMItem(t, vmLoaded.Items, false)
+	node := vm.RetailPrice * pluginsdk.HoursPerMonth
 
-	calc, _ := newAKSPricingCalc(t, loaded.Items, nil)
-	resp, err := calc.GetProjectedCost(context.Background(), aksRequest(aksCanonicalType, "Free", nil))
-	if err != nil {
-		t.Fatalf("GetProjectedCost() failed: %v", err)
-	}
-	if resp.GetCostPerMonth() == 0 || resp.GetUnitPrice() == 0 {
-		t.Fatal("free tier result is zero")
-	}
-	assertAKSQuote(t, resp, open.RetailPrice, map[string]float64{
-		aksComponentControl: open.RetailPrice * pluginsdk.HoursPerMonth,
-	})
-	for _, item := range closed {
-		if math.Abs(resp.GetUnitPrice()-item.RetailPrice) <= 1e-9 {
-			t.Fatalf("used closed free row price %v", item.RetailPrice)
+	closed := append([]azureclient.PriceItem(nil), aksLoaded.Items...)
+	for i := range closed {
+		if closed[i].MeterName == aksFreeMeter {
+			closed[i].EffectiveEndDate = "2020-01-01T00:00:00Z"
 		}
 	}
-	if !strings.Contains(resp.GetBillingDetail(), "Free") {
-		t.Fatalf("billing_detail = %q", resp.GetBillingDetail())
+	other := open
+	other.RetailPrice = open.RetailPrice + 1
+	other.MeterID += "-other"
+	ambiguous := append(append([]azureclient.PriceItem(nil), aksLoaded.Items...), other)
+
+	tests := []struct {
+		name     string
+		aksItems []azureclient.PriceItem
+		tags     map[string]string
+		want     map[string]float64
+	}{
+		{
+			name:     "open meter is not billed",
+			aksItems: aksLoaded.Items,
+			want:     map[string]float64{aksComponentControl: 0},
+		},
+		{
+			name: "no aks rows",
+			want: map[string]float64{aksComponentControl: 0},
+		},
+		{
+			name:     "closed meter rows",
+			aksItems: closed,
+			want:     map[string]float64{aksComponentControl: 0},
+		},
+		{
+			name:     "ambiguous meter rows",
+			aksItems: ambiguous,
+			want:     map[string]float64{aksComponentControl: 0},
+		},
+		{
+			name:     "node pools still priced",
+			aksItems: aksLoaded.Items,
+			tags:     twoPoolTags(vm.ArmSkuName, nil),
+			want: map[string]float64{
+				aksComponentControl: 0,
+				"node_pool_pool_1":  node * 2,
+				"node_pool_pool_2":  node,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			calc, filters := newAKSPricingCalc(t, tt.aksItems, vmLoaded.Items)
+			resp, err := calc.GetProjectedCost(context.Background(), aksRequest(aksCanonicalType, "Free", tt.tags))
+			if err != nil {
+				t.Fatalf("GetProjectedCost() failed: %v", err)
+			}
+			assertAKSQuote(t, resp, 0, tt.want)
+			if filters.aks != "" {
+				t.Fatalf("free tier queried the aks price page: %q", filters.aks)
+			}
+			if resp.GetCurrency() != "USD" {
+				t.Fatalf("currency = %q, want USD", resp.GetCurrency())
+			}
+			detail := resp.GetBillingDetail()
+			for _, text := range []string{"Free", aksFreeMeter, "not billed"} {
+				if !strings.Contains(detail, text) {
+					t.Fatalf("billing_detail = %q, want it to contain %q", detail, text)
+				}
+			}
+		})
 	}
 }
 
@@ -197,7 +250,7 @@ func TestGetProjectedCostAKSTierSources(t *testing.T) {
 
 	loaded := loadRetailFixture(t, aksFixturePath)
 	standard := requireOpenAKSMeter(t, loaded.Items, aksStandardMeter)
-	free := requireOpenAKSMeter(t, loaded.Items, aksFreeMeter)
+	free := azureclient.PriceItem{}
 
 	tests := []struct {
 		name string
@@ -349,61 +402,6 @@ func TestGetProjectedCostAKSMissingMeterIsNotFound(t *testing.T) {
 	}
 	if !strings.Contains(status.Convert(err).Message(), aksStandardMeter) {
 		t.Fatalf("message %q does not name %q", status.Convert(err).Message(), aksStandardMeter)
-	}
-}
-
-func TestGetProjectedCostAKSFreeSelectionErrors(t *testing.T) {
-	t.Parallel()
-
-	loaded := loadRetailFixture(t, aksFixturePath)
-	open := requireOpenAKSMeter(t, loaded.Items, aksFreeMeter)
-
-	closed := append([]azureclient.PriceItem(nil), loaded.Items...)
-	for i := range closed {
-		if closed[i].MeterName == aksFreeMeter {
-			closed[i].EffectiveEndDate = "2020-01-01T00:00:00Z"
-		}
-	}
-	other := open
-	other.RetailPrice = open.RetailPrice + 1
-	other.MeterID += "-other"
-	ambiguous := append(append([]azureclient.PriceItem(nil), loaded.Items...), other)
-	same := open
-	same.MeterID += "-same"
-	duplicates := append(append([]azureclient.PriceItem(nil), loaded.Items...), same)
-	otherCurrency := open
-	otherCurrency.CurrencyCode = "EUR"
-	otherCurrency.MeterID += "-eur"
-	mixedCurrency := append(append([]azureclient.PriceItem(nil), loaded.Items...), otherCurrency)
-
-	tests := []struct {
-		name  string
-		items []azureclient.PriceItem
-		code  codes.Code
-	}{
-		{name: "no open row", items: closed, code: codes.InvalidArgument},
-		{name: "different open prices", items: ambiguous, code: codes.InvalidArgument},
-		{name: "different open currencies", items: mixedCurrency, code: codes.InvalidArgument},
-		{name: "same open price", items: duplicates, code: codes.OK},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			calc, _ := newAKSPricingCalc(t, tt.items, nil)
-			resp, err := calc.GetProjectedCost(context.Background(), aksRequest(aksCanonicalType, "Free", nil))
-			if tt.code != codes.OK {
-				assertInvalidArgument(t, err, aksFreeMeter)
-				return
-			}
-			if err != nil {
-				t.Fatalf("GetProjectedCost() failed: %v", err)
-			}
-			assertAKSQuote(t, resp, open.RetailPrice, map[string]float64{
-				aksComponentControl: open.RetailPrice * pluginsdk.HoursPerMonth,
-			})
-		})
 	}
 }
 

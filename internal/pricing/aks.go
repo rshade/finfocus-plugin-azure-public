@@ -26,6 +26,13 @@ const (
 	aksMeterLTS      = "Standard Long Term Support"
 	aksMeterFree     = "FreeTierInfrastructureCost Uptime SLA"
 
+	// aksFreeTierNote explains the zero control plane. The Retail Prices API
+	// lists the Free meter at 0.05 USD per hour from 2026-10-01, while the
+	// published AKS pricing page and the Pricing Calculator still show the Free
+	// tier as having no control-plane charge.
+	aksFreeTierNote = "Free control plane priced at 0: the published AKS pricing page lists no " +
+		"Free-tier charge, so the retail meter " + aksMeterFree + " is not billed"
+
 	aksTierFree     = "free"
 	aksTierStandard = "standard"
 	aksTierTag      = "tier"
@@ -60,6 +67,18 @@ func (c *Calculator) quoteAKS(
 	pools, err := aksNodePools(resource.GetTags())
 	if err != nil {
 		return monthlyQuote{}, err
+	}
+
+	if tierLabel == aksLabelFree {
+		return c.aksQuote(ctx, resource, taskID, aksQuoteInput{
+			region:    region,
+			tierLabel: tierLabel,
+			item: azureclient.PriceItem{
+				CurrencyCode:  descriptorCurrency(resource),
+				UnitOfMeasure: appServiceUnitHour,
+			},
+			pools: pools,
+		})
 	}
 
 	result, err := c.fetchServicePrices(ctx, resource, aksServiceName, taskID)
@@ -164,6 +183,7 @@ func (c *Calculator) aksPoolCost(
 // aksControlPlane reads the tier from SKU, Tags["sku"], or Tags["tier"].
 // support=lts selects Standard Long Term Support. That support value with
 // Free is InvalidArgument. Any other tier, including Automatic, is rejected.
+// Free returns its meter name for the note only; quoteAKS prices it at 0.
 func aksControlPlane(resource *finfocusv1.ResourceDescriptor) (string, string, error) {
 	raw := strings.TrimSpace(resource.GetSku())
 	if raw == "" {
@@ -402,7 +422,11 @@ func aksBillingDetail(tier, region string, pools int) string {
 	if pools > 0 {
 		subject = "control plane and node pools"
 	}
-	return fmt.Sprintf("AKS %s %s in %s, 730 hrs/month", tier, subject, region)
+	detail := fmt.Sprintf("AKS %s %s in %s, 730 hrs/month", tier, subject, region)
+	if tier == aksLabelFree {
+		detail += "; " + aksFreeTierNote
+	}
+	return detail
 }
 
 func earlierTime(left, right time.Time) time.Time {

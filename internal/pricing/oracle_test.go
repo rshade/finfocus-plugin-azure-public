@@ -131,7 +131,7 @@ func runOracleCase(t *testing.T, item oracleCase, shared *Calculator) oracleResu
 	case "not_available":
 		judgeOracleMissing(&result, pluginCost, callErr)
 	case "ambiguous":
-		judgeOracleAmbiguous(&result, pluginCost, callErr)
+		judgeOracleAmbiguous(&result, item.ID, pluginCost, callErr)
 	default:
 		result.fail = "unknown oracle status " + item.Status
 	}
@@ -203,13 +203,31 @@ func judgeOracleMissing(result *oracleResult, pluginCost float64, callErr error)
 	}
 }
 
-func judgeOracleAmbiguous(result *oracleResult, pluginCost float64, callErr error) {
+// oracleZeroChoice reports whether an ambiguous case's documented choice is a
+// zero cost. Any other ambiguous case that returns zero still fails.
+func oracleZeroChoice(id string) bool {
+	switch id {
+	case "aks_control_plane_free:eastus":
+		// The AKS pricing page and the Pricing Calculator show no Free-tier
+		// control-plane charge, so the FreeTierInfrastructureCost meter is not
+		// billed (decided 2026-10-02).
+		return true
+	default:
+		return false
+	}
+}
+
+func judgeOracleAmbiguous(result *oracleResult, id string, pluginCost float64, callErr error) {
 	if callErr != nil {
 		result.plugin = status.Code(callErr).String() + ": " + status.Convert(callErr).Message()
 		result.verdict = "choice"
 		return
 	}
 	result.plugin = strconv.FormatFloat(pluginCost, 'f', -1, 64)
+	if pluginCost == 0 && oracleZeroChoice(id) {
+		result.verdict = "choice"
+		return
+	}
 	if pluginCost == 0 {
 		result.verdict = "fail"
 		result.fail = "ambiguous case returned a zero cost"
@@ -671,5 +689,33 @@ func paramBool(params map[string]any, key string) (bool, bool) {
 	default:
 		parsed, err := strconv.ParseBool(fmt.Sprint(value))
 		return parsed, err == nil
+	}
+}
+
+func TestJudgeOracleAmbiguous_ZeroCost_FailsUnlessDocumented(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		id       string
+		cost     float64
+		wantFail bool
+	}{
+		{name: "documented zero", id: "aks_control_plane_free:eastus", cost: 0},
+		{name: "undocumented zero", id: "other:eastus", cost: 0, wantFail: true},
+		{name: "documented case with a cost", id: "aks_control_plane_free:eastus", cost: 36.5},
+		{name: "undocumented case with a cost", id: "other:eastus", cost: 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var result oracleResult
+			judgeOracleAmbiguous(&result, tt.id, tt.cost, nil)
+			if (result.fail != "") != tt.wantFail {
+				t.Fatalf("fail = %q, wantFail %v", result.fail, tt.wantFail)
+			}
+		})
 	}
 }

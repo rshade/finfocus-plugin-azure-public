@@ -358,10 +358,12 @@ and `ProductName` stay empty.
 
 Standard control plane uses meter `Standard Uptime SLA`, unit `1 Hour`,
 and monthly `retailPrice * 730`. Tag `support=lts` uses
-`Standard Long Term Support` instead. Free uses meter
-`FreeTierInfrastructureCost Uptime SLA` and keeps the row whose
-`effectiveEndDate` is empty. A live query on 2026-10-01 returned one open
-row at 0.05 USD per hour, so the control plane month is 36.50. Tier
+`Standard Long Term Support` instead. The Free control plane is 0 and the
+AKS price page is not queried for it. A live query on 2026-10-02 returned an
+open `FreeTierInfrastructureCost Uptime SLA` row at 0.05 USD per hour,
+effective 2026-10-01. The published AKS pricing page and the Pricing Calculator still
+show no Free-tier charge, so that meter is not billed, and `billing_detail`
+says so. Node pools on a Free cluster are still priced. Tier
 `Automatic` is `InvalidArgument`.
 
 Node pools use tags `node_pool_1_sku` and `node_pool_1_count`, with optional

@@ -315,8 +315,8 @@ Item 44 returns one pricing spec. Item 46 has no `charge_type` field, and
 `commitment_discount_type` stays empty. Item 53 waits on owner values.
 
 **Known limitations**: item 43 has no filter field on `DryRunResponse`.
-Item 48 rejects `EP1` and Flex. Item 49 prices AKS Free from the 0.05 USD
-per hour meter.
+Item 48 rejects `EP1` and Flex. Item 49 prices the AKS Free control plane
+at 0 and notes that the 0.05 USD per hour retail meter is not billed.
 
 The counts in the table follow the milestone checklists. The
 priced-now list is the working tree. GitHub milestones were not
