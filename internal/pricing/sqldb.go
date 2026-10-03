@@ -45,16 +45,15 @@ const (
 	sqlModelBusinessCrit   = "Business Critical"
 	sqlModelHyperscale     = "Hyperscale"
 	sqlComponentZoneCPU    = "zone_redundancy_compute"
-	sqlComponentZoneDisk   = "zone_redundancy_storage"
 	sqlTaskAZ27            = "AZ-2.7"
 	sqlSKUMinParts         = 3
 )
 
 // quoteSQLDatabase prices General Purpose Gen5 provisioned vCore compute plus
 // General Purpose storage. The {n} vCore row is already the price for n
-// vCores. Storage is GB-month. Zone components are included only when
-// zone_redundant is true. Other purchasing models are Unimplemented and name
-// AZ-2.7.
+// vCores. Storage is GB-month. When zone_redundant is true, the zone vCore
+// surcharge is added to compute and storage is billed at the zone rate instead
+// of the local rate. Other purchasing models are Unimplemented and name AZ-2.7.
 func (c *Calculator) quoteSQLDatabase(
 	ctx context.Context,
 	resource *finfocusv1.ResourceDescriptor,
@@ -275,8 +274,9 @@ func sqlMonthlyQuote(
 	if err != nil {
 		return monthlyQuote{}, sqlStatus(err)
 	}
+	storageSKU, storageMeter := sqlStorageRow(spec.zone)
 	storageItem, storageErr := selectSQLPrice(
-		storage.Items, sqlStorageProduct, sqlStorageSKUName, sqlMeterDataStored, sqlUnitGBMonth,
+		storage.Items, sqlStorageProduct, storageSKU, storageMeter, sqlUnitGBMonth,
 	)
 	if storageErr != nil {
 		return monthlyQuote{}, sqlStatus(storageErr)
@@ -295,13 +295,12 @@ func sqlMonthlyQuote(
 		{key: breakdownStorage, price: storageItem.RetailPrice, unit: storageItem.UnitOfMeasure},
 	}
 	if spec.zone {
-		zoneCompute, zoneStorage, zoneErr := addSQLZone(components, compute.Items, storage.Items, spec, currency)
+		zoneCompute, zoneErr := addSQLZoneCompute(components, compute.Items, spec, currency)
 		if zoneErr != nil {
 			return monthlyQuote{}, zoneErr
 		}
 		meters = append(meters,
 			quoteMeter{key: sqlComponentZoneCPU, price: zoneCompute.RetailPrice, unit: zoneCompute.UnitOfMeasure},
-			quoteMeter{key: sqlComponentZoneDisk, price: zoneStorage.RetailPrice, unit: zoneStorage.UnitOfMeasure},
 		)
 	}
 
@@ -319,37 +318,39 @@ func sqlMonthlyQuote(
 	}, nil
 }
 
-func addSQLZone(
+// sqlStorageRow returns the storage sku and meter. Zone-redundant storage is
+// a replacement rate, not a surcharge: Azure bills the zone row instead of the
+// local row (issue #77).
+func sqlStorageRow(zone bool) (string, string) {
+	if zone {
+		return sqlZoneStorageSKUName, sqlMeterZoneDataStored
+	}
+	return sqlStorageSKUName, sqlMeterDataStored
+}
+
+func addSQLZoneCompute(
 	components map[string]float64,
-	compute, storage []azureclient.PriceItem,
+	compute []azureclient.PriceItem,
 	spec sqlRequest,
 	currency string,
-) (azureclient.PriceItem, azureclient.PriceItem, error) {
+) (azureclient.PriceItem, error) {
 	computeItem, err := selectSQLPrice(
 		compute, sqlComputeProduct, sqlZoneVCoreSKU(spec.vcores), sqlMeterZoneVCore, sqlUnitHour,
 	)
 	if err != nil {
-		return azureclient.PriceItem{}, azureclient.PriceItem{}, sqlStatus(err)
+		return azureclient.PriceItem{}, sqlStatus(err)
 	}
-	storageItem, storageErr := selectSQLPrice(
-		storage, sqlStorageProduct, sqlZoneStorageSKUName, sqlMeterZoneDataStored, sqlUnitGBMonth,
-	)
-	if storageErr != nil {
-		return azureclient.PriceItem{}, azureclient.PriceItem{}, sqlStatus(storageErr)
-	}
-	if currencyErr := sqlSameCurrency(currency, computeItem, storageItem); currencyErr != nil {
-		return azureclient.PriceItem{}, azureclient.PriceItem{}, currencyErr
+	if currencyErr := sqlSameCurrency(currency, computeItem); currencyErr != nil {
+		return azureclient.PriceItem{}, currencyErr
 	}
 	components[sqlComponentZoneCPU] = computeItem.RetailPrice * pluginsdk.HoursPerMonth
-	components[sqlComponentZoneDisk] = storageItem.RetailPrice * spec.sizeGB
-	return computeItem, storageItem, nil
+	return computeItem, nil
 }
 
 func sqlComponentSum(components map[string]float64) float64 {
 	return components[breakdownCompute] +
 		components[breakdownStorage] +
-		components[sqlComponentZoneCPU] +
-		components[sqlComponentZoneDisk]
+		components[sqlComponentZoneCPU]
 }
 
 func selectSQLPrice(items []azureclient.PriceItem, product, sku, meter, unit string) (azureclient.PriceItem, error) {

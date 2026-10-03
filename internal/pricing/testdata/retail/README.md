@@ -154,8 +154,8 @@ Storage selection is local. The paid meter is `General Purpose Data Stored`,
 unit `1 GB/Month`. Monthly storage is `retailPrice` times size in GB, not
 times 730. `General Purpose Data Stored - Free` is the included quantity at
 `0` and is not the overage. Zone storage is
-`General Purpose Zone Redundancy Data Stored`. IO rate meters are not
-capacity.
+`General Purpose Zone Redundancy Data Stored`, which replaces the local
+meter when `zone_redundant=true`. IO rate meters are not capacity.
 
 ```bash
 mkdir -p internal/pricing/testdata/retail/sqldb

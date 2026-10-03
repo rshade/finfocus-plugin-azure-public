@@ -110,7 +110,10 @@ price in the fixture is 0. Do not select it when the paid meter exists. If
 the paid meter is missing, the result is `NotFound`, not the free row.
 
 Zone capacity is meter `General Purpose Zone Redundancy Data Stored`, unit
-`1 GB/Month`. It is added only when `zone_redundant=true`. IO rate meters are
+`1 GB/Month`. When `zone_redundant=true` it replaces `General Purpose Data
+Stored`; it is not added on top. The Pricing Calculator picks one storage
+offer, local or zone, and the zone IO rate row repeats the local IO price, so
+the zone row is a full rate (issue #77, read 2026-10-03). IO rate meters are
 not capacity and are not selected.
 
 | skuName | meterName | unitOfMeasure |

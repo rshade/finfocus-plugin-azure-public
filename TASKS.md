@@ -1053,7 +1053,8 @@ billable: say so in the response and the register, never quote it as a fact.
 **Description**: Classic `skuName` (`GP_Gen5_4`), `maxSizeGb`, `zoneRedundant`, `licenseType`, and no
 `location` (join from `serverId`: `needs_parent_resource`); native `sku.name` and `sku.capacity`
 (today lost), `maxSizeBytes`. Serverless `GP_S_*` returns an explicit unsupported error, never the
-provisioned price. Zone redundancy and `licenseType: BasePrice` are ambiguous in the Retail API: take
+provisioned price. Zone redundancy is settled by #77: the zone vCore meter is a surcharge on compute,
+and zone storage replaces local storage. `licenseType: BasePrice` is ambiguous in the Retail API: take
 a documented reading and record it.
 
 **Acceptance Criteria**: the SQL rows pass; the ambiguity is in the register with both readings.
