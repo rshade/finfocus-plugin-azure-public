@@ -2,6 +2,7 @@ package pricing
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -9,13 +10,26 @@ import (
 	finfocusv1 "github.com/rshade/finfocus-spec/sdk/go/proto/finfocus/v1"
 )
 
-// FOCUS Unit Format values and the FOCUS 1.3 provider name for Azure. The name
-// matches PublisherName in microsoft/finops-toolkit Services.csv.
+// FOCUS Unit Format values and the FOCUS 1.3 provider name for Azure. The
+// units follow microsoft/finops-toolkit PricingUnits.csv (DistinctUnits), and
+// the name matches PublisherName in its Services.csv.
 const (
 	focusUnitHours         = "Hours"
 	focusUnitMonths        = "Months"
+	focusUnitUnitsPerMonth = "Units/Month"
 	focusProviderMicrosoft = "Microsoft"
+	// focusVirtualMachines is both a Services.csv ServiceName and a FOCUS 1.3
+	// ServiceSubcategory.
+	focusVirtualMachines = "Virtual Machines"
 )
+
+// focusService is the FOCUS 1.3 ServiceName, ServiceCategory, and
+// ServiceSubcategory of one priced resource.
+type focusService struct {
+	name        string
+	category    finfocusv1.FocusServiceCategory
+	subcategory string
+}
 
 // buildFocusRecord maps one actual-cost quote onto a FOCUS record.
 // billingAccountID comes from the request when that id is set, and otherwise
@@ -37,12 +51,7 @@ func buildFocusRecord(
 	if resource != nil {
 		tags = resource.GetTags()
 	}
-	category, subcategory, err := focusServiceClass(resourceType, tags)
-	if err != nil {
-		return nil, err
-	}
-
-	query, err := MapDescriptorToQuery(resource)
+	service, err := focusServiceClass(resourceType, tags, descriptorSKU(resource))
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +81,8 @@ func buildFocusRecord(
 		).
 		WithFinancials(cost, cost, cost, quote.currency, "").
 		WithContractedCost(cost).
-		WithService(category, query.ServiceName).
-		WithServiceSubcategory(subcategory).
+		WithService(service.category, service.name).
+		WithServiceSubcategory(service.subcategory).
 		WithSKU(quote.sku, "").
 		WithLocation(quote.region, quote.region, "").
 		WithResource(resourceID, "", resourceType)
@@ -81,7 +90,7 @@ func buildFocusRecord(
 	//nolint:staticcheck // SA1019: required until FOCUS 1.4 removes the column.
 	builder = builder.WithPublisher(focusProviderMicrosoft)
 	if window.hours > 0 {
-		quantity, unit, unitPrice := focusPricingBasis(quote.meters, cost, window.hours)
+		quantity, unit, unitPrice := focusPricingBasis(quote.meters, quote.monthly, window.hours)
 		builder = builder.
 			WithPricing(quantity, unit, unitPrice).
 			WithContractedUnitPrice(unitPrice).
@@ -91,60 +100,96 @@ func buildFocusRecord(
 	return builder.Build()
 }
 
-// focusServiceClass returns the FOCUS 1.3 ServiceCategory and
-// ServiceSubcategory for a resource type. The pairs follow
-// microsoft/finops-toolkit Services.csv, so rows line up with Azure's own
-// FOCUS data. App Service plans map to Web / Application Platforms there,
-// but FocusServiceCategory has no Web value until rshade/finfocus-spec#612,
-// so they use Compute / Other (Compute).
-func focusServiceClass(
-	resourceType string,
-	tags map[string]string,
-) (finfocusv1.FocusServiceCategory, string, error) {
+// focusServiceClass returns the FOCUS 1.3 service columns for a resource
+// type. Name, category, and subcategory follow microsoft/finops-toolkit
+// Services.csv, so rows line up with Azure's own FOCUS data. Azure App Service
+// (server farms, and a Function App billed on a plan) is Web / Application
+// Platforms there, but FocusServiceCategory has no Web value until
+// rshade/finfocus-spec#612, so it uses Compute / Other (Compute). sku is only
+// read to tell a Function App on a plan from a serverless one.
+func focusServiceClass(resourceType string, tags map[string]string, sku string) (focusService, error) {
 	lower := strings.ToLower(strings.TrimSpace(resourceType))
 	compute := finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE
 	database := finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_DATABASE
+	appService := focusService{name: "Azure App Service", category: compute, subcategory: "Other (Compute)"}
 	switch {
+	case isVirtualMachineScaleSetResourceType(lower):
+		return focusService{
+			name:        "Virtual Machine Scale Sets",
+			category:    compute,
+			subcategory: focusVirtualMachines,
+		}, nil
 	case isPricedVMResourceType(lower) || isManagedDiskResourceType(lower):
-		return compute, "Virtual Machines", nil
+		return focusService{name: focusVirtualMachines, category: compute, subcategory: focusVirtualMachines}, nil
 	case isFunctionAppResourceType(lower) || isNativeFunctionWebApp(lower, tags):
-		return compute, "Serverless Compute", nil
+		if kind, err := functionQuoteKind(tags[tagPricingModel], sku); err == nil && kind == kindFunctionDedicated {
+			return appService, nil
+		}
+		return focusService{name: "Functions", category: compute, subcategory: "Serverless Compute"}, nil
 	case isAppServicePlanResourceType(lower):
-		return compute, "Other (Compute)", nil
+		return appService, nil
 	case isAKSResourceType(lower):
-		return compute, "Containers", nil
+		return focusService{name: "Azure Kubernetes Service", category: compute, subcategory: "Containers"}, nil
 	case isBlobStorageResourceType(lower) || isStorageAccountResourceType(lower):
-		return finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_STORAGE, "Storage Platforms", nil
+		return focusService{
+			name:        "Storage Accounts",
+			category:    finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_STORAGE,
+			subcategory: "Storage Platforms",
+		}, nil
 	case isSQLDatabaseResourceType(lower):
-		return database, "Relational Databases", nil
+		return focusService{name: "Azure SQL Database", category: database, subcategory: "Relational Databases"}, nil
 	case isCosmosAccountResourceType(lower):
-		return database, "NoSQL Databases", nil
+		return focusService{name: "Cosmos DB", category: database, subcategory: "NoSQL Databases"}, nil
 	case isLoadBalancerResourceType(lower):
-		return finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_NETWORK, "Application Networking", nil
+		return focusService{
+			name:        "Load Balancer",
+			category:    finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_NETWORK,
+			subcategory: "Application Networking",
+		}, nil
 	default:
-		return finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_UNSPECIFIED, "",
-			fmt.Errorf("unsupported resource type: %s: %w", resourceType, ErrUnsupportedResourceType)
+		return focusService{}, fmt.Errorf("unsupported resource type: %s: %w", resourceType, ErrUnsupportedResourceType)
 	}
 }
 
 // focusPricingBasis returns the FOCUS pricing quantity, unit, and unit price
-// for one cost window. A quote priced by exactly one positive hourly or
-// monthly meter is expressed in that meter's unit, so quantity is cost divided
-// by the meter price (instance-hours for a scale set, months for a disk).
-// Any other quote, including several meters, GB-month bands, and zero prices,
-// is expressed in window hours. In both cases unit price times quantity is the
-// cost.
-func focusPricingBasis(meters []quoteMeter, cost, hours float64) (float64, string, float64) {
-	if len(meters) == 1 && meters[0].price > 0 && cost > 0 {
+// for one cost window. A quote billed by exactly one positive hourly or
+// monthly meter, whose monthly total is that meter times its count, is
+// expressed in the meter's unit. The quantity is then counted directly
+// (window hours times instances, or window months) rather than divided back
+// out of the cost, so 24 hours stays exactly 24. Any other quote (several
+// meters, GB-month bands, request units, zero prices) is expressed in window
+// hours with both unit prices unset, because a blended rate is not a
+// published price. ValidateFocusRecord only checks ContractedCost against
+// unit price times quantity when both are non-zero.
+func focusPricingBasis(meters []quoteMeter, monthly, hours float64) (float64, string, float64) {
+	if len(meters) == 1 && meters[0].price > 0 && monthly > 0 {
 		meter := meters[0]
-		switch unit := strings.ToLower(strings.TrimSpace(meter.unit)); unit {
-		case "1 hour":
-			return cost / meter.price, focusUnitHours, meter.price
-		case "1/month", "1 month":
-			return cost / meter.price, focusUnitMonths, meter.price
+		count := meter.count
+		if count == 0 {
+			count = 1
+		}
+		months := hours / pluginsdk.HoursPerMonth
+		switch strings.ToLower(strings.TrimSpace(meter.unit)) {
+		case "1 hour", "1 hours":
+			if sameAmount(monthly, meter.price*pluginsdk.HoursPerMonth*count) {
+				return hours * count, focusUnitHours, meter.price
+			}
+		case "1/month":
+			if sameAmount(monthly, meter.price*count) {
+				return months * count, focusUnitUnitsPerMonth, meter.price
+			}
+		case "1 month":
+			if sameAmount(monthly, meter.price*count) {
+				return months * count, focusUnitMonths, meter.price
+			}
 		}
 	}
-	return hours, focusUnitHours, cost / hours
+	return hours, focusUnitHours, 0
+}
+
+// sameAmount reports whether two money amounts agree to within float noise.
+func sameAmount(a, b float64) bool {
+	return math.Abs(a-b) <= 1e-9*math.Max(1, math.Abs(b))
 }
 
 func focusPricingCategory(resource *finfocusv1.ResourceDescriptor) finfocusv1.FocusPricingCategory {

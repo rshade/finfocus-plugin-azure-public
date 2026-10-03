@@ -199,6 +199,7 @@ func TestFocusRecordMatchesActualCost(t *testing.T) {
 	const hours = 24.0
 	monthly := 0.0104 * pluginsdk.HoursPerMonth
 	quote := focusQuote(monthly, "USD", "vm detail")
+	quote.meters = []quoteMeter{{key: breakdownCompute, price: 0.0104, unit: "1 Hour"}}
 	window := focusWindow(hours)
 	// The RPC resolves this from the request or the process setting.
 	billingAccountID := "ba-focus-test"
@@ -579,10 +580,11 @@ func TestFocusPricingBasis_Quotes_ReturnMeterOrWindowBasis(t *testing.T) {
 	const hours = 24.0
 	vmHourly := 0.0104
 	diskMonthly := 19.71
+	months := hours / pluginsdk.HoursPerMonth
 	tests := []struct {
 		name      string
 		meters    []quoteMeter
-		cost      float64
+		monthly   float64
 		wantQty   float64
 		wantUnit  string
 		wantPrice float64
@@ -590,26 +592,49 @@ func TestFocusPricingBasis_Quotes_ReturnMeterOrWindowBasis(t *testing.T) {
 		{
 			name:      "single hourly meter",
 			meters:    []quoteMeter{{key: breakdownCompute, price: vmHourly, unit: "1 Hour"}},
-			cost:      vmHourly * hours,
+			monthly:   vmHourly * pluginsdk.HoursPerMonth,
+			wantQty:   hours,
+			wantUnit:  focusUnitHours,
+			wantPrice: vmHourly,
+		},
+		{
+			name:      "plural hours unit",
+			meters:    []quoteMeter{{key: breakdownCompute, price: vmHourly, unit: "1 Hours"}},
+			monthly:   vmHourly * pluginsdk.HoursPerMonth,
 			wantQty:   hours,
 			wantUnit:  focusUnitHours,
 			wantPrice: vmHourly,
 		},
 		{
 			name:      "scale set of three bills instance hours",
-			meters:    []quoteMeter{{key: breakdownCompute, price: vmHourly, unit: "1 Hour"}},
-			cost:      vmHourly * hours * 3,
+			meters:    []quoteMeter{{key: breakdownCompute, price: vmHourly, unit: "1 Hour", count: 3}},
+			monthly:   vmHourly * pluginsdk.HoursPerMonth * 3,
 			wantQty:   hours * 3,
 			wantUnit:  focusUnitHours,
 			wantPrice: vmHourly,
 		},
 		{
-			name:      "single monthly meter bills months",
+			name:      "per month meter bills units per month",
 			meters:    []quoteMeter{{key: breakdownStorage, price: diskMonthly, unit: "1/Month"}},
-			cost:      diskMonthly * hours / pluginsdk.HoursPerMonth,
-			wantQty:   hours / pluginsdk.HoursPerMonth,
+			monthly:   diskMonthly,
+			wantQty:   months,
+			wantUnit:  focusUnitUnitsPerMonth,
+			wantPrice: diskMonthly,
+		},
+		{
+			name:      "one month meter bills months",
+			meters:    []quoteMeter{{key: breakdownStorage, price: diskMonthly, unit: "1 Month"}},
+			monthly:   diskMonthly,
+			wantQty:   months,
 			wantUnit:  focusUnitMonths,
 			wantPrice: diskMonthly,
+		},
+		{
+			name:     "monthly total that is not the meter uses the window",
+			meters:   []quoteMeter{{key: breakdownCompute, price: vmHourly, unit: "1 Hour"}},
+			monthly:  vmHourly * pluginsdk.HoursPerMonth * 2,
+			wantQty:  hours,
+			wantUnit: focusUnitHours,
 		},
 		{
 			name: "several meters use the window",
@@ -617,59 +642,50 @@ func TestFocusPricingBasis_Quotes_ReturnMeterOrWindowBasis(t *testing.T) {
 				{key: "control_plane", price: 0.10, unit: "1 Hour"},
 				{key: "node_pool_pool_1", price: 0.096, unit: "1 Hour"},
 			},
-			cost:      9.0,
-			wantQty:   hours,
-			wantUnit:  focusUnitHours,
-			wantPrice: 9.0 / hours,
+			monthly:  273,
+			wantQty:  hours,
+			wantUnit: focusUnitHours,
 		},
 		{
-			name:      "zero price meter uses the window",
-			meters:    []quoteMeter{{key: breakdownCompute, price: 0, unit: "1 Hour"}},
-			cost:      0,
-			wantQty:   hours,
-			wantUnit:  focusUnitHours,
-			wantPrice: 0,
+			name:     "zero price meter uses the window",
+			meters:   []quoteMeter{{key: breakdownCompute, price: 0, unit: "1 Hour"}},
+			wantQty:  hours,
+			wantUnit: focusUnitHours,
 		},
 		{
-			name:      "gb month meter uses the window",
-			meters:    []quoteMeter{{key: breakdownStorage, price: 0.0208, unit: "1 GB/Month"}},
-			cost:      0.0208 * 100 * hours / pluginsdk.HoursPerMonth,
-			wantQty:   hours,
-			wantUnit:  focusUnitHours,
-			wantPrice: 0.0208 * 100 / pluginsdk.HoursPerMonth,
+			name:     "gb month meter uses the window",
+			meters:   []quoteMeter{{key: breakdownStorage, price: 0.0208, unit: "1 GB/Month"}},
+			monthly:  2.08,
+			wantQty:  hours,
+			wantUnit: focusUnitHours,
 		},
 		{
-			name:      "per hour request unit meter uses the window",
-			meters:    []quoteMeter{{key: "ru", price: 0.008, unit: "1/Hour"}},
-			cost:      0.008 * 4 * hours,
-			wantQty:   hours,
-			wantUnit:  focusUnitHours,
-			wantPrice: 0.008 * 4,
+			name:     "per hour request unit meter uses the window",
+			meters:   []quoteMeter{{key: "ru", price: 0.008, unit: "1/Hour"}},
+			monthly:  0.008 * 4 * pluginsdk.HoursPerMonth,
+			wantQty:  hours,
+			wantUnit: focusUnitHours,
 		},
 		{
-			name:      "no meters use the window",
-			cost:      2.4,
-			wantQty:   hours,
-			wantUnit:  focusUnitHours,
-			wantPrice: 0.1,
+			name:     "no meters use the window",
+			monthly:  73,
+			wantQty:  hours,
+			wantUnit: focusUnitHours,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			qty, unit, price := focusPricingBasis(tt.meters, tt.cost, hours)
+			qty, unit, price := focusPricingBasis(tt.meters, tt.monthly, hours)
 			if unit != tt.wantUnit {
 				t.Errorf("unit = %q, want %q", unit, tt.wantUnit)
 			}
-			if math.Abs(qty-tt.wantQty) > 1e-9 {
-				t.Errorf("quantity = %v, want %v", qty, tt.wantQty)
+			if qty != tt.wantQty {
+				t.Errorf("quantity = %v, want exactly %v", qty, tt.wantQty)
 			}
-			if math.Abs(price-tt.wantPrice) > 1e-12 {
+			if price != tt.wantPrice {
 				t.Errorf("unit price = %v, want %v", price, tt.wantPrice)
-			}
-			if math.Abs(price*qty-tt.cost) > 1e-9 {
-				t.Errorf("unit price %v * quantity %v = %v, want cost %v", price, qty, price*qty, tt.cost)
 			}
 		})
 	}
@@ -702,8 +718,13 @@ func TestBuildFocusRecord_CostColumns_AgreeWithUnitPrice(t *testing.T) {
 		t.Errorf("unit prices contracted=%v list=%v, want %v",
 			record.GetContractedUnitPrice(), record.GetListUnitPrice(), diskMonthly)
 	}
-	if record.GetPricingUnit() != focusUnitMonths || record.GetConsumedUnit() != focusUnitMonths {
-		t.Errorf("units = %q and %q, want %s", record.GetPricingUnit(), record.GetConsumedUnit(), focusUnitMonths)
+	if record.GetPricingUnit() != focusUnitUnitsPerMonth || record.GetConsumedUnit() != focusUnitUnitsPerMonth {
+		t.Errorf(
+			"units = %q and %q, want %s",
+			record.GetPricingUnit(),
+			record.GetConsumedUnit(),
+			focusUnitUnitsPerMonth,
+		)
 	}
 	qty := record.GetPricingQuantity()
 	if math.Abs(record.GetListUnitPrice()*qty-record.GetListCost()) > 1e-9 ||
@@ -723,60 +744,74 @@ func TestFocusServiceClass_EverySupportedType_MatchesMicrosoftMapping(t *testing
 	storage := finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_STORAGE
 	database := finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_DATABASE
 	network := finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_NETWORK
+	vms := focusService{name: "Virtual Machines", category: compute, subcategory: "Virtual Machines"}
+	scaleSets := focusService{name: "Virtual Machine Scale Sets", category: compute, subcategory: "Virtual Machines"}
+	appService := focusService{name: "Azure App Service", category: compute, subcategory: "Other (Compute)"}
+	functions := focusService{name: "Functions", category: compute, subcategory: "Serverless Compute"}
+	accounts := focusService{name: "Storage Accounts", category: storage, subcategory: "Storage Platforms"}
 	tests := []struct {
+		name         string
 		resourceType string
 		tags         map[string]string
-		category     finfocusv1.FocusServiceCategory
-		subcategory  string
+		sku          string
+		want         focusService
 	}{
-		{resourceType: "compute/VirtualMachine", category: compute, subcategory: "Virtual Machines"},
-		{
-			resourceType: "azure:compute/linuxVirtualMachineScaleSet:LinuxVirtualMachineScaleSet",
-			category:     compute,
-			subcategory:  "Virtual Machines",
-		},
-		{
-			resourceType: "azure:compute/windowsVirtualMachine:WindowsVirtualMachine",
-			category:     compute,
-			subcategory:  "Virtual Machines",
-		},
-		{
-			resourceType: "azure-native:compute:VirtualMachineScaleSet",
-			category:     compute,
-			subcategory:  "Virtual Machines",
-		},
-		{resourceType: "storage/ManagedDisk", category: compute, subcategory: "Virtual Machines"},
-		{resourceType: "storage/StorageAccount", category: storage, subcategory: "Storage Platforms"},
-		{resourceType: "storage/BlobStorage", category: storage, subcategory: "Storage Platforms"},
-		{resourceType: "web/AppServicePlan", category: compute, subcategory: "Other (Compute)"},
-		{resourceType: "web/FunctionApp", category: compute, subcategory: "Serverless Compute"},
+		{resourceType: "compute/VirtualMachine", want: vms},
+		{resourceType: "azure:compute/linuxVirtualMachineScaleSet:LinuxVirtualMachineScaleSet", want: scaleSets},
+		{resourceType: "azure:compute/windowsVirtualMachine:WindowsVirtualMachine", want: vms},
+		{resourceType: "azure-native:compute:VirtualMachineScaleSet", want: scaleSets},
+		{resourceType: "storage/ManagedDisk", want: vms},
+		{resourceType: "storage/StorageAccount", want: accounts},
+		{resourceType: "storage/BlobStorage", want: accounts},
+		{resourceType: "web/AppServicePlan", want: appService},
+		{resourceType: "web/FunctionApp", want: functions},
+		{name: "function app on a plan", resourceType: "web/FunctionApp", sku: "B1", want: appService},
 		{
 			resourceType: "azure-native:web:WebApp",
 			tags:         map[string]string{"kind": "FunctionApp"},
-			category:     compute,
-			subcategory:  "Serverless Compute",
+			want:         functions,
 		},
-		{resourceType: "containerservice/KubernetesCluster", category: compute, subcategory: "Containers"},
-		{resourceType: "sql/Database", category: database, subcategory: "Relational Databases"},
-		{resourceType: "cosmosdb/Account", category: database, subcategory: "NoSQL Databases"},
-		{resourceType: "network/LoadBalancer", category: network, subcategory: "Application Networking"},
+		{
+			resourceType: "containerservice/KubernetesCluster",
+			want:         focusService{name: "Azure Kubernetes Service", category: compute, subcategory: "Containers"},
+		},
+		{
+			resourceType: "sql/Database",
+			want: focusService{
+				name:        "Azure SQL Database",
+				category:    database,
+				subcategory: "Relational Databases",
+			},
+		},
+		{
+			resourceType: "cosmosdb/Account",
+			want:         focusService{name: "Cosmos DB", category: database, subcategory: "NoSQL Databases"},
+		},
+		{
+			resourceType: "network/LoadBalancer",
+			want:         focusService{name: "Load Balancer", category: network, subcategory: "Application Networking"},
+		},
 	}
 
 	covered := map[string]bool{}
 	for _, tt := range tests {
 		covered[tt.resourceType] = true
-		t.Run(tt.resourceType, func(t *testing.T) {
+		name := tt.name
+		if name == "" {
+			name = tt.resourceType
+		}
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			category, subcategory, err := focusServiceClass(tt.resourceType, tt.tags)
+			got, err := focusServiceClass(tt.resourceType, tt.tags, tt.sku)
 			if err != nil {
 				t.Fatalf("focusServiceClass() failed: %v", err)
 			}
-			if category != tt.category || subcategory != tt.subcategory {
-				t.Fatalf("class = %s / %q, want %s / %q", category, subcategory, tt.category, tt.subcategory)
+			if got != tt.want {
+				t.Fatalf("service = %+v, want %+v", got, tt.want)
 			}
-			if parent, ok := focus13SubcategoryParents()[subcategory]; !ok || parent != category {
-				t.Fatalf("subcategory %q is not a FOCUS 1.3 child of %s", subcategory, category)
+			if parent, ok := focus13SubcategoryParents()[got.subcategory]; !ok || parent != got.category {
+				t.Fatalf("subcategory %q is not a FOCUS 1.3 child of %s", got.subcategory, got.category)
 			}
 		})
 	}

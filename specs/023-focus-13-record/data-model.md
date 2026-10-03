@@ -6,17 +6,19 @@ No new persisted data. The in-memory values are listed below.
 
 | Field | Type | Rule |
 | --- | --- | --- |
-| quantity | float64 | cost / meter price, or window hours |
-| unit | string | `Hours` or `Months` (FOCUS Unit Format) |
-| unitPrice | float64 | meter price, or cost / window hours |
+| quantity | float64 | window hours × count, window months × count, or window hours |
+| unit | string | `Hours`, `Units/Month`, or `Months` (PricingUnits.csv) |
+| unitPrice | float64 | meter price, or 0 for a blended quote |
 
-Invariant: `unitPrice × quantity == cost`, within the SDK tolerance.
+Invariant: when `unitPrice` is set, `unitPrice × quantity == cost` within the
+SDK tolerance.
 `quantity > 0` whenever window hours > 0.
 
 ## Service class
 
 | Field | Type | Rule |
 | --- | --- | --- |
+| name | string | Services.csv ServiceName for the resource type |
 | category | `FocusServiceCategory` | from the resource type |
 | subcategory | string | FOCUS 1.3 allowed value whose parent is the category |
 
@@ -32,8 +34,9 @@ Invariant: `unitPrice × quantity == cost`, within the SDK tolerance.
 | host_provider_name | empty | `Microsoft` |
 | contracted_cost | 0 | window cost |
 | contracted_unit_price | 0 | unitPrice |
-| pricing_unit / consumed_unit | `hour` | `Hours` or `Months` |
+| pricing_unit / consumed_unit | `hour` | `Hours`, `Units/Month`, or `Months` |
 | pricing_quantity / consumed_quantity | window hours | basis quantity |
-| list_unit_price | cost / hours | basis unitPrice |
+| list_unit_price | cost / hours | meter price, or unset when blended |
+| service_name | Retail API service | Services.csv ServiceName |
 | service_category (disk) | Storage | Compute |
 | service_subcategory | empty | mapped value |
