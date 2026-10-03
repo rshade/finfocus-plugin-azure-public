@@ -624,9 +624,9 @@ func pricingSpecItems(filter string, fx pricingSpecFX) []azureclient.PriceItem {
 		return fx.vm
 	case strings.Contains(filter, "Managed Disks"), strings.Contains(filter, "Premium SSD Managed Disks"):
 		return fx.disk
-	case strings.Contains(filter, "Blob Storage"):
+	case strings.Contains(filter, generalBlockBlobV2Product) && strings.Contains(filter, "skuName eq "):
 		return fx.blob
-	case strings.Contains(filter, "General Block Blob v2"):
+	case strings.Contains(filter, generalBlockBlobV2Product):
 		return fx.storage
 	case strings.Contains(filter, "serviceName eq 'Storage'"):
 		return fx.blob

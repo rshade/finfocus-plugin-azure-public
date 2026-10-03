@@ -7,6 +7,7 @@ import (
 	"math"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -66,8 +67,20 @@ func TestGetProjectedCostDiskUsesMonthlyTierPrice(t *testing.T) {
 	t.Parallel()
 
 	calc := newPricingCalc(t, []azureclient.PriceItem{
-		{MeterName: "P4 LRS Disk", RetailPrice: 5.28, CurrencyCode: "USD"},
-		{MeterName: "P10 LRS Disk", RetailPrice: 19.71, CurrencyCode: "USD"},
+		{
+			ProductName:  "Premium SSD Managed Disks",
+			SkuName:      "P4 LRS",
+			MeterName:    "P4 LRS Disk",
+			RetailPrice:  5.28,
+			CurrencyCode: "USD",
+		},
+		{
+			ProductName:  "Premium SSD Managed Disks",
+			SkuName:      "P10 LRS",
+			MeterName:    "P10 LRS Disk",
+			RetailPrice:  19.71,
+			CurrencyCode: "USD",
+		},
 	})
 
 	resp, err := calc.GetProjectedCost(context.Background(), &finfocusv1.GetProjectedCostRequest{
@@ -97,10 +110,36 @@ func TestGetProjectedCostBlobScalesBySizeAndPrefersDataStored(t *testing.T) {
 	t.Parallel()
 
 	calc := newPricingCalc(t, []azureclient.PriceItem{
-		{MeterName: "Hot LRS Write Operations", RetailPrice: 0.0001, CurrencyCode: "USD"},
-		{MeterName: "Hot LRS Data Stored", RetailPrice: 0.019136, CurrencyCode: "USD", TierMinimumUnits: 512000},
-		{MeterName: "Hot LRS Data Stored", RetailPrice: 0.0208, CurrencyCode: "USD"},
-		{MeterName: "Hot LRS Data Stored", RetailPrice: 0.019968, CurrencyCode: "USD", TierMinimumUnits: 51200},
+		{
+			ProductName:  generalBlockBlobV2Product,
+			SkuName:      "Hot LRS",
+			MeterName:    "Hot LRS Write Operations",
+			RetailPrice:  0.0001,
+			CurrencyCode: "USD",
+		},
+		{
+			ProductName:      generalBlockBlobV2Product,
+			SkuName:          "Hot LRS",
+			MeterName:        "Hot LRS Data Stored",
+			RetailPrice:      0.019136,
+			CurrencyCode:     "USD",
+			TierMinimumUnits: 512000,
+		},
+		{
+			ProductName:  generalBlockBlobV2Product,
+			SkuName:      "Hot LRS",
+			MeterName:    "Hot LRS Data Stored",
+			RetailPrice:  0.0208,
+			CurrencyCode: "USD",
+		},
+		{
+			ProductName:      generalBlockBlobV2Product,
+			SkuName:          "Hot LRS",
+			MeterName:        "Hot LRS Data Stored",
+			RetailPrice:      0.019968,
+			CurrencyCode:     "USD",
+			TierMinimumUnits: 51200,
+		},
 	})
 
 	resp, err := calc.GetProjectedCost(context.Background(), &finfocusv1.GetProjectedCostRequest{
@@ -388,8 +427,20 @@ func TestGetActualCostDiskAndBlob(t *testing.T) {
 	t.Parallel()
 
 	calc := newPricingCalc(t, []azureclient.PriceItem{
-		{MeterName: "P10 LRS Disk", RetailPrice: 19.71, CurrencyCode: "USD"},
-		{MeterName: "Hot LRS Data Stored", RetailPrice: 0.02, CurrencyCode: "USD"},
+		{
+			ProductName:  "Premium SSD Managed Disks",
+			SkuName:      "P10 LRS",
+			MeterName:    "P10 LRS Disk",
+			RetailPrice:  19.71,
+			CurrencyCode: "USD",
+		},
+		{
+			ProductName:  generalBlockBlobV2Product,
+			SkuName:      "Hot LRS",
+			MeterName:    "Hot LRS Data Stored",
+			RetailPrice:  0.02,
+			CurrencyCode: "USD",
+		},
 	})
 
 	start := time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
@@ -433,11 +484,9 @@ func TestGetActualCostDiskAndBlob(t *testing.T) {
 func newPricingCalc(t *testing.T, items []azureclient.PriceItem) *Calculator {
 	t.Helper()
 
-	if items == nil {
-		items = []azureclient.PriceItem{}
-	}
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		resp := azureclient.PriceResponse{Items: items, Count: len(items)}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		matched := retailFakeItems(r.URL.Query().Get("$filter"), items)
+		resp := azureclient.PriceResponse{Items: matched, Count: len(matched)}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			t.Errorf("encode response: %v", err)
@@ -448,4 +497,35 @@ func newPricingCalc(t *testing.T, items []azureclient.PriceItem) *Calculator {
 	cached := newCalculatorTestCachedClient(t, server.URL)
 	t.Cleanup(func() { cached.Close() })
 	return NewCalculator(zerolog.Nop(), cached)
+}
+
+// retailFakeItems applies the productName and skuName conditions of an OData
+// filter the way the Retail Prices API would, so a query for the wrong
+// product finds no rows offline.
+func retailFakeItems(filter string, items []azureclient.PriceItem) []azureclient.PriceItem {
+	product, hasProduct := filterEquals(filter, "productName")
+	sku, hasSKU := filterEquals(filter, "skuName")
+	if !hasProduct && !hasSKU {
+		return items
+	}
+
+	kept := make([]azureclient.PriceItem, 0, len(items))
+	for _, item := range items {
+		if hasProduct && item.ProductName != product {
+			continue
+		}
+		if hasSKU && item.SkuName != sku {
+			continue
+		}
+		kept = append(kept, item)
+	}
+	return kept
+}
+
+func filterEquals(filter, field string) (string, bool) {
+	match := regexp.MustCompile(`\b` + field + ` eq '((?:[^']|'')*)'`).FindStringSubmatch(filter)
+	if match == nil {
+		return "", false
+	}
+	return strings.ReplaceAll(match[1], "''", "'"), true
 }

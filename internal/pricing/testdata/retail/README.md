@@ -452,9 +452,10 @@ number. A changed stored cost fails the test.
 The live meter names are `P4 LRS Disk` and `P10 LRS Disk` on product
 `Premium SSD Managed Disks`. `blob/hot_lrs_eastus.json` copies the Hot LRS
 write `0.0001` and the base data-stored `0.0208` row (100 GB is `2.08`).
-The live product is `Blob Storage`, skuName `Hot LRS`, and higher
-`tierMinimumUnits` bands are not the list price. Those two files are not a
-full live API page.
+The live product is `General Block Blob v2`, skuName `Hot LRS`, and higher
+`tierMinimumUnits` bands are not the list price. The legacy `Blob Storage`
+product has the same LRS prices but no ZRS, GZRS, or RA-GZRS rows. Those
+two files are not a full live API page.
 
 Refresh means replacing the stored number after a deliberate fixture update.
 Do not edit the quote so a stale number passes. A separate live snapshot
