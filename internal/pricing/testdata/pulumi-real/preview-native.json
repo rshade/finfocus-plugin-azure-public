@@ -1,0 +1,961 @@
+{
+  "changeSummary": {
+    "create": 21
+  },
+  "config": {
+    "azure-native:clientId": "00000000-0000-0000-0000-000000000000",
+    "azure-native:clientSecret": "[secret]",
+    "azure-native:location": "westeurope",
+    "azure-native:subscriptionId": "00000000-0000-0000-0000-000000000000",
+    "azure-native:tenantId": "00000000-0000-0000-0000-000000000000"
+  },
+  "diagnostics": [
+    {
+      "message": "warning: using pulumi-language-yaml from $PATH at <path> expected <path>\n",
+      "severity": "warning"
+    }
+  ],
+  "duration": 2591530303,
+  "steps": [
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": false,
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "pulumi:pulumi:Stack",
+        "urn": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native"
+      },
+      "op": "create",
+      "urn": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "inputs": {
+          "__createBeforeDelete": true,
+          "azureApiVersion": "2024-03-01",
+          "location": "westeurope",
+          "resourceGroupName": "rg2b0f507e"
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "location": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:resources:ResourceGroup",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "azureApiVersion": "2024-11-01",
+          "location": "westeurope",
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "sku": {
+            "capacity": 3,
+            "name": "Standard_D2s_v5",
+            "tier": "Standard"
+          },
+          "upgradePolicy": {
+            "mode": "Manual"
+          },
+          "virtualMachineProfile": {
+            "billingProfile": {
+              "maxPrice": -1
+            },
+            "evictionPolicy": "Delete",
+            "osProfile": {
+              "adminPassword": "FAKE-PASSWORD",
+              "adminUsername": "azureuser",
+              "computerNamePrefix": "vmss",
+              "linuxConfiguration": {
+                "disablePasswordAuthentication": false
+              }
+            },
+            "priority": "Spot",
+            "storageProfile": {
+              "imageReference": {
+                "offer": "0001-com-ubuntu-server-jammy",
+                "publisher": "Canonical",
+                "sku": "22_04-lts",
+                "version": "latest"
+              },
+              "osDisk": {
+                "createOption": "FromImage",
+                "managedDisk": {
+                  "storageAccountType": "Standard_LRS"
+                }
+              }
+            }
+          },
+          "vmScaleSetName": "vmss2838c2fa"
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "location": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "sku": [],
+          "upgradePolicy": [],
+          "virtualMachineProfile": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:compute:VirtualMachineScaleSet",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:compute:VirtualMachineScaleSet::vmss"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:compute:VirtualMachineScaleSet::vmss"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "azureApiVersion": "2024-11-01",
+          "hardwareProfile": {
+            "vmSize": "Standard_D4s_v5"
+          },
+          "licenseType": "Windows_Server",
+          "location": "westeurope",
+          "networkProfile": {
+            "networkInterfaces": [
+              {
+                "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/x/providers/Microsoft.Network/networkInterfaces/nic2"
+              }
+            ]
+          },
+          "osProfile": {
+            "adminPassword": "FAKE-PASSWORD",
+            "adminUsername": "azureuser",
+            "computerName": "win",
+            "windowsConfiguration": {
+              "provisionVMAgent": true
+            }
+          },
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "storageProfile": {
+            "imageReference": {
+              "offer": "WindowsServer",
+              "publisher": "MicrosoftWindowsServer",
+              "sku": "2022-datacenter-azure-edition",
+              "version": "latest"
+            },
+            "osDisk": {
+              "createOption": "FromImage",
+              "managedDisk": {
+                "storageAccountType": "StandardSSD_LRS"
+              }
+            }
+          },
+          "vmName": "windowsVm6893d579"
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "hardwareProfile": [],
+          "licenseType": [],
+          "location": [],
+          "networkProfile": [],
+          "osProfile": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "storageProfile": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:compute:VirtualMachine",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:compute:VirtualMachine::windowsVm"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:compute:VirtualMachine::windowsVm"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "azureApiVersion": "2024-11-01",
+          "billingProfile": {
+            "maxPrice": 0.05
+          },
+          "evictionPolicy": "Deallocate",
+          "hardwareProfile": {
+            "vmSize": "Standard_D4s_v5"
+          },
+          "location": "westeurope",
+          "networkProfile": {
+            "networkInterfaces": [
+              {
+                "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/x/providers/Microsoft.Network/networkInterfaces/nic"
+              }
+            ]
+          },
+          "osProfile": {
+            "adminPassword": "FAKE-PASSWORD",
+            "adminUsername": "azureuser",
+            "computerName": "lin",
+            "linuxConfiguration": {
+              "disablePasswordAuthentication": false
+            }
+          },
+          "priority": "Spot",
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "storageProfile": {
+            "imageReference": {
+              "offer": "0001-com-ubuntu-server-jammy",
+              "publisher": "Canonical",
+              "sku": "22_04-lts",
+              "version": "latest"
+            },
+            "osDisk": {
+              "createOption": "FromImage",
+              "diskSizeGB": 128,
+              "managedDisk": {
+                "storageAccountType": "Premium_LRS"
+              }
+            }
+          },
+          "vmName": "linuxVm221d3bd9",
+          "zones": [
+            "1"
+          ]
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "billingProfile": [],
+          "evictionPolicy": [],
+          "hardwareProfile": [],
+          "location": [],
+          "networkProfile": [],
+          "osProfile": [],
+          "priority": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "storageProfile": [],
+          "zones": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:compute:VirtualMachine",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:compute:VirtualMachine::linuxVm"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:compute:VirtualMachine::linuxVm"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "azureApiVersion": "2024-11-01",
+          "hardwareProfile": {
+            "vmSize": "Standard_B2s"
+          },
+          "location": "westeurope",
+          "networkProfile": {
+            "networkInterfaces": [
+              {
+                "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/x/providers/Microsoft.Network/networkInterfaces/nic3"
+              }
+            ]
+          },
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "storageProfile": {
+            "imageReference": {
+              "offer": "0001-com-ubuntu-server-jammy",
+              "publisher": "Canonical",
+              "sku": "22_04-lts",
+              "version": "latest"
+            },
+            "osDisk": {
+              "createOption": "FromImage"
+            }
+          },
+          "vmName": "vmNoLocation778beb82"
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "hardwareProfile": [],
+          "networkProfile": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "storageProfile": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:compute:VirtualMachine",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:compute:VirtualMachine::vmNoLocation"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:compute:VirtualMachine::vmNoLocation"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "azureApiVersion": "2024-05-01",
+          "loadBalancerName": "lb12efa42f",
+          "location": "westeurope",
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "sku": {
+            "name": "Standard",
+            "tier": "Regional"
+          }
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "location": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "sku": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:network:LoadBalancer",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:network:LoadBalancer::lb"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:network:LoadBalancer::lb"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "azureApiVersion": "2024-03-02",
+          "creationData": {
+            "createOption": "Empty"
+          },
+          "diskName": "diskb0b06976",
+          "diskSizeGB": 256,
+          "location": "westeurope",
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "sku": {
+            "name": "Premium_LRS"
+          }
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "creationData": [],
+          "diskSizeGB": [],
+          "location": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "sku": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:compute:Disk",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:compute:Disk::disk"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:compute:Disk::disk"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "azureApiVersion": "2025-05-01",
+          "kind": "linux",
+          "location": "westeurope",
+          "name": "plan6b27401e",
+          "reserved": true,
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "sku": {
+            "capacity": 2,
+            "name": "P1v3",
+            "tier": "PremiumV3"
+          }
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "kind": [],
+          "location": [],
+          "reserved": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "sku": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:web:AppServicePlan",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:web:AppServicePlan::plan"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:web:AppServicePlan::plan"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "accessTier": "Cool",
+          "accountName": "storage64552b07",
+          "azureApiVersion": "2024-01-01",
+          "kind": "StorageV2",
+          "location": "westeurope",
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "sku": {
+            "name": "Standard_GRS"
+          }
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "accessTier": [],
+          "kind": [],
+          "location": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "sku": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:storage:StorageAccount",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:storage:StorageAccount::storage"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:storage:StorageAccount::storage"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "azureApiVersion": "2025-05-01",
+          "location": "westeurope",
+          "name": "winPlan25230845",
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "sku": {
+            "name": "S1",
+            "tier": "Standard"
+          }
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "location": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "sku": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:web:AppServicePlan",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:web:AppServicePlan::winPlan"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:web:AppServicePlan::winPlan"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "administratorLogin": "sqladmin",
+          "administratorLoginPassword": "FAKE-PASSWORD",
+          "azureApiVersion": "2023-08-01",
+          "location": "westeurope",
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "serverName": "sqlServerb8afc627"
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "administratorLogin": [],
+          "administratorLoginPassword": [],
+          "location": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ]
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:sql:Server",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:sql:Server::sqlServer"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:sql:Server::sqlServer"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "accountName": "cosmosba44005c",
+          "azureApiVersion": "2025-10-15",
+          "consistencyPolicy": {
+            "defaultConsistencyLevel": "Session"
+          },
+          "databaseAccountOfferType": "Standard",
+          "enableMultipleWriteLocations": true,
+          "kind": "GlobalDocumentDB",
+          "location": "westeurope",
+          "locations": [
+            {
+              "failoverPriority": 0,
+              "isZoneRedundant": false,
+              "locationName": "westeurope"
+            },
+            {
+              "failoverPriority": 1,
+              "isZoneRedundant": true,
+              "locationName": "northeurope"
+            }
+          ],
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9"
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "consistencyPolicy": [],
+          "databaseAccountOfferType": [],
+          "enableMultipleWriteLocations": [],
+          "kind": [],
+          "location": [],
+          "locations": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ]
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:cosmosdb:DatabaseAccount",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:cosmosdb:DatabaseAccount::cosmos"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:cosmosdb:DatabaseAccount::cosmos"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "agentPoolProfiles": [
+            {
+              "count": 3,
+              "enableAutoScaling": true,
+              "maxCount": 6,
+              "minCount": 3,
+              "mode": "System",
+              "name": "system",
+              "osDiskSizeGB": 128,
+              "osDiskType": "Managed",
+              "osType": "Linux",
+              "vmSize": "Standard_D4s_v5"
+            }
+          ],
+          "azureApiVersion": "2025-09-01",
+          "dnsPrefix": "probe",
+          "identity": {
+            "type": "SystemAssigned"
+          },
+          "location": "westeurope",
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "resourceName": "aks5a78bdbf",
+          "sku": {
+            "name": "Base",
+            "tier": "Standard"
+          }
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "agentPoolProfiles": [],
+          "dnsPrefix": [],
+          "identity": [],
+          "location": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "sku": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:containerservice:ManagedCluster",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:containerservice:ManagedCluster::aks"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:containerservice:ManagedCluster::aks"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "azureApiVersion": "2024-05-01",
+          "location": "westeurope",
+          "natGatewayName": "natbd4dbad2",
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "sku": {
+            "name": "Standard"
+          },
+          "zones": [
+            "1"
+          ]
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "location": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "sku": [],
+          "zones": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:network:NatGateway",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:network:NatGateway::nat"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:network:NatGateway::nat"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg",
+          "urn:pulumi:native::az-native-probe::azure-native:web:AppServicePlan::plan"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "azureApiVersion": "2025-05-01",
+          "kind": "functionapp,linux",
+          "location": "westeurope",
+          "name": "funcApp32b16755",
+          "reserved": true,
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "serverFarmId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9"
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "kind": [],
+          "location": [],
+          "reserved": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "serverFarmId": [
+            "urn:pulumi:native::az-native-probe::azure-native:web:AppServicePlan::plan"
+          ]
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:web:WebApp",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:web:WebApp::funcApp"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:web:WebApp::funcApp"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:web:AppServicePlan::plan",
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__createBeforeDelete": true,
+          "azureApiVersion": "2025-05-01",
+          "kind": "app,linux",
+          "location": "westeurope",
+          "name": "appc2a8b562",
+          "reserved": true,
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "serverFarmId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "siteConfig": {
+            "linuxFxVersion": "NODE|20-lts"
+          }
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "kind": [],
+          "location": [],
+          "reserved": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "serverFarmId": [
+            "urn:pulumi:native::az-native-probe::azure-native:web:AppServicePlan::plan"
+          ],
+          "siteConfig": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:web:WebApp",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:web:WebApp::app"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:web:WebApp::app"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg",
+          "urn:pulumi:native::az-native-probe::azure-native:sql:Server::sqlServer"
+        ],
+        "inputs": {
+          "azureApiVersion": "2023-08-01",
+          "databaseName": "sqlDb",
+          "licenseType": "BasePrice",
+          "location": "westeurope",
+          "maxSizeBytes": 68719476736,
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "serverName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "sku": {
+            "capacity": 4,
+            "family": "Gen5",
+            "name": "GP_Gen5",
+            "tier": "GeneralPurpose"
+          },
+          "zoneRedundant": true
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "licenseType": [],
+          "location": [],
+          "maxSizeBytes": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "serverName": [
+            "urn:pulumi:native::az-native-probe::azure-native:sql:Server::sqlServer"
+          ],
+          "sku": [],
+          "zoneRedundant": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:sql:Database",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:sql:Database::sqlDb"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:sql:Database::sqlDb"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:cosmosdb:DatabaseAccount::cosmos",
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "accountName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "azureApiVersion": "2025-10-15",
+          "databaseName": "cosmosDb",
+          "options": {
+            "throughput": 400
+          },
+          "resource": {
+            "id": "appdb"
+          },
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9"
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "accountName": [
+            "urn:pulumi:native::az-native-probe::azure-native:cosmosdb:DatabaseAccount::cosmos"
+          ],
+          "options": [],
+          "resource": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ]
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:cosmosdb:SqlResourceSqlDatabase",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:cosmosdb:SqlResourceSqlDatabase::cosmosDb"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:cosmosdb:SqlResourceSqlDatabase::cosmosDb"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:containerservice:ManagedCluster::aks",
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "agentPoolName": "spot",
+          "azureApiVersion": "2025-09-01",
+          "count": 2,
+          "mode": "User",
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "resourceName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "scaleSetEvictionPolicy": "Delete",
+          "scaleSetPriority": "Spot",
+          "spotMaxPrice": -1,
+          "vmSize": "Standard_D8s_v5"
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "agentPoolName": [],
+          "count": [],
+          "mode": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ],
+          "resourceName": [
+            "urn:pulumi:native::az-native-probe::azure-native:containerservice:ManagedCluster::aks"
+          ],
+          "scaleSetEvictionPolicy": [],
+          "scaleSetPriority": [],
+          "spotMaxPrice": [],
+          "vmSize": []
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:containerservice:AgentPool",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:containerservice:AgentPool::aksPool"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:containerservice:AgentPool::aksPool"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg",
+          "urn:pulumi:native::az-native-probe::azure-native:cosmosdb:DatabaseAccount::cosmos",
+          "urn:pulumi:native::az-native-probe::azure-native:cosmosdb:SqlResourceSqlDatabase::cosmosDb"
+        ],
+        "inputs": {
+          "accountName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "azureApiVersion": "2025-10-15",
+          "containerName": "cosmosContainer",
+          "databaseName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "options": {
+            "autoscaleSettings": {
+              "maxThroughput": 4000
+            }
+          },
+          "resource": {
+            "id": "items",
+            "partitionKey": {
+              "kind": "Hash",
+              "paths": [
+                "/id"
+              ]
+            }
+          },
+          "resourceGroupName": "04da6b54-80e4-46f7-96ec-b56ff0331ba9"
+        },
+        "parent": "urn:pulumi:native::az-native-probe::pulumi:pulumi:Stack::az-native-probe-native",
+        "propertyDependencies": {
+          "accountName": [
+            "urn:pulumi:native::az-native-probe::azure-native:cosmosdb:DatabaseAccount::cosmos"
+          ],
+          "databaseName": [
+            "urn:pulumi:native::az-native-probe::azure-native:cosmosdb:SqlResourceSqlDatabase::cosmosDb"
+          ],
+          "options": [],
+          "resource": [],
+          "resourceGroupName": [
+            "urn:pulumi:native::az-native-probe::azure-native:resources:ResourceGroup::rg"
+          ]
+        },
+        "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure-native:cosmosdb:SqlResourceSqlContainer",
+        "urn": "urn:pulumi:native::az-native-probe::azure-native:cosmosdb:SqlResourceSqlContainer::cosmosContainer"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:native::az-native-probe::pulumi:providers:azure-native::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:native::az-native-probe::azure-native:cosmosdb:SqlResourceSqlContainer::cosmosContainer"
+    }
+  ]
+}

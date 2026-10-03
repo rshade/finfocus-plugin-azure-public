@@ -1,0 +1,2672 @@
+{
+ "meta": {
+  "retrieved": "2026-10-02",
+  "pulumi_cli": "v3.264.0",
+  "azure_classic_version": "6.40.0",
+  "azure_native_version": "3.28.0",
+  "latest_verified_via": "gh api repos/pulumi/pulumi-azure/releases/latest -> v6.40.0; repos/pulumi/pulumi-azure-native/releases/latest -> v3.28.0",
+  "schema_source": "pulumi package get-schema azure@6.40.0 ; azure-native@3.28.0 (fields inputProperties/requiredInputs/types)",
+  "notes": [
+   "Property names are Pulumi camelCase as written in YAML/TS and as they appear in steps[].newState.inputs (verified in preview).",
+   "Enum arrays appear only where the schema declares them (azure-native mostly); azure classic schema has plain strings: allowed values come from the doc sentence.",
+   "path = dotted path; arrays are flattened (e.g. agentPoolProfiles.vmSize means agentPoolProfiles[].vmSize)."
+  ]
+ },
+ "resources": [
+  {
+   "provider": "azure",
+   "token": "azure:compute/linuxVirtualMachine:LinuxVirtualMachine",
+   "category": "vm",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The Azure location where the Linux Virtual Machine should exist. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "size",
+     "type": "string",
+     "required": true,
+     "doc": "The SKU which should be used for this Virtual Machine, such as `Standard_D4_v5`."
+    },
+    {
+     "path": "priority",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the priority of this Virtual Machine. Possible values are `Regular` and `Spot`. Defaults to `Regular`. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "evictionPolicy",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies what should happen when the Virtual Machine is evicted for price reasons when using a Spot instance. Possible values are `Deallocate` and `Delete`. Changing this forces a new resource to be created.\n\n> **NOTE:** This can only be configured when <span pulumi-lang-nodejs=\"`priority`\" pulumi-lang-dotnet=\"`Priority`\" pulumi-lang-go=\"`priority`\" pulumi-lang-python=\"`priority`\" pulumi-lang-yam"
+    },
+    {
+     "path": "maxBidPrice",
+     "type": "number",
+     "required": false,
+     "doc": "The maximum price you're willing to pay for this Virtual Machine, in US Dollars; which must be greater than the current spot price. If this bid price falls below the current spot price the Virtual Machine will be evicted using the <span pulumi-lang-nodejs=\"`evictionPolicy`\" pulumi-lang-dotnet=\"`EvictionPolicy`\" pulumi-lang-go=\"`evictionPolicy`\" pulumi-lang-python=\"`eviction_policy`\" pulumi-lang-ya"
+    },
+    {
+     "path": "zone",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the Availability Zones in which this Linux Virtual Machine should be located. Changing this forces a new Linux Virtual Machine to be created."
+    },
+    {
+     "path": "licenseType",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the License Type for this Virtual Machine. Possible values are `RHEL_BYOS`, `RHEL_BASE`, `RHEL_EUS`, `RHEL_SAPAPPS`, `RHEL_SAPHA`, `RHEL_BASESAPAPPS`, `RHEL_BASESAPHA`, `SLES_BYOS`, `SLES_SAP`, `SLES_HPC`, `UBUNTU_PRO`."
+    },
+    {
+     "path": "osDisk.storageAccountType",
+     "type": "string",
+     "required": false,
+     "doc": "The Type of Storage Account which should back this the Internal OS Disk. Possible values are `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `StandardSSD_ZRS` and `Premium_ZRS`. Changing this forces a new resource to be created.\n\n> **Note:** This is required unless using an existing OS Managed Disk by specifying <span pulumi-lang-nodejs=\"`osManagedDiskId`\" pulumi-lang-dotnet=\"`OsManagedDiskId`\" "
+    },
+    {
+     "path": "osDisk.diskSizeGb",
+     "type": "integer",
+     "required": false,
+     "doc": "The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Machine is sourced from.\n\n> **NOTE:** If specified this must be equal to or larger than the size of the Image the Virtual Machine is based on. When creating a larger disk than exists in the image you'll need to repartition the disk to use the remaining space."
+    },
+    {
+     "path": "sourceImageReference.publisher",
+     "type": "string",
+     "required": true,
+     "doc": "Specifies the publisher of the image used to create the virtual machines. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "sourceImageReference.offer",
+     "type": "string",
+     "required": true,
+     "doc": "Specifies the offer of the image used to create the virtual machines. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "sourceImageReference.sku",
+     "type": "string",
+     "required": true,
+     "doc": "Specifies the SKU of the image used to create the virtual machines. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "dedicatedHostId",
+     "type": "string",
+     "required": false,
+     "doc": "The ID of a Dedicated Host where this machine should be run on. Conflicts with <span pulumi-lang-nodejs=\"`dedicatedHostGroupId`\" pulumi-lang-dotnet=\"`DedicatedHostGroupId`\" pulumi-lang-go=\"`dedicatedHostGroupId`\" pulumi-lang-python=\"`dedicated_host_group_id`\" pulumi-lang-yaml=\"`dedicatedHostGroupId`\" pulumi-lang-java=\"`dedicatedHostGroupId`\" pulumi-lang-hcl=\"`dedicated_host_group_id`\">`dedicatedHo"
+    },
+    {
+     "path": "additionalCapabilities.ultraSsdEnabled",
+     "type": "boolean",
+     "required": false,
+     "doc": "Should the capacity to enable Data Disks of the `UltraSSD_LRS` storage account type be supported on this Virtual Machine? Defaults to `false`."
+    }
+   ],
+   "rules": {
+    "os": "Linux by token (LinuxVirtualMachine)",
+    "spot": "priority=Spot (default Regular; preview fills priority=Regular via __defaults when omitted), evictionPolicy Deallocate|Delete (only with Spot), maxBidPrice (-1 = pay up to on-demand)",
+    "region": "location (optional in schema; falls back to resource group location in provider UNVERIFIED)",
+    "sku": "size"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:compute/windowsVirtualMachine:WindowsVirtualMachine",
+   "category": "vm",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The Azure location where the Windows Virtual Machine should exist. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "size",
+     "type": "string",
+     "required": true,
+     "doc": "The SKU which should be used for this Virtual Machine, such as `Standard_D4_v5`."
+    },
+    {
+     "path": "priority",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the priority of this Virtual Machine. Possible values are `Regular` and `Spot`. Defaults to `Regular`. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "evictionPolicy",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies what should happen when the Virtual Machine is evicted for price reasons when using a Spot instance. Possible values are `Deallocate` and `Delete`. Changing this forces a new resource to be created.\n\n> **NOTE:** This can only be configured when <span pulumi-lang-nodejs=\"`priority`\" pulumi-lang-dotnet=\"`Priority`\" pulumi-lang-go=\"`priority`\" pulumi-lang-python=\"`priority`\" pulumi-lang-yam"
+    },
+    {
+     "path": "maxBidPrice",
+     "type": "number",
+     "required": false,
+     "doc": "The maximum price you're willing to pay for this Virtual Machine, in US Dollars; which must be greater than the current spot price. If this bid price falls below the current spot price the Virtual Machine will be evicted using the <span pulumi-lang-nodejs=\"`evictionPolicy`\" pulumi-lang-dotnet=\"`EvictionPolicy`\" pulumi-lang-go=\"`evictionPolicy`\" pulumi-lang-python=\"`eviction_policy`\" pulumi-lang-ya"
+    },
+    {
+     "path": "zone",
+     "type": "string",
+     "required": false,
+     "doc": "* `zones` - (Optional) Specifies the Availability Zone in which this Windows Virtual Machine should be located. Changing this forces a new Windows Virtual Machine to be created."
+    },
+    {
+     "path": "licenseType",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the type of on-premise license (also known as [Azure Hybrid Use Benefit](https://docs.microsoft.com/windows-server/get-started/azure-hybrid-benefit)) which should be used for this Virtual Machine. Possible values are `None`, `Windows_Client` and `Windows_Server`."
+    },
+    {
+     "path": "osDisk.storageAccountType",
+     "type": "string",
+     "required": false,
+     "doc": "The Type of Storage Account which should back this the Internal OS Disk. Possible values are `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS`, `StandardSSD_ZRS` and `Premium_ZRS`. Changing this forces a new resource to be created.\n\n> **Note:** This is required unless using an existing OS Managed Disk by specifying <span pulumi-lang-nodejs=\"`osManagedDiskId`\" pulumi-lang-dotnet=\"`OsManagedDiskId`\" "
+    },
+    {
+     "path": "osDisk.diskSizeGb",
+     "type": "integer",
+     "required": false,
+     "doc": "The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Machine is sourced from.\n\n> **NOTE:** If specified this must be equal to or larger than the size of the Image the Virtual Machine is based on. When creating a larger disk than exists in the image you'll need to repartition the disk to use the remaining space."
+    },
+    {
+     "path": "sourceImageReference.publisher",
+     "type": "string",
+     "required": true,
+     "doc": "Specifies the publisher of the image used to create the virtual machines. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "sourceImageReference.offer",
+     "type": "string",
+     "required": true,
+     "doc": "Specifies the offer of the image used to create the virtual machines. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "sourceImageReference.sku",
+     "type": "string",
+     "required": true,
+     "doc": "Specifies the SKU of the image used to create the virtual machines. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "dedicatedHostId",
+     "type": "string",
+     "required": false,
+     "doc": "The ID of a Dedicated Host where this machine should be run on. Conflicts with <span pulumi-lang-nodejs=\"`dedicatedHostGroupId`\" pulumi-lang-dotnet=\"`DedicatedHostGroupId`\" pulumi-lang-go=\"`dedicatedHostGroupId`\" pulumi-lang-python=\"`dedicated_host_group_id`\" pulumi-lang-yaml=\"`dedicatedHostGroupId`\" pulumi-lang-java=\"`dedicatedHostGroupId`\" pulumi-lang-hcl=\"`dedicated_host_group_id`\">`dedicatedHo"
+    },
+    {
+     "path": "additionalCapabilities.ultraSsdEnabled",
+     "type": "boolean",
+     "required": false,
+     "doc": "Should the capacity to enable Data Disks of the `UltraSSD_LRS` storage account type be supported on this Virtual Machine? Defaults to `false`."
+    },
+    {
+     "path": "timezone",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the Time Zone which should be used by the Virtual Machine, [the possible values are defined here](https://jackstromberg.com/2017/01/list-of-time-zones-consumed-by-azure/). Changing this forces a new resource to be created."
+    }
+   ],
+   "rules": {
+    "os": "Windows by token (WindowsVirtualMachine); licenseType Windows_Client|Windows_Server = Azure Hybrid Benefit (price-relevant)",
+    "spot": "same as Linux VM",
+    "region": "location",
+    "sku": "size"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:compute/virtualMachine:VirtualMachine",
+   "category": "vm",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the Azure Region where the Virtual Machine exists. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "vmSize",
+     "type": "string",
+     "required": true,
+     "doc": "Specifies the [size of the Virtual Machine](https://docs.microsoft.com/azure/virtual-machines/sizes-general). See also [Azure VM Naming Conventions](https://docs.microsoft.com/azure/virtual-machines/vm-naming-conventions)."
+    },
+    {
+     "path": "zones",
+     "type": "string",
+     "required": false,
+     "doc": "A list of a single item of the Availability Zone which the Virtual Machine should be allocated in. Changing this forces a new resource to be created.\n\n> **Please Note:** Availability Zones are [only supported in several regions at this time](https://docs.microsoft.com/azure/availability-zones/az-overview).\n\nFor more information on the different example configurations, please check out the [Azure d"
+    },
+    {
+     "path": "licenseType",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the BYOL Type for this Virtual Machine. This is only applicable to Windows Virtual Machines. Possible values are `Windows_Client` and `Windows_Server`."
+    },
+    {
+     "path": "storageOsDisk.createOption",
+     "type": "string",
+     "required": true,
+     "doc": "Specifies how the OS Disk should be created. Possible values are `Attach` (managed disks only) and `FromImage`."
+    },
+    {
+     "path": "storageOsDisk.diskSizeGb",
+     "type": "integer",
+     "required": false,
+     "doc": "Specifies the size of the OS Disk in gigabytes."
+    },
+    {
+     "path": "storageOsDisk.osType",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the Operating System on the OS Disk. Possible values are `Linux` and `Windows`."
+    },
+    {
+     "path": "storageOsDisk.managedDiskType",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the type of Managed Disk which should be created. Possible values are `Standard_LRS`, `StandardSSD_LRS` or `Premium_LRS`.\n\nThe following properties apply when using Unmanaged Disks:"
+    },
+    {
+     "path": "storageDataDisks.managedDiskType",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the type of managed disk to create. Possible values are either `Standard_LRS`, `StandardSSD_LRS`, `Premium_LRS` or `UltraSSD_LRS`.\n\n> **Note:** <span pulumi-lang-nodejs=\"`managedDiskType`\" pulumi-lang-dotnet=\"`ManagedDiskType`\" pulumi-lang-go=\"`managedDiskType`\" pulumi-lang-python=\"`managed_disk_type`\" pulumi-lang-yaml=\"`managedDiskType`\" pulumi-lang-java=\"`managedDiskType`\" pulumi-lang-"
+    },
+    {
+     "path": "osProfileWindowsConfig",
+     "type": "VirtualMachineOsProfileWindowsConfig:VirtualMachineOsProfileWindowsConfig",
+     "required": false,
+     "doc": "(Required, when a Windows machine) An `osProfileWindowsConfig` block a"
+    },
+    {
+     "path": "osProfileLinuxConfig",
+     "type": "VirtualMachineOsProfileLinuxConfig:VirtualMachineOsProfileLinuxConfig",
+     "required": false,
+     "doc": "(Required, when a Linux machine) An `osProfileLinuxConfig` block as defined below."
+    },
+    {
+     "path": "storageImageReference.publisher",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the publisher of the image used to create the virtual machine. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "storageImageReference.offer",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the offer of the image used to create the virtual machine. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "storageImageReference.sku",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the SKU of the image used to create the virtual machine. Changing this forces a new resource to be created."
+    }
+   ],
+   "rules": {
+    "os": "Legacy type. Windows if osProfileWindowsConfig is set (top-level block) or storageOsDisk.osType=Windows; Linux if osProfileLinuxConfig set.",
+    "spot": "No priority/spot properties on legacy type (UNVERIFIED beyond schema list)",
+    "region": "location",
+    "sku": "vmSize"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:compute/linuxVirtualMachineScaleSet:LinuxVirtualMachineScaleSet",
+   "category": "vmss",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The Azure location where the Linux Virtual Machine Scale Set should exist. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "sku",
+     "type": "string",
+     "required": true,
+     "doc": "The Virtual Machine SKU for the Scale Set, such as `Standard_D4_v5`."
+    },
+    {
+     "path": "instances",
+     "type": "integer",
+     "required": false,
+     "doc": "The number of Virtual Machines in the Scale Set. Defaults to `0`.\n\n> **NOTE:** If you're using AutoScaling, you may wish to use [`Ignore Changes` functionality](https://www.pulumi.com/docs/intro/concepts/programming-model/#"
+    },
+    {
+     "path": "priority",
+     "type": "string",
+     "required": false,
+     "doc": "The Priority of this Virtual Machine Scale Set. Possible values are `Regular` and `Spot`. Defaults to `Regular`. Changing this value forces a new resource.\n\n> **Note:** When <span pulumi-lang-nodejs=\"`priority`\" pulumi-lang-dotnet=\"`Priority`\" pulumi-lang-go=\"`priority`\" pulumi-lang-python=\"`priority`\" pulumi-lang-yaml=\"`priority`\" pulumi-lang-java=\"`priority`\" pulumi-lang-hcl=\"`priority`\">`priori"
+    },
+    {
+     "path": "maxBidPrice",
+     "type": "number",
+     "required": false,
+     "doc": "The maximum price you're willing to pay for each Virtual Machine in this Scale Set, in US Dollars; which must be greater than the current spot price. If this bid price falls below the current spot price the Virtual Machines in the Scale Set will be evicted using the <span pulumi-lang-nodejs=\"`evictionPolicy`\" pulumi-lang-dotnet=\"`EvictionPolicy`\" pulumi-lang-go=\"`evictionPolicy`\" pulumi-lang-pytho"
+    },
+    {
+     "path": "zones",
+     "type": "array<string>",
+     "required": false,
+     "doc": "Specifies a list of Availability Zones in which this Linux Virtual Machine Scale Set should be located.\n\n> **Note:** Updating `zones` to remove an existing zone forces a new Virtual Machine Scale"
+    },
+    {
+     "path": "osDisk.storageAccountType",
+     "type": "string",
+     "required": true,
+     "doc": "The Type of Storage Account which should back this the Internal OS Disk. Possible values include `Standard_LRS`, `StandardSSD_LRS`, `StandardSSD_ZRS`, `Premium_LRS` and `Premium_ZRS`. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "osDisk.diskSizeGb",
+     "type": "integer",
+     "required": false,
+     "doc": "The Size of the Internal OS Disk in GB, if you wish to vary from the size used in the image this Virtual Machine Scale Set is sourced from.\n\n> **Note:** If specified this must be equal to or larger than the size of the Image the VM Scale Set is based on. When creating a larger disk than exists in the image you'll need to repartition the disk to use the remaining space."
+    },
+    {
+     "path": "dataDisks.diskSizeGb",
+     "type": "integer",
+     "required": true,
+     "doc": "The size of the Data Disk which should be created."
+    },
+    {
+     "path": "dataDisks.storageAccountType",
+     "type": "string",
+     "required": true,
+     "doc": "The Type of Storage Account which should back this Data Disk. Possible values include `Standard_LRS`, `StandardSSD_LRS`, `StandardSSD_ZRS`, `Premium_LRS`, `PremiumV2_LRS`, `Premium_ZRS` and `UltraSSD_LRS`.\n\n> **Note:** `UltraSSD_LRS` is only supported when <span pulumi-lang-nodejs=\"`ultraSsdEnabled`\" pulumi-lang-dotnet=\"`UltraSsdEnabled`\" pulumi-lang-go=\"`ultraSsdEnabled`\" pulumi-lang-python=\"`ult"
+    }
+   ],
+   "rules": {
+    "os": "Linux by token",
+    "spot": "priority=Spot (default Regular), evictionPolicy, maxBidPrice",
+    "region": "location",
+    "sku": "sku (VM size), capacity=instances"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:compute/windowsVirtualMachineScaleSet:WindowsVirtualMachineScaleSet",
+   "category": "vmss",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The Azure location where the Windows Virtual Machine Scale Set should exist. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "sku",
+     "type": "string",
+     "required": true,
+     "doc": "The Virtual Machine SKU for the Scale Set, such as `Standard_D4_v5`."
+    },
+    {
+     "path": "instances",
+     "type": "integer",
+     "required": true,
+     "doc": "The number of Virtual Machines in the Scale Set.\n\n> **NOTE:** If you're using AutoScaling, you may wish to use [`Ignore Changes` functionality](https://www.pulumi.com/docs/intro/concepts/programming-model/#ignorechanges) to ignore changes to this field."
+    },
+    {
+     "path": "priority",
+     "type": "string",
+     "required": false,
+     "doc": "The Priority of this Virtual Machine Scale Set. Possible values are `Regular` and `Spot`. Defaults to `Regular`. Changing this value forces a new resource.\n\n> **Note:** When <span pulumi-lang-nodejs=\"`priority`\" pulumi-lang-dotnet=\"`Priority`\" pulumi-lang-go=\"`priority`\" pulumi-lang-python=\"`priority`\" pulumi-lang-yaml=\"`priority`\" pulumi-lang-java=\"`priority`\" pulumi-lang-hcl=\"`priority`\">`priori"
+    },
+    {
+     "path": "maxBidPrice",
+     "type": "number",
+     "required": false,
+     "doc": "The maximum price you're willing to pay for each Virtual Machine in this Scale Set, in US Dollars; which must be greater than the current spot price. If this bid price falls below the current spot price the Virtual Machines in the Scale Set will be evicted using the <span pulumi-lang-nodejs=\"`evictionPolicy`\" pulumi-lang-dotnet=\"`EvictionPolicy`\" pulumi-lang-go=\"`evictionPolicy`\" pulumi-lang-pytho"
+    },
+    {
+     "path": "licenseType",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the type of on-premise license (also known as [Azure Hybrid Use Benefit](https://docs.microsoft.com/en-gb/windows-server/get-started/azure-hybrid-benefit)) which should be used for this Virtual Machine Scale Set. Possible values are `None`, `Windows_Client` and `Windows_Server`."
+    },
+    {
+     "path": "zones",
+     "type": "array<string>",
+     "required": false,
+     "doc": "Specifies a list of Availability Zones in which this Windows Virtual Machine Scale Set should be located.\n\n> **Note:** Updating `zones` to remove an existing zone forces a new Virtual Machine Sca"
+    },
+    {
+     "path": "osDisk.storageAccountType",
+     "type": "string",
+     "required": true,
+     "doc": "The Type of Storage Account which should back this the Internal OS Disk. Possible values include `Standard_LRS`, `StandardSSD_LRS`, `StandardSSD_ZRS`, `Premium_LRS` and `Premium_ZRS`. Changing this forces a new resource to be created."
+    }
+   ],
+   "rules": {
+    "os": "Windows by token",
+    "spot": "same",
+    "region": "location",
+    "sku": "sku, instances"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:compute/orchestratedVirtualMachineScaleSet:OrchestratedVirtualMachineScaleSet",
+   "category": "vmss",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The Azure location where the Virtual Machine Scale Set should exist. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "skuName",
+     "type": "string",
+     "required": false,
+     "doc": "The name of the SKU to be used by this Virtual Machine Scale Set.\n\n> **Note:** `skuName` can be set to any of the [General purpose](https://docs.microsoft.com/azure/virtual-machin"
+    },
+    {
+     "path": "instances",
+     "type": "integer",
+     "required": false,
+     "doc": "The number of Virtual Machines in the Virtual Machine Scale Set."
+    },
+    {
+     "path": "priority",
+     "type": "string",
+     "required": false,
+     "doc": "The Priority of this Virtual Machine Scale Set. Possible values are `Regular` and `Spot`. Defaults to `Regular`. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "maxBidPrice",
+     "type": "number",
+     "required": false,
+     "doc": "The maximum price you're willing to pay for each Virtual Machine in this Scale Set, in US Dollars; which must be greater than the current spot price. If this bid price falls below the current spot price the Virtual Machines in the Scale Set will be evicted using the eviction_policy. Defaults to `-1`, which means that each Virtual Machine in the Scale Set should not be evicted for price reasons."
+    },
+    {
+     "path": "licenseType",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the type of on-premise license (also known as Azure Hybrid Use Benefit) which should be used for this Virtual Machine Scale Set. Possible values are `None`, `Windows_Client`, and `Windows_Server`."
+    },
+    {
+     "path": "priorityMix.baseRegularCount",
+     "type": "integer",
+     "required": false,
+     "doc": "Specifies the base number of VMs of `Regular` priority that will be created before any VMs of priority `Spot` are created. Possible values are integers between `0` and <span pulumi-lang-nodejs=\"`1000`\" pulumi-lang-dotnet=\"`"
+    },
+    {
+     "path": "osProfile.windowsConfiguration",
+     "type": "OrchestratedVirtualMachineScaleSetOsProfileWindowsConfiguration:OrchestratedVirtualMachineScaleSetOsProfileWindowsConfiguration",
+     "required": false,
+     "doc": "A `windowsConfiguration` block as defined below."
+    },
+    {
+     "path": "osProfile.linuxConfiguration",
+     "type": "OrchestratedVirtualMachineScaleSetOsProfileLinuxConfiguration:OrchestratedVirtualMachineScaleSetOsProfileLinuxConfiguration",
+     "required": false,
+     "doc": "A `linuxConfiguration` block as defined above."
+    },
+    {
+     "path": "zones",
+     "type": "array<string>",
+     "required": false,
+     "doc": "Specifies a list of Availability Zones across which the Virtual Machine Scale Set will create instances.\n\n> **Note:** Updating `zones` to remove an existing zone forces a new Virtual Machine Scal"
+    }
+   ],
+   "rules": {
+    "os": "osProfile.windowsConfiguration vs osProfile.linuxConfiguration block presence",
+    "spot": "priority=Spot + priorityMix",
+    "region": "location",
+    "sku": "skuName (empty with skuProfile.virtualMachineSizes.name list)"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:compute/managedDisk:ManagedDisk",
+   "category": "disk",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "Specified the supported Azure location where the resource exists. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "storageAccountType",
+     "type": "string",
+     "required": true,
+     "doc": "The type of storage to use for the managed disk. Possible values are `Standard_LRS`, `StandardSSD_ZRS`, `Premium_LRS`, `PremiumV2_LRS`, `Premium_ZRS`, `StandardSSD_LRS` or `UltraSSD_LRS`.\n\n> **Note:** Azure Ultra Disk Storage is only available in a region that support availability zones and can only enabled on the following VM series: `ESv3`, `DSv3`, `FSv3`, `LSv2`, `M` and `Mv2`. For more informa"
+    },
+    {
+     "path": "diskSizeGb",
+     "type": "integer",
+     "required": false,
+     "doc": "(Optional, Required for a new managed disk) Specifies the size of the managed disk to create in gigabytes. If `createOption` is `Copy` or `FromI"
+    },
+    {
+     "path": "tier",
+     "type": "string",
+     "required": false,
+     "doc": "The disk performance tier to use. Possible values are documented [here](https://docs.microsoft.com/azure/virtual-machines/disks-change-performance). This feature is currently supported only for premium SSDs.\n\n> **NOTE:** Changing this value is disruptive if the disk is attached to a Virtual Machine. The VM will be shut down and de-allocated as required by Azure to action the change. Terraform will"
+    },
+    {
+     "path": "diskIopsReadWrite",
+     "type": "integer",
+     "required": false,
+     "doc": "The number of IOPS allowed for this disk; only settable for UltraSSD disks and PremiumV2 disks. One operation can transfer between 4k and 256k bytes."
+    },
+    {
+     "path": "diskMbpsReadWrite",
+     "type": "integer",
+     "required": false,
+     "doc": "The bandwidth allowed for this disk; only settable for UltraSSD disks and PremiumV2 disks. MBps means millions of bytes per second."
+    },
+    {
+     "path": "osType",
+     "type": "string",
+     "required": false,
+     "doc": "Specify a value when the source of an `Import`, `ImportSecure` or `Copy` operation targets a source that contains an operating system. Valid values are `Linux` or `Windows`."
+    },
+    {
+     "path": "zone",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the Availability Zone in which this Managed Disk should be located. Changing this property forces a new resource to be created.\n\n> **Note:** Availability Zones are [only supported in select regions at this time](https://docs.microsoft.com/azure/availability-zones/az-overview)."
+    },
+    {
+     "path": "createOption",
+     "type": "string",
+     "required": true,
+     "doc": "The method to use when creating the managed disk. Changing this forces a new resource to be created. Possible values include:\n* `Import` - Import a VHD file in to the managed disk (VHD specified with <span pulumi-lang-nodejs=\"`sourceUri`\" pulumi-lang-dotnet=\"`SourceUri`\" pulumi-lang-go=\"`sourceUri`\" pulumi-lang-python=\"`source_uri`\" pulumi-lang-yaml=\"`sourceUri`\" pulumi-lang-java=\"`sourceUri`\" pul"
+    }
+   ],
+   "rules": {
+    "os": "osType (Windows|Linux) informational for disks",
+    "region": "location",
+    "sku": "storageAccountType (Standard_LRS, StandardSSD_LRS, Premium_LRS, StandardSSD_ZRS, Premium_ZRS, PremiumV2_LRS, UltraSSD_LRS)"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:storage/account:Account",
+   "category": "storage",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the supported Azure location where the resource exists. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "accountTier",
+     "type": "string",
+     "required": true,
+     "doc": "Defines the Tier to use for this storage account. Valid options are `Standard` and `Premium`. For `BlockBlobStorage` and `FileStorage` accounts only `Premium` is valid. Changing this forces a new resource to be created.\n\n> **Note:** Blobs with a tier of `Premium` are of account kind `StorageV2`."
+    },
+    {
+     "path": "accountReplicationType",
+     "type": "string",
+     "required": true,
+     "doc": "Defines the type of replication to use for this storage account. Valid options are `LRS`, `GRS`, `RAGRS`, `ZRS`, `GZRS` and `RAGZRS`. Changing this forces a new resource to be created when types `LRS`, `GRS` and `RAGRS` are changed to `ZRS`, `GZRS` or `RAGZRS` and vice versa."
+    },
+    {
+     "path": "accountKind",
+     "type": "string",
+     "required": false,
+     "doc": "Defines the Kind of account. Valid options are `BlobStorage`, `BlockBlobStorage`, `FileStorage`, `Storage` and `StorageV2`. Defaults to `StorageV2`.\n\n> **Note:** Changing the <span pulumi-lang-nodejs=\"`accountKind`\" pulumi-lang-dotnet=\"`AccountKind`\" pulumi-lang-go=\"`accountKind`\" pulumi-lang-python=\"`account_kind`\" pulumi-lang-yaml=\"`accountKind`\" pulumi-lang-java=\"`accountKind`\" pulumi-lang-hcl="
+    },
+    {
+     "path": "accessTier",
+     "type": "string",
+     "required": false,
+     "doc": "Defines the access tier for `BlobStorage`, `FileStorage` and `StorageV2` accounts. Valid options are `Hot`, `Cool`, `Cold`, `Smart` and `Premium`. Defaults to `Hot`."
+    }
+   ],
+   "rules": {
+    "region": "location",
+    "sku": "accountTier + accountReplicationType (e.g. Standard + GRS); accessTier Hot|Cool (default Hot)"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:storage/blob:Blob",
+   "category": "storage",
+   "price_relevant_properties": [
+    {
+     "path": "accessTier",
+     "type": "string",
+     "required": false,
+     "doc": "The access tier of the storage blob. Possible values are `Archive`, `Cool` and `Hot`."
+    },
+    {
+     "path": "size",
+     "type": "integer",
+     "required": false,
+     "doc": "Used only for `page` blobs to specify the size in bytes of the blob to be created. Must be a multiple of 512. Defaults to <span pulumi-lang-nodejs=\"`0`\" pulumi-lang-dotnet=\"`0`\" pulumi-lang-go=\"`0`\" pul"
+    },
+    {
+     "path": "storageAccountName",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the storage account in which to create the storage container. Changing this forces a new resource to be created.\n\n> **Note:** This property is deprecated in favour of <span pulumi-lang-nodejs=\"`storageContainerId`\" pulumi-lang-dotnet=\"`StorageContainerId`\" pulumi-lang-go=\"`storageContainerId`\" pulumi-lang-python=\"`storage_container_id`\" pulumi-lang-yaml=\"`storageContainerId`\" pulumi-lang"
+    }
+   ],
+   "rules": {
+    "region": "none: inherited from the storage account (separate resource)",
+    "note": "Blob objects are not recurring-cost in practice; storage cost is on the account"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:appservice/servicePlan:ServicePlan",
+   "category": "plan",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The Azure Region where the Service Plan should exist. Changing this forces a new Service Plan to be created."
+    },
+    {
+     "path": "skuName",
+     "type": "string",
+     "required": true,
+     "doc": "The SKU for the plan. Possible values include `B1`, `B2`, `B3`, `D1`, `F1`, `I1`, `I2`, `I3`, `I1v2`, `I1mv2`, `I2v2`, `I2mv2`, `I3v2`, `I3mv2`, `I4v2`, `I4mv2`, `I5v2`, `I5mv2`, `I6v2`, `P1v2`, `P2v2`, `P3v2`, `P0v3`, `P1v3`, `P2v3`, `P3v3`, `P1mv3`, `P2mv3`, `P3mv3`, `P4mv3`, `P5mv3`, `P0v4`, `P1v4`, `P2v4`, `P3v4`, `P1mv4`, `P2mv4`, `P3mv4`, `P4mv4`, `P5mv4`, `S1`, `S2`, `S3`, `SHARED`, `EP1`, "
+    },
+    {
+     "path": "osType",
+     "type": "string",
+     "required": true,
+     "doc": "The O/S type for the App Services to be hosted in this plan. Possible values include `Windows`, `Linux`, and `WindowsContainer`. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "workerCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The number of Workers (instances) to be allocated."
+    },
+    {
+     "path": "maximumElasticWorkerCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The maximum number of workers to use in an Elastic SKU Plan or Premium Plan that have <span pulumi-lang-nodejs=\"`premiumPlanAutoScaleEnabled`\" pulumi-lang-dotnet=\"`PremiumPlanAutoScaleEnabled`\" pulumi-lang-go=\"`premiumPlanAutoScaleEnabled`\" pulumi-lang-python=\"`premium_plan_auto_scale_enabled`\" pulumi-lang-yaml=\"`premiumPlanAutoScaleEnabled`\" pulumi-lang-java=\"`premiumPlanAutoScaleEnabled`\" pulumi"
+    }
+   ],
+   "rules": {
+    "os": "osType = Linux | Windows | WindowsContainer (REQUIRED)",
+    "region": "location",
+    "sku": "skuName (B1, S1, P1v3, Y1, EP1, WS1, I1v2 ...)",
+    "quantity": "workerCount"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:appservice/linuxWebApp:LinuxWebApp",
+   "category": "app",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The Azure Region where the Linux Web App should exist. Changing this forces a new Linux Web App to be created."
+    },
+    {
+     "path": "servicePlanId",
+     "type": "string",
+     "required": true,
+     "doc": "The ID of the Service Plan that this Linux App Service will be created in."
+    },
+    {
+     "path": "siteConfig.alwaysOn",
+     "type": "boolean",
+     "required": false,
+     "doc": "If this Linux Web App is Always On enabled. Defaults to `true`.\n\n> **Note:** <span pulumi-lang-nodejs=\"`alwaysOn`\" pulumi-lang-dotnet=\"`AlwaysOn`\" pulumi-lang-go=\"`alwaysOn`\" pulumi-lang-python=\"`always"
+    },
+    {
+     "path": "siteConfig.workerCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The number of Workers for this Linux App Service."
+    }
+   ],
+   "rules": {
+    "os": "by token",
+    "region": "location",
+    "sku": "NONE on the resource: only servicePlanId (a reference, unknown at preview = sentinel UUID); plan SKU must be joined from the azure:appservice/servicePlan resource"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:appservice/windowsWebApp:WindowsWebApp",
+   "category": "app",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The Azure Region where the Windows Web App should exist. Changing this forces a new Windows Web App to be created."
+    },
+    {
+     "path": "servicePlanId",
+     "type": "string",
+     "required": true,
+     "doc": "The ID of the Service Plan that this Windows App Service will be created in."
+    },
+    {
+     "path": "siteConfig.alwaysOn",
+     "type": "boolean",
+     "required": false,
+     "doc": "If this Windows Web App is Always On enabled. Defaults to `true`.\n\n> **Note:** <span pulumi-lang-nodejs=\"`alwaysOn`\" pulumi-lang-dotnet=\"`AlwaysOn`\" pulumi-lang-go=\"`alwaysOn`\" pulumi-lang-python=\"`alwa"
+    },
+    {
+     "path": "siteConfig.workerCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The number of Workers for this Windows App Service."
+    }
+   ],
+   "rules": {
+    "os": "by token",
+    "region": "location",
+    "sku": "NONE on the resource: only servicePlanId (a reference, unknown at preview = sentinel UUID); plan SKU must be joined from the azure:appservice/servicePlan resource"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:appservice/linuxFunctionApp:LinuxFunctionApp",
+   "category": "app",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The Azure Region where the Linux Function App should exist. Changing this forces a new Linux Function App to be created."
+    },
+    {
+     "path": "servicePlanId",
+     "type": "string",
+     "required": true,
+     "doc": "The ID of the App Service Plan within which to create this Function App."
+    },
+    {
+     "path": "storageAccountName",
+     "type": "string",
+     "required": false,
+     "doc": "The backend storage account name which will be used by this Function App."
+    },
+    {
+     "path": "siteConfig.workerCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The number of Workers for this Linux Function App."
+    },
+    {
+     "path": "siteConfig.preWarmedInstanceCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The number of pre-warmed instances for this function app. Only affects apps on an Elastic Premium plan."
+    }
+   ],
+   "rules": {
+    "os": "by token",
+    "region": "location",
+    "sku": "NONE on the resource; servicePlanId reference. Consumption (Y1) / Flex / Premium (EP*) / Dedicated determined by the plan skuName"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:appservice/windowsFunctionApp:WindowsFunctionApp",
+   "category": "app",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The Azure Region where the Windows Function App should exist. Changing this forces a new Windows Function App to be created."
+    },
+    {
+     "path": "servicePlanId",
+     "type": "string",
+     "required": true,
+     "doc": "The ID of the App Service Plan within which to create this Function App."
+    },
+    {
+     "path": "storageAccountName",
+     "type": "string",
+     "required": false,
+     "doc": "The backend storage account name which will be used by this Function App."
+    },
+    {
+     "path": "siteConfig.workerCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The number of Workers for this Windows Function App."
+    },
+    {
+     "path": "siteConfig.preWarmedInstanceCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The number of pre-warmed instances for this Windows Function App. Only affects apps on an Elastic Premium plan."
+    }
+   ],
+   "rules": {
+    "os": "by token",
+    "region": "location",
+    "sku": "NONE on the resource; servicePlanId reference. Consumption (Y1) / Flex / Premium (EP*) / Dedicated determined by the plan skuName"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:containerservice/kubernetesCluster:KubernetesCluster",
+   "category": "aks",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The location where the Managed Kubernetes Cluster should be created. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "skuTier",
+     "type": "string",
+     "required": false,
+     "doc": "The SKU Tier that should be used for this Kubernetes Cluster. Possible values are `Free`, `Standard` (which includes the Uptime SLA) and `Premium`. Defaults to `Free`.\n\n> **Note:** Whilst the AKS API previously supported the `Paid` SKU - the AKS API introduced a breaking change in API Version `2023-02-01` (used in v3.51.0 and later) where the value `Paid` must now be set to `Standard`."
+    },
+    {
+     "path": "supportPlan",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the support plan which should be used for this Kubernetes Cluster. Possible values are `KubernetesOfficial` and `AKSLongTermSupport`. Defaults to `KubernetesOfficial`."
+    },
+    {
+     "path": "defaultNodePool.vmSize",
+     "type": "string",
+     "required": false,
+     "doc": "The size of the Virtual Machine, such as `Standard_DS2_v2`. <span pulumi-lang-nodejs=\"`temporaryNameForRotation`\" pulumi-lang-dotnet=\"`TemporaryNameForRotation`\" pulumi-lang-go=\"`temporaryNameForRotation`\" pulumi-lang-python=\"`temporary_name_for_rotation`\" pulumi-lang-yaml=\"`temporaryNameForRotation`\" pulumi-lang-java=\"`temporaryNameForRotation`\" pulumi-lang-hcl=\"`temporary_name_for_rotation`\">`te"
+    },
+    {
+     "path": "defaultNodePool.nodeCount",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "path": "defaultNodePool.autoScalingEnabled",
+     "type": "boolean",
+     "required": false,
+     "doc": "Should [the Kubernetes Auto Scaler](https://docs.microsoft.com/azure/aks/cluster-autoscaler) be enabled for this Node Pool?\n\n> **Note:** This requires that the `type` is set to `VirtualMachineScaleSets`"
+    },
+    {
+     "path": "defaultNodePool.minCount",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "path": "defaultNodePool.maxCount",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "path": "defaultNodePool.osDiskType",
+     "type": "string",
+     "required": false,
+     "doc": "The type of disk which should be used for the Operating System. Possible values are `Ephemeral` and `Managed`. Defaults to `Managed`. <span pulumi-lang-nodejs=\"`temporaryNameForRotation`\" pulumi-lang-dotnet=\"`TemporaryNameForRotation`\" pulumi-lang-go=\"`temporaryNameForRotation`\" pulumi-lang-python=\"`temporary_name_for_rotation`\" pulumi-lang-yaml=\"`temporaryNameForRotation`\" pulumi-lang-java=\"`temp"
+    },
+    {
+     "path": "defaultNodePool.osDiskSizeGb",
+     "type": "integer",
+     "required": false,
+     "doc": "The size of the OS Disk which should be used for each agent in the Node Pool. <span pulumi-lang-nodejs=\"`temporaryNameForRotation`\" pulumi-lang-dotnet=\"`TemporaryNameForRotation`\" pulumi-lang-go=\"`temporaryNameForRotation`\" pulumi-lang-python=\"`temporary_name_for_rotation`\" pulumi-lang-yaml=\"`temporaryNameForRotation`\" pulumi-lang-java=\"`temporaryNameForRotation`\" pulumi-lang-hcl=\"`temporary_name_"
+    },
+    {
+     "path": "defaultNodePool.osSku",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the OS SKU used by the agent pool. Possible values are `AzureLinux`, `AzureLinux3`, `Ubuntu`, `Ubuntu2204`, `Ubuntu2404`, `Windows2019` and `Windows2022`. If not specified, the default is `Ubuntu` when os_type=Linux or `Windows2019` if os_type=Windows (`Windows2022` Kubernetes \u22651.33). Changing between `AzureLinux` and `Ubuntu` does not replace the resource; otherwise <span pulumi-lang-no"
+    },
+    {
+     "path": "defaultNodePool.zones",
+     "type": "array<string>",
+     "required": false,
+     "doc": "Specifies a list of Availability Zones in which this Kubernetes Cluster should be located. <span pulumi-lang-nodejs=\"`temporaryNameForRotation`\" pulumi-lang-dotnet=\"`TemporaryNameForRotation`\" pulumi-lang-go=\"`temporaryNameForRotation`\" pulumi-lang-python=\"`temporary_name_for_rotation`\" pulumi-lang-yaml=\"`temporaryNameForRotation`\" pulumi-lang-java=\"`temporaryNameForRotation`\" pulumi-lang-hcl=\"`te"
+    },
+    {
+     "path": "networkProfile.loadBalancerSku",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the SKU of the Load Balancer used for this Kubernetes Cluster. Possible values are `basic` and <span pulumi-lang-nodejs=\"`standard`\" pulumi-lang-dotnet=\"`Standard`\" pulumi-lang-go=\"`sta"
+    },
+    {
+     "path": "networkProfile.natGatewayProfile.managedOutboundIpCount",
+     "type": "integer",
+     "required": false,
+     "doc": "Count of desired managed outbound IPs for the managed nat gateway. Must be between `1` and <span pulumi-lang-nodejs=\"`16`\" pulumi-lang-dotnet=\"`16`\" pulumi-lang-go=\"`16`\" pulumi-lang-python=\"`16`\" pulumi-lang-yaml=\"`16`\" pu"
+    },
+    {
+     "path": "networkProfile.loadBalancerProfile.managedOutboundIpCount",
+     "type": "integer",
+     "required": false,
+     "doc": "Count of desired managed outbound IPs for the cluster load balancer. Must be between `1` and <span pulumi-lang-nodejs=\"`100`\" pulumi-lang-dotnet=\"`100`\" pulumi-lang-go=\"`100`\" pulumi-lang-python=\"`100`\" pulumi-lang-yaml=\"`1"
+    }
+   ],
+   "rules": {
+    "region": "location",
+    "sku": "skuTier (Free|Standard|Premium) for control plane; defaultNodePool.vmSize for the system pool",
+    "spot": "defaultNodePool cannot be Spot; spot only on KubernetesClusterNodePool"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:containerservice/kubernetesClusterNodePool:KubernetesClusterNodePool",
+   "category": "aks",
+   "price_relevant_properties": [
+    {
+     "path": "vmSize",
+     "type": "string",
+     "required": false,
+     "doc": "The SKU which should be used for the Virtual Machines used in this Node Pool. Changing this property requires specifying <span pulumi-lang-nodejs=\"`temporaryNameForRotation`\" pulumi-lang-dotnet=\"`TemporaryNameForRotation`\" pulumi-lang-go=\"`temporaryNameForRotation`\" pulumi-lang-python=\"`temporary_name_for_rotation`\" pulumi-lang-yaml=\"`temporaryNameForRotation`\" pulumi-lang-java=\"`temporaryNameForR"
+    },
+    {
+     "path": "nodeCount",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "path": "autoScalingEnabled",
+     "type": "boolean",
+     "required": false,
+     "doc": "Whether to enable [auto-scaler](https://docs.microsoft.com/azure/aks/cluster-autoscaler)."
+    },
+    {
+     "path": "minCount",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "path": "maxCount",
+     "type": "integer",
+     "required": false
+    },
+    {
+     "path": "osType",
+     "type": "string",
+     "required": false,
+     "doc": "The Operating System which should be used for this Node Pool. Changing this forces a new resource to be created. Possible values are `Linux` and `Windows`. Defaults to `Linux`."
+    },
+    {
+     "path": "osSku",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the OS SKU used by the agent pool. Possible values are `AzureLinux`, `AzureLinux3`, `Ubuntu`, `Ubuntu2204`, `Ubuntu2404`, `Windows2019` and `Windows2022`. If not specified, the default is `Ubuntu` when os_type=Linux or `Windows2019` if os_type=Windows (`Windows2022` Kubernetes \u22651.33). Changing between `AzureLinux` and `Ubuntu` does not replace the resource; any other change forces a new "
+    },
+    {
+     "path": "osDiskType",
+     "type": "string",
+     "required": false,
+     "doc": "The type of disk which should be used for the Operating System. Possible values are `Ephemeral` and `Managed`. Defaults to `Managed`. Changing this property requires specifying <span pulumi-lang-nodejs=\"`temporaryNameForRotation`\" pulumi-lang-dotnet=\"`TemporaryNameForRotation`\" pulumi-lang-go=\"`temporaryNameForRotation`\" pulumi-lang-python=\"`temporary_name_for_rotation`\" pulumi-lang-yaml=\"`tempora"
+    },
+    {
+     "path": "osDiskSizeGb",
+     "type": "integer",
+     "required": false,
+     "doc": "The Agent Operating System disk size in GB. Changing this property requires specifying <span pulumi-lang-nodejs=\"`temporaryNameForRotation`\" pulumi-lang-dotnet=\"`TemporaryNameForRotation`\" pulumi-lang-go=\"`temporaryNameForRotation`\" pulumi-lang-python=\"`temporary_name_for_rotation`\" pulumi-lang-yaml=\"`temporaryNameForRotation`\" pulumi-lang-java=\"`temporaryNameForRotation`\" pulumi-lang-hcl=\"`tempor"
+    },
+    {
+     "path": "priority",
+     "type": "string",
+     "required": false,
+     "doc": "The Priority for Virtual Machines within the Virtual Machine Scale Set that powers this Node Pool. Possible values are `Regular` and `Spot`. Defaults to `Regular`. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "spotMaxPrice",
+     "type": "number",
+     "required": false,
+     "doc": "The maximum price you're willing to pay in USD per Virtual Machine. Valid values are `-1` (the current on-demand price for a Virtual Machine) or a positive value with up to five decimal places. Changing this forces a new resource to be created.\n\n> **Note:** This field can only be configured when <span pulumi-lang-nodejs=\"`priority`\" pulumi-lang-dotnet=\"`Priority`\" pulumi-lang-go=\"`priority`\" pulum"
+    },
+    {
+     "path": "zones",
+     "type": "array<string>",
+     "required": false,
+     "doc": "Specifies a list of Availability Zones in which this Kubernetes Cluster Node Pool should be located. Changing this property requires specifying <span pulumi-lang-nodejs=\"`temporaryNameForRotation`\" pulumi-lang-dotnet=\"`TemporaryNameForRotation`\" pulumi-lang-go=\"`temporaryNameForRotation`\" pulumi-lang-python=\"`temporary_name_for_rotation`\" pulumi-lang-yaml=\"`temporaryNameForRotation`\" pulumi-lang-j"
+    }
+   ],
+   "rules": {
+    "os": "osType Linux (default)|Windows",
+    "spot": "priority=Spot (default Regular), evictionPolicy Delete|Deallocate, spotMaxPrice (-1)",
+    "region": "NONE on the resource: inherited from kubernetesClusterId (reference)",
+    "sku": "vmSize"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:mssql/server:Server",
+   "category": "sqlserver",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the supported Azure location where the resource exists. Changing this forces a new resource to be created."
+    }
+   ],
+   "rules": {
+    "region": "location"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:mssql/database:Database",
+   "category": "sqldb",
+   "price_relevant_properties": [
+    {
+     "path": "serverId",
+     "type": "string",
+     "required": true,
+     "doc": "The id of the MS SQL Server on which to create the database. Changing this forces a new resource to be created.\n\n> **Note:** This setting is still required for \"Serverless\" SKUs"
+    },
+    {
+     "path": "skuName",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the name of the SKU used by the database. For example, `GP_S_Gen5_2`,`HS_Gen4_1`,`BC_Gen5_2`, `ElasticPool`, `Basic`,`S0`, `P2` ,`DW100c`, `DS100`. Changing this from the HyperScale service tier to another service tier will create a new resource.\n\n> **Note:** A full list of supported SKU names by region can be retrieved using the Azure CLI: `az sql db list-editions -l <region> -o table`\n"
+    },
+    {
+     "path": "maxSizeGb",
+     "type": "number",
+     "required": false,
+     "doc": "The max size of the database in gigabytes.\n\n> **Note:** This value should not be configured when the `createMode` is `Secondary` or `OnlineSecondary`, as the "
+    },
+    {
+     "path": "zoneRedundant",
+     "type": "boolean",
+     "required": false,
+     "doc": "Whether or not this database is zone redundant, which means the replicas of this database will be spread across multiple availability zones. This property is only settable for Premium and Business Critical databases."
+    },
+    {
+     "path": "licenseType",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the license type applied to this database. Possible values are `LicenseIncluded` and `BasePrice`."
+    },
+    {
+     "path": "readReplicaCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The number of readonly secondary replicas associated with the database to which readonly application intent connections may be routed. This property is only settable for Hyperscale edition databases."
+    },
+    {
+     "path": "readScale",
+     "type": "boolean",
+     "required": false,
+     "doc": "If enabled, connections that have application intent set to readonly in their connection string may be routed to a readonly secondary replica. This property is only settable for Premium and Business Critical databases."
+    },
+    {
+     "path": "elasticPoolId",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the ID of the elastic pool containing this database."
+    },
+    {
+     "path": "autoPauseDelayInMinutes",
+     "type": "integer",
+     "required": false,
+     "doc": "Time in minutes after which database is automatically paused. A value of `-1` means that automatic pause is disabled. This property is only settable for Serverless databases."
+    },
+    {
+     "path": "minCapacity",
+     "type": "number",
+     "required": false,
+     "doc": "Minimal capacity that database will always have allocated, if not paused. This property is only settable for Serverless databases."
+    },
+    {
+     "path": "storageAccountType",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the storage account type used to store backups for this database. Possible values are `Geo`, `GeoZone`, `Local` and `Zone`. Defaults to `Geo`."
+    }
+   ],
+   "rules": {
+    "region": "NONE on the resource (no location property): inherited from serverId (reference); join with azure:mssql/server",
+    "sku": "skuName: e.g. GP_Gen5_4, GP_S_Gen5_2 (serverless), BC_Gen5_8, HS_Gen5_4, S0, P1, Basic, ElasticPool; DTU/vCore encoded in one string"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:cosmosdb/account:Account",
+   "category": "cosmos",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the supported Azure location where the resource exists. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "offerType",
+     "type": "string",
+     "required": true,
+     "doc": "Specifies the Offer Type to use for this CosmosDB Account; currently, this can only be set to `Standard`."
+    },
+    {
+     "path": "kind",
+     "type": "string",
+     "required": false
+    },
+    {
+     "path": "multipleWriteLocationsEnabled",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "path": "geoLocations.location",
+     "type": "string",
+     "required": true,
+     "doc": "The name of the Azure region to host replicated data."
+    },
+    {
+     "path": "geoLocations.zoneRedundant",
+     "type": "boolean",
+     "required": false,
+     "doc": "Should zone redundancy be enabled for this region? Defaults to `false`.\n\n> **Note:** You cannot change zone redundancy in a region that has already been added to a Cosmos DB account. If you wish "
+    },
+    {
+     "path": "geoLocations.failoverPriority",
+     "type": "integer",
+     "required": true,
+     "doc": "The failover priority of the region. A failover priority of `0` indicates a write region. The maximum value for a failover priority = (total number of regions - 1). Failover priority values must be unique for each of the re"
+    },
+    {
+     "path": "capabilities.name",
+     "type": "string",
+     "required": true,
+     "doc": "Specifies the name of the CosmosDB Account. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "capacity.totalThroughputLimit",
+     "type": "integer",
+     "required": true,
+     "doc": "The total throughput limit imposed on this Cosmos DB account (RU/s). Possible values are at least `-1`. `-1` means no limit."
+    },
+    {
+     "path": "freeTierEnabled",
+     "type": "boolean",
+     "required": false
+    },
+    {
+     "path": "analyticalStorageEnabled",
+     "type": "boolean",
+     "required": false
+    }
+   ],
+   "rules": {
+    "region": "location (primary) plus geoLocations[].location (each replica region is billed)",
+    "spot": "n/a",
+    "note": "Throughput is NOT on the account: it is on cosmosdb/sqlDatabase / sqlContainer. Serverless = capabilities contains {name: EnableServerless}"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:cosmosdb/sqlDatabase:SqlDatabase",
+   "category": "cosmos",
+   "price_relevant_properties": [
+    {
+     "path": "accountName",
+     "type": "string",
+     "required": true,
+     "doc": "The name of the Cosmos DB SQL Database to create the table within. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "throughput",
+     "type": "integer",
+     "required": false,
+     "doc": "The throughput of SQL database (RU/s). Must be set in increments of `100`. The minimum value is <span pulumi-lang-nodejs=\"`400`\" pulumi-lang-dotnet=\"`400`\" pulumi-lang-go=\"`400`\" pulumi-lang-python=\"`400`\" pul"
+    },
+    {
+     "path": "autoscaleSettings.maxThroughput",
+     "type": "integer",
+     "required": false,
+     "doc": "The maximum throughput of the SQL database (RU/s). Must be between `1,000` and `1,000,000`. Must be set in increments of `1,000`. Conflicts with `throughput`."
+    }
+   ],
+   "rules": {
+    "region": "NONE: via accountName (name reference)",
+    "note": "throughput XOR autoscaleSettings.maxThroughput; omitted = serverless or container-level"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:cosmosdb/sqlContainer:SqlContainer",
+   "category": "cosmos",
+   "price_relevant_properties": [
+    {
+     "path": "accountName",
+     "type": "string",
+     "required": true,
+     "doc": "The name of the Cosmos DB Account to create the container within. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "databaseName",
+     "type": "string",
+     "required": true,
+     "doc": "The name of the Cosmos DB SQL Database to create the container within. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "throughput",
+     "type": "integer",
+     "required": false,
+     "doc": "The throughput of SQL container (RU/s). Must be set in increments of `100`. The minimum value is <span pulumi-lang-nodejs=\"`400`\" pulumi-lang-dotnet=\"`400`\" pulumi-lang-go=\"`400`\" pulumi-lang-python=\"`400`\" pu"
+    },
+    {
+     "path": "autoscaleSettings.maxThroughput",
+     "type": "integer",
+     "required": false,
+     "doc": "The maximum throughput of the SQL container (RU/s). Must be between `1,000` and `1,000,000`. Must be set in increments of `1,000`. Conflicts with `throughput`."
+    }
+   ],
+   "rules": {
+    "region": "NONE: via accountName",
+    "note": "throughput XOR autoscaleSettings.maxThroughput"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:lb/loadBalancer:LoadBalancer",
+   "category": "lb",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the supported Azure Region where the Load Balancer should be created. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "sku",
+     "type": "string",
+     "required": false,
+     "doc": "The SKU of the Azure Load Balancer. Accepted values are `Basic`, `Standard` and `Gateway`. Defaults to `Standard`. Changing this forces a new resource to be created.\n\n> **Note:** The `Microsoft.Network/AllowGatewayLoadBalancer` feature is required to be registered in order to use the `Gateway` SKU. The feature can only be registered by the Azure service team, please submit an [Azure support ticket"
+    },
+    {
+     "path": "skuTier",
+     "type": "string",
+     "required": false,
+     "doc": "`skuTier` - (Optional) The SKU tier of this Load Balancer. Possible values are `Global` and `Regional`. Defaults to `Regional`. Changing this forces a new resource to be created."
+    }
+   ],
+   "rules": {
+    "region": "location",
+    "sku": "sku Basic|Standard|Gateway (default Basic), skuTier Regional|Global",
+    "note": "rules/data-processed are separate resources/usage"
+   }
+  },
+  {
+   "provider": "azure",
+   "token": "azure:network/natGateway:NatGateway",
+   "category": "nat",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the supported Azure location where the NAT Gateway should exist. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "skuName",
+     "type": "string",
+     "required": false,
+     "doc": "The SKU which should be used. Possible values are `Standard` and `StandardV2`. Defaults to `Standard`. Changing this forces a new resource to be created."
+    },
+    {
+     "path": "idleTimeoutInMinutes",
+     "type": "integer",
+     "required": false,
+     "doc": "The idle timeout which should be used in minutes. Defaults to `4`."
+    },
+    {
+     "path": "zones",
+     "type": "array<string>",
+     "required": false,
+     "doc": "A list of Availability Zones in which this NAT Gateway should be located. Changing this forces a new resource to be created.\n\n> **Note:** For `Standard`, `zones` may be omitted for a no-zone depl"
+    }
+   ],
+   "rules": {
+    "region": "location",
+    "sku": "skuName=Standard"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:compute:VirtualMachine",
+   "category": "vm",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The geo-location where the resource lives"
+    },
+    {
+     "path": "hardwareProfile.vmSize",
+     "type": "string|azure-native:compute:VirtualMachineSizeTypes",
+     "required": false,
+     "enum": [
+      "Basic_A0",
+      "Basic_A1",
+      "Basic_A2",
+      "Basic_A3",
+      "Basic_A4",
+      "Standard_A0",
+      "Standard_A1",
+      "Standard_A2",
+      "Standard_A3",
+      "Standard_A4",
+      "Standard_A5",
+      "Standard_A6",
+      "Standard_A7",
+      "Standard_A8",
+      "Standard_A9",
+      "Standard_A10",
+      "Standard_A11",
+      "Standard_A1_v2",
+      "Standard_A2_v2",
+      "Standard_A4_v2",
+      "Standard_A8_v2",
+      "Standard_A2m_v2",
+      "Standard_A4m_v2",
+      "Standard_A8m_v2",
+      "Standard_B1s",
+      "Standard_B1ms",
+      "Standard_B2s",
+      "Standard_B2ms",
+      "Standard_B4ms",
+      "Standard_B8ms",
+      "Standard_D1",
+      "Standard_D2",
+      "Standard_D3",
+      "Standard_D4",
+      "Standard_D11",
+      "Standard_D12",
+      "Standard_D13",
+      "Standard_D14",
+      "Standard_D1_v2",
+      "Standard_D2_v2",
+      "Standard_D3_v2",
+      "Standard_D4_v2",
+      "Standard_D5_v2",
+      "Standard_D2_v3",
+      "Standard_D4_v3",
+      "Standard_D8_v3",
+      "Standard_D16_v3",
+      "Standard_D32_v3",
+      "Standard_D64_v3",
+      "Standard_D2s_v3",
+      "Standard_D4s_v3",
+      "Standard_D8s_v3",
+      "Standard_D16s_v3",
+      "Standard_D32s_v3",
+      "Standard_D64s_v3",
+      "Standard_D11_v2",
+      "Standard_D12_v2",
+      "Standard_D13_v2",
+      "Standard_D14_v2",
+      "Standard_D15_v2",
+      "Standard_DS1",
+      "Standard_DS2",
+      "Standard_DS3",
+      "Standard_DS4",
+      "Standard_DS11",
+      "Standard_DS12",
+      "Standard_DS13",
+      "Standard_DS14",
+      "Standard_DS1_v2",
+      "Standard_DS2_v2",
+      "Standard_DS3_v2",
+      "Standard_DS4_v2",
+      "Standard_DS5_v2",
+      "Standard_DS11_v2",
+      "Standard_DS12_v2",
+      "Standard_DS13_v2",
+      "Standard_DS14_v2",
+      "Standard_DS15_v2",
+      "Standard_DS13-4_v2",
+      "Standard_DS13-2_v2",
+      "Standard_DS14-8_v2",
+      "Standard_DS14-4_v2",
+      "Standard_E2_v3",
+      "Standard_E4_v3",
+      "Standard_E8_v3",
+      "Standard_E16_v3",
+      "Standard_E32_v3",
+      "Standard_E64_v3",
+      "Standard_E2s_v3",
+      "Standard_E4s_v3",
+      "Standard_E8s_v3",
+      "Standard_E16s_v3",
+      "Standard_E32s_v3",
+      "Standard_E64s_v3",
+      "Standard_E32-16_v3",
+      "Standard_E32-8s_v3",
+      "Standard_E64-32s_v3",
+      "Standard_E64-16s_v3",
+      "Standard_F1",
+      "Standard_F2",
+      "Standard_F4",
+      "Standard_F8",
+      "Standard_F16",
+      "Standard_F1s",
+      "Standard_F2s",
+      "Standard_F4s",
+      "Standard_F8s",
+      "Standard_F16s",
+      "Standard_F2s_v2",
+      "Standard_F4s_v2",
+      "Standard_F8s_v2",
+      "Standard_F16s_v2",
+      "Standard_F32s_v2",
+      "Standard_F64s_v2",
+      "Standard_F72s_v2",
+      "Standard_G1",
+      "Standard_G2",
+      "Standard_G3",
+      "Standard_G4",
+      "Standard_G5",
+      "Standard_GS1",
+      "Standard_GS2",
+      "Standard_GS3",
+      "Standard_GS4",
+      "Standard_GS5",
+      "Standard_GS4-8",
+      "Standard_GS4-4",
+      "Standard_GS5-16",
+      "Standard_GS5-8",
+      "Standard_H8",
+      "Standard_H16",
+      "Standard_H8m",
+      "Standard_H16m",
+      "Standard_H16r",
+      "Standard_H16mr",
+      "Standard_L4s",
+      "Standard_L8s",
+      "Standard_L16s",
+      "Standard_L32s",
+      "Standard_M64s",
+      "Standard_M64ms",
+      "Standard_M128s",
+      "Standard_M128ms",
+      "Standard_M64-32ms",
+      "Standard_M64-16ms",
+      "Standard_M128-64ms",
+      "Standard_M128-32ms",
+      "Standard_NC6",
+      "Standard_NC12",
+      "Standard_NC24",
+      "Standard_NC24r",
+      "Standard_NC6s_v2",
+      "Standard_NC12s_v2",
+      "Standard_NC24s_v2",
+      "Standard_NC24rs_v2",
+      "Standard_NC6s_v3",
+      "Standard_NC12s_v3",
+      "Standard_NC24s_v3",
+      "Standard_NC24rs_v3",
+      "Standard_ND6s",
+      "Standard_ND12s",
+      "Standard_ND24s",
+      "Standard_ND24rs",
+      "Standard_NV6",
+      "Standard_NV12",
+      "Standard_NV24"
+     ],
+     "doc": "Specifies the size of the virtual machine. The enum data type is currently deprecated and will be removed by December 23rd 2023. The recommended way to get the list of available sizes is using these APIs: [List all available virtual machine sizes in an availability set](https://docs.microsoft.com/rest/api/compute/availabilitysets/listavailablesizes), [List all available virtual machine sizes in a "
+    },
+    {
+     "path": "priority",
+     "type": "string|azure-native:compute:VirtualMachinePriorityTypes",
+     "required": false,
+     "enum": [
+      "Regular",
+      "Low",
+      "Spot"
+     ],
+     "doc": "Specifies the priority for the virtual machine. Minimum api-version: 2019-03-01"
+    },
+    {
+     "path": "evictionPolicy",
+     "type": "string|azure-native:compute:VirtualMachineEvictionPolicyTypes",
+     "required": false,
+     "enum": [
+      "Deallocate",
+      "Delete"
+     ],
+     "doc": "Specifies the eviction policy for the Azure Spot virtual machine and Azure Spot scale set. For Azure Spot virtual machines, both 'Deallocate' and 'Delete' are supported and the minimum api-version is 2019-03-01. For Azure Spot scale sets, both 'Deallocate' and 'Delete' are supported and the minimum api-version is 2017-10-30-preview."
+    },
+    {
+     "path": "billingProfile.maxPrice",
+     "type": "number",
+     "required": false,
+     "doc": "Specifies the maximum price you are willing to pay for a Azure Spot VM/VMSS. This price is in US Dollars. <br><br> This price will be compared with the current Azure Spot price for the VM size. Also, the prices are compared at the time of create/update of Azure Spot VM/VMSS and the operation will only succeed if  the maxPrice is greater than the current Azure Spot price. <br><br> The maxPrice will"
+    },
+    {
+     "path": "zones",
+     "type": "array<string>",
+     "required": false,
+     "doc": "The availability zones."
+    },
+    {
+     "path": "licenseType",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies that the image or disk that is being used was licensed on-premises. <br><br> Possible values for Windows Server operating system are: <br><br> Windows_Client <br><br> Windows_Server <br><br> Possible values for Linux Server operating system are: <br><br> RHEL_BYOS (for RHEL) <br><br> SLES_BYOS (for SUSE) <br><br> For more information, see [Azure Hybrid Use Benefit for Windows Server](htt"
+    },
+    {
+     "path": "osProfile.windowsConfiguration",
+     "type": "azure-native:compute:WindowsConfiguration",
+     "required": false,
+     "doc": "Specifies Windows operating system settings on the virtual machine."
+    },
+    {
+     "path": "osProfile.linuxConfiguration",
+     "type": "azure-native:compute:LinuxConfiguration",
+     "required": false,
+     "doc": "Specifies the Linux operating system settings on the virtual machine. For a list of supported Linux distributions, see [Linux on Azure-Endorsed Distributions](https://docs.microsoft.com/azure/virtual-machines/linux/endorsed-distros)."
+    },
+    {
+     "path": "storageProfile.osDisk.osType",
+     "type": "azure-native:compute:OperatingSystemTypes",
+     "required": false,
+     "enum": [
+      "Windows",
+      "Linux"
+     ],
+     "doc": "This property allows you to specify the type of the OS that is included in the disk if creating a VM from user-image or a specialized VHD. Possible values are: **Windows,** **Linux.**"
+    },
+    {
+     "path": "storageProfile.osDisk.managedDisk.storageAccountType",
+     "type": "string|azure-native:compute:StorageAccountTypes",
+     "required": false,
+     "enum": [
+      "Standard_LRS",
+      "Premium_LRS",
+      "StandardSSD_LRS",
+      "UltraSSD_LRS",
+      "Premium_ZRS",
+      "StandardSSD_ZRS",
+      "PremiumV2_LRS"
+     ],
+     "doc": "Specifies the storage account type for the managed disk. NOTE: UltraSSD_LRS can only be used with data disks, it cannot be used with OS Disk."
+    },
+    {
+     "path": "storageProfile.osDisk.diskSizeGB",
+     "type": "integer",
+     "required": false,
+     "doc": "Specifies the size of an empty data disk in gigabytes. This element can be used to overwrite the size of the disk in a virtual machine image. The property 'diskSizeGB' is the number of bytes x 1024^3 for the disk and the value cannot be larger than 1023."
+    },
+    {
+     "path": "storageProfile.dataDisks.diskSizeGB",
+     "type": "integer",
+     "required": false,
+     "doc": "Specifies the size of an empty data disk in gigabytes. This element can be used to overwrite the size of the disk in a virtual machine image. The property 'diskSizeGB' is the number of bytes x 1024^3 for the disk and the value cannot be larger than 1023."
+    },
+    {
+     "path": "storageProfile.dataDisks.managedDisk.storageAccountType",
+     "type": "string|azure-native:compute:StorageAccountTypes",
+     "required": false,
+     "enum": [
+      "Standard_LRS",
+      "Premium_LRS",
+      "StandardSSD_LRS",
+      "UltraSSD_LRS",
+      "Premium_ZRS",
+      "StandardSSD_ZRS",
+      "PremiumV2_LRS"
+     ],
+     "doc": "Specifies the storage account type for the managed disk. NOTE: UltraSSD_LRS can only be used with data disks, it cannot be used with OS Disk."
+    },
+    {
+     "path": "storageProfile.imageReference.publisher",
+     "type": "string",
+     "required": false,
+     "doc": "The image publisher."
+    },
+    {
+     "path": "storageProfile.imageReference.offer",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the offer of the platform image or marketplace image used to create the virtual machine."
+    },
+    {
+     "path": "storageProfile.imageReference.sku",
+     "type": "string",
+     "required": false,
+     "doc": "The image SKU."
+    },
+    {
+     "path": "additionalCapabilities.ultraSSDEnabled",
+     "type": "boolean",
+     "required": false,
+     "doc": "The flag that enables or disables a capability to have one or more managed data disks with UltraSSD_LRS storage account type on the VM or VMSS. Managed disks with storage account type UltraSSD_LRS can be added to a virtual machine or virtual machine scale set only if this property is enabled."
+    }
+   ],
+   "rules": {
+    "os": "NO single property. Windows if osProfile.windowsConfiguration present (Linux if osProfile.linuxConfiguration), else storageProfile.osDisk.osType (Windows|Linux, mostly set for attached disks) else image reference (publisher MicrosoftWindowsServer etc.) ; licenseType Windows_Server|Windows_Client = Hybrid Benefit",
+    "spot": "priority=Spot (enum Regular|Low|Spot; no default), evictionPolicy Deallocate|Delete, billingProfile.maxPrice (-1)",
+    "region": "location (preview filled from azure-native:location config when omitted: verified)",
+    "sku": "hardwareProfile.vmSize (NESTED)"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:compute:Disk",
+   "category": "disk",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The geo-location where the resource lives"
+    },
+    {
+     "path": "sku.name",
+     "type": "string|azure-native:compute:DiskStorageAccountTypes",
+     "required": false,
+     "enum": [
+      "Standard_LRS",
+      "Premium_LRS",
+      "StandardSSD_LRS",
+      "UltraSSD_LRS",
+      "Premium_ZRS",
+      "StandardSSD_ZRS",
+      "PremiumV2_LRS"
+     ],
+     "doc": "The sku name."
+    },
+    {
+     "path": "diskSizeGB",
+     "type": "integer",
+     "required": false,
+     "doc": "If creationData.createOption is Empty, this field is mandatory and it indicates the size of the disk to create. If this field is present for updates or creation with other options, it indicates a resize. Resizes are only allowed if the disk is not attached to a running VM, and can only increase the disk's size."
+    },
+    {
+     "path": "tier",
+     "type": "string",
+     "required": false,
+     "doc": "Performance tier of the disk (e.g, P4, S10) as described here: https://azure.microsoft.com/en-us/pricing/details/managed-disks/. Does not apply to Ultra disks."
+    },
+    {
+     "path": "diskIOPSReadWrite",
+     "type": "number",
+     "required": false,
+     "doc": "The number of IOPS allowed for this disk; only settable for UltraSSD disks. One operation can transfer between 4k and 256k bytes."
+    },
+    {
+     "path": "diskMBpsReadWrite",
+     "type": "number",
+     "required": false,
+     "doc": "The bandwidth allowed for this disk; only settable for UltraSSD disks. MBps means millions of bytes per second - MB here uses the ISO notation, of powers of 10."
+    },
+    {
+     "path": "osType",
+     "type": "azure-native:compute:OperatingSystemTypes",
+     "required": false,
+     "enum": [
+      "Windows",
+      "Linux"
+     ],
+     "doc": "The Operating System type."
+    },
+    {
+     "path": "zones",
+     "type": "array<string>",
+     "required": false,
+     "doc": "The Logical zone list for Disk."
+    },
+    {
+     "path": "creationData.createOption",
+     "type": "string|azure-native:compute:DiskCreateOption",
+     "required": true,
+     "enum": [
+      "Empty",
+      "Attach",
+      "FromImage",
+      "Import",
+      "Copy",
+      "Restore",
+      "Upload",
+      "CopyStart",
+      "ImportSecure",
+      "UploadPreparedSecure",
+      "CopyFromSanSnapshot"
+     ],
+     "doc": "This enumerates the possible sources of a disk's creation."
+    }
+   ],
+   "rules": {
+    "region": "location",
+    "sku": "sku.name enum Standard_LRS|Premium_LRS|StandardSSD_LRS|UltraSSD_LRS|Premium_ZRS|StandardSSD_ZRS|PremiumV2_LRS; size key is diskSizeGB (capital GB)"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:compute:VirtualMachineScaleSet",
+   "category": "vmss",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The geo-location where the resource lives"
+    },
+    {
+     "path": "sku.name",
+     "type": "string",
+     "required": false,
+     "doc": "The sku name."
+    },
+    {
+     "path": "sku.capacity",
+     "type": "number",
+     "required": false,
+     "doc": "Specifies the number of virtual machines in the scale set."
+    },
+    {
+     "path": "sku.tier",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies the tier of virtual machines in a scale set.<br /><br /> Possible Values:<br /><br /> **Standard**<br /><br /> **Basic**"
+    },
+    {
+     "path": "virtualMachineProfile.priority",
+     "type": "string|azure-native:compute:VirtualMachinePriorityTypes",
+     "required": false,
+     "enum": [
+      "Regular",
+      "Low",
+      "Spot"
+     ],
+     "doc": "Specifies the priority for the virtual machines in the scale set. Minimum api-version: 2017-10-30-preview."
+    },
+    {
+     "path": "virtualMachineProfile.billingProfile.maxPrice",
+     "type": "number",
+     "required": false,
+     "doc": "Specifies the maximum price you are willing to pay for a Azure Spot VM/VMSS. This price is in US Dollars. <br><br> This price will be compared with the current Azure Spot price for the VM size. Also, the prices are compared at the time of create/update of Azure Spot VM/VMSS and the operation will only succeed if  the maxPrice is greater than the current Azure Spot price. <br><br> The maxPrice will"
+    },
+    {
+     "path": "virtualMachineProfile.licenseType",
+     "type": "string",
+     "required": false,
+     "doc": "Specifies that the image or disk that is being used was licensed on-premises. <br><br> Possible values for Windows Server operating system are: <br><br> Windows_Client <br><br> Windows_Server <br><br> Possible values for Linux Server operating system are: <br><br> RHEL_BYOS (for RHEL) <br><br> SLES_BYOS (for SUSE) <br><br> For more information, see [Azure Hybrid Use Benefit for Windows Server](htt"
+    },
+    {
+     "path": "virtualMachineProfile.osProfile.windowsConfiguration",
+     "type": "azure-native:compute:WindowsConfiguration",
+     "required": false,
+     "doc": "Specifies Windows operating system settings on the virtual machine."
+    },
+    {
+     "path": "virtualMachineProfile.osProfile.linuxConfiguration",
+     "type": "azure-native:compute:LinuxConfiguration",
+     "required": false,
+     "doc": "Specifies the Linux operating system settings on the virtual machine. For a list of supported Linux distributions, see [Linux on Azure-Endorsed Distributions](https://docs.microsoft.com/azure/virtual-machines/linux/endorsed-distros)."
+    },
+    {
+     "path": "virtualMachineProfile.storageProfile.osDisk.osType",
+     "type": "azure-native:compute:OperatingSystemTypes",
+     "required": false,
+     "enum": [
+      "Windows",
+      "Linux"
+     ],
+     "doc": "This property allows you to specify the type of the OS that is included in the disk if creating a VM from user-image or a specialized VHD. Possible values are: **Windows,** **Linux.**"
+    },
+    {
+     "path": "virtualMachineProfile.storageProfile.osDisk.managedDisk",
+     "type": "azure-native:compute:VirtualMachineScaleSetManagedDiskParameters",
+     "required": false,
+     "doc": "The managed disk parameters."
+    },
+    {
+     "path": "zones",
+     "type": "array<string>",
+     "required": false,
+     "doc": "The availability zones."
+    }
+   ],
+   "rules": {
+    "os": "virtualMachineProfile.osProfile.windowsConfiguration vs linuxConfiguration",
+    "spot": "virtualMachineProfile.priority=Spot, .evictionPolicy, .billingProfile.maxPrice",
+    "region": "location",
+    "sku": "sku.name (VM size), sku.capacity (instance count)"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:storage:StorageAccount",
+   "category": "storage",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "Required. Gets or sets the location of the resource. This will be one of the supported and registered Azure Geo Regions (e.g. West US, East US, Southeast Asia, etc.). The geo region of a resource cannot be changed once it is created, but if an identical geo region is specified on update, the request will succeed."
+    },
+    {
+     "path": "sku.name",
+     "type": "string|azure-native:storage:SkuName",
+     "required": true,
+     "enum": [
+      "Standard_LRS",
+      "Standard_GRS",
+      "Standard_RAGRS",
+      "Standard_ZRS",
+      "Premium_LRS",
+      "Premium_ZRS",
+      "Standard_GZRS",
+      "Standard_RAGZRS",
+      "StandardV2_LRS",
+      "StandardV2_GRS",
+      "StandardV2_ZRS",
+      "StandardV2_GZRS",
+      "PremiumV2_LRS",
+      "PremiumV2_ZRS"
+     ],
+     "doc": "The SKU name. Required for account creation; optional for update. Note that in older versions, SKU name was called accountType."
+    },
+    {
+     "path": "kind",
+     "type": "string|azure-native:storage:Kind",
+     "required": true,
+     "enum": [
+      "Storage",
+      "StorageV2",
+      "BlobStorage",
+      "FileStorage",
+      "BlockBlobStorage"
+     ],
+     "doc": "Required. Indicates the type of storage account."
+    },
+    {
+     "path": "accessTier",
+     "type": "azure-native:storage:AccessTier",
+     "required": false,
+     "enum": [
+      "Hot",
+      "Cool",
+      "Premium",
+      "Cold"
+     ],
+     "doc": "Required for storage accounts where kind = BlobStorage. The access tier is used for billing. The 'Premium' access tier is the default value for premium block blobs storage account type and it cannot be changed for the premium block blobs storage account type."
+    }
+   ],
+   "rules": {
+    "region": "location",
+    "sku": "sku.name = <Standard|Premium>_<LRS|GRS|RAGRS|ZRS|GZRS|RAGZRS> (REQUIRED, nested); kind REQUIRED (StorageV2 ...); accessTier Hot|Cool|Cold|Premium"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:web:AppServicePlan",
+   "category": "plan",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The geo-location where the resource lives"
+    },
+    {
+     "path": "sku.name",
+     "type": "string",
+     "required": false,
+     "doc": "Name of the resource SKU."
+    },
+    {
+     "path": "sku.tier",
+     "type": "string",
+     "required": false,
+     "doc": "Service tier of the resource SKU."
+    },
+    {
+     "path": "sku.capacity",
+     "type": "integer",
+     "required": false,
+     "doc": "Current number of instances assigned to the resource."
+    },
+    {
+     "path": "kind",
+     "type": "string",
+     "required": false,
+     "doc": "Kind of resource. If the resource is an app, you can refer to https://github.com/Azure/app-service-linux-docs/blob/master/Things_You_Should_Know/kind_property.md#app-service-resource-kind-reference for details supported values for kind."
+    },
+    {
+     "path": "reserved",
+     "type": "boolean",
+     "required": false,
+     "doc": "If Linux app service plan <code>true</code>, <code>false</code> otherwise."
+    },
+    {
+     "path": "isXenon",
+     "type": "boolean",
+     "required": false,
+     "doc": "Obsolete: If Hyper-V container app service plan <code>true</code>, <code>false</code> otherwise."
+    },
+    {
+     "path": "zoneRedundant",
+     "type": "boolean",
+     "required": false,
+     "doc": "If <code>true</code>, this App Service Plan will perform availability zone balancing.\nIf <code>false</code>, this App Service Plan will not perform availability zone balancing."
+    },
+    {
+     "path": "perSiteScaling",
+     "type": "boolean",
+     "required": false,
+     "doc": "If <code>true</code>, apps assigned to this App Service plan can be scaled independently.\nIf <code>false</code>, apps assigned to this App Service plan will scale to all instances of the plan."
+    },
+    {
+     "path": "maximumElasticWorkerCount",
+     "type": "integer",
+     "required": false,
+     "doc": "Maximum number of total workers allowed for this ElasticScaleEnabled App Service Plan"
+    },
+    {
+     "path": "targetWorkerCount",
+     "type": "integer",
+     "required": false,
+     "doc": "Scaling worker count."
+    }
+   ],
+   "rules": {
+    "os": "reserved=true => Linux; kind string (linux | app | elastic | functionapp | xenon ...). Windows = reserved absent/false. isXenon=Windows containers",
+    "region": "location",
+    "sku": "sku.name (P1v3, S1, B1, Y1, EP1 ...), sku.tier, sku.capacity = worker count"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:web:WebApp",
+   "category": "app",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The geo-location where the resource lives"
+    },
+    {
+     "path": "kind",
+     "type": "string",
+     "required": false,
+     "doc": "Kind of resource. If the resource is an app, you can refer to https://github.com/Azure/app-service-linux-docs/blob/master/Things_You_Should_Know/kind_property.md#app-service-resource-kind-reference for details supported values for kind."
+    },
+    {
+     "path": "reserved",
+     "type": "boolean",
+     "required": false,
+     "doc": "<code>true</code> if reserved; otherwise, <code>false</code>."
+    },
+    {
+     "path": "serverFarmId",
+     "type": "string",
+     "required": false,
+     "doc": "Resource ID of the associated App Service plan, formatted as: \"/subscriptions/{subscriptionID}/resourceGroups/{groupName}/providers/Microsoft.Web/serverfarms/{appServicePlanName}\"."
+    },
+    {
+     "path": "isXenon",
+     "type": "boolean",
+     "required": false,
+     "default": false,
+     "doc": "Obsolete: Hyper-V sandbox."
+    },
+    {
+     "path": "siteConfig.minimumElasticInstanceCount",
+     "type": "integer",
+     "required": false,
+     "doc": "Number of minimum instance count for a site\nThis setting only applies to the Elastic Plans"
+    },
+    {
+     "path": "siteConfig.preWarmedInstanceCount",
+     "type": "integer",
+     "required": false,
+     "doc": "Number of preWarmed instances.\nThis setting only applies to the Consumption and Elastic Plans"
+    },
+    {
+     "path": "functionAppConfig.scaleAndConcurrency.maximumInstanceCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The maximum number of on demand instances per function group."
+    },
+    {
+     "path": "functionAppConfig.scaleAndConcurrency.alwaysReady.instanceCount",
+     "type": "integer",
+     "required": false,
+     "doc": "Sets the number of 'Always Ready' instances for a given function group or a specific function. For additional information see https://aka.ms/flexconsumption/alwaysready."
+    }
+   ],
+   "rules": {
+    "os": "kind contains \"linux\" or reserved=true => Linux",
+    "function app": "kind is a comma list, e.g. \"functionapp,linux\", \"functionapp\", \"app,linux\", \"functionapp,workflowapp\"; exact-string equality with \"FunctionApp\" is wrong",
+    "region": "location",
+    "sku": "NONE: only serverFarmId (reference to AppServicePlan)"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:containerservice:ManagedCluster",
+   "category": "aks",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The geo-location where the resource lives"
+    },
+    {
+     "path": "sku.name",
+     "type": "string|azure-native:containerservice:ManagedClusterSKUName",
+     "required": false,
+     "enum": [
+      "Base",
+      "Automatic"
+     ],
+     "doc": "The name of a managed cluster SKU."
+    },
+    {
+     "path": "sku.tier",
+     "type": "string|azure-native:containerservice:ManagedClusterSKUTier",
+     "required": false,
+     "enum": [
+      "Premium",
+      "Standard",
+      "Free"
+     ],
+     "doc": "The tier of a managed cluster SKU. If not specified, the default is 'Free'. See [AKS Pricing Tier](https://learn.microsoft.com/azure/aks/free-standard-pricing-tiers) for more details."
+    },
+    {
+     "path": "supportPlan",
+     "type": "string|azure-native:containerservice:KubernetesSupportPlan",
+     "required": false,
+     "enum": [
+      "KubernetesOfficial",
+      "AKSLongTermSupport"
+     ],
+     "doc": "The support plan for the Managed Cluster. If unspecified, the default is 'KubernetesOfficial'."
+    },
+    {
+     "path": "agentPoolProfiles.vmSize",
+     "type": "string",
+     "required": false,
+     "doc": "The size of the agent pool VMs. VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions"
+    },
+    {
+     "path": "agentPoolProfiles.count",
+     "type": "integer",
+     "required": false,
+     "doc": "Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1."
+    },
+    {
+     "path": "agentPoolProfiles.enableAutoScaling",
+     "type": "boolean",
+     "required": false,
+     "doc": "Whether to enable auto-scaler"
+    },
+    {
+     "path": "agentPoolProfiles.minCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The minimum number of nodes for auto-scaling"
+    },
+    {
+     "path": "agentPoolProfiles.maxCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The maximum number of nodes for auto-scaling"
+    },
+    {
+     "path": "agentPoolProfiles.osType",
+     "type": "string|azure-native:containerservice:OSType",
+     "required": false,
+     "enum": [
+      "Linux",
+      "Windows"
+     ],
+     "doc": "The operating system type. The default is Linux."
+    },
+    {
+     "path": "agentPoolProfiles.osSKU",
+     "type": "string|azure-native:containerservice:OSSKU",
+     "required": false,
+     "enum": [
+      "Ubuntu",
+      "AzureLinux",
+      "AzureLinux3",
+      "CBLMariner",
+      "Windows2019",
+      "Windows2022",
+      "Ubuntu2204"
+     ],
+     "doc": "Specifies the OS SKU used by the agent pool. The default is Ubuntu if OSType is Linux. The default is Windows2019 when Kubernetes <= 1.24 or Windows2022 when Kubernetes >= 1.25 if OSType is Windows."
+    },
+    {
+     "path": "agentPoolProfiles.osDiskType",
+     "type": "string|azure-native:containerservice:OSDiskType",
+     "required": false,
+     "enum": [
+      "Managed",
+      "Ephemeral"
+     ],
+     "doc": "The OS disk type to be used for machines in the agent pool. The default is 'Ephemeral' if the VM supports it and has a cache disk larger than the requested OSDiskSizeGB. Otherwise, defaults to 'Managed'. May not be changed after creation. For more information see [Ephemeral OS](https://docs.microsoft.com/azure/aks/cluster-configuration#ephemeral-os)."
+    },
+    {
+     "path": "agentPoolProfiles.osDiskSizeGB",
+     "type": "integer",
+     "required": false,
+     "doc": "OS Disk Size in GB to be used to specify the disk size for every machine in the master/agent pool. If you specify 0, it will apply the default osDisk size according to the vmSize specified."
+    },
+    {
+     "path": "agentPoolProfiles.scaleSetPriority",
+     "type": "string|azure-native:containerservice:ScaleSetPriority",
+     "required": false,
+     "enum": [
+      "Spot",
+      "Regular"
+     ],
+     "doc": "The Virtual Machine Scale Set priority. If not specified, the default is 'Regular'."
+    },
+    {
+     "path": "agentPoolProfiles.spotMaxPrice",
+     "type": "number",
+     "required": false,
+     "doc": "The max price (in US Dollars) you are willing to pay for spot instances. Possible values are any decimal value greater than zero or -1 which indicates default price to be up-to on-demand. Possible values are any decimal value greater than zero or -1 which indicates the willingness to pay any on-demand price. For more details on spot pricing, see [spot VMs pricing](https://docs.microsoft.com/azure/"
+    },
+    {
+     "path": "agentPoolProfiles.availabilityZones",
+     "type": "array<string>",
+     "required": false,
+     "doc": "The list of Availability zones to use for nodes. This can only be specified if the AgentPoolType property is 'VirtualMachineScaleSets'."
+    },
+    {
+     "path": "networkProfile.loadBalancerSku",
+     "type": "string|azure-native:containerservice:LoadBalancerSku",
+     "required": false,
+     "enum": [
+      "standard",
+      "basic"
+     ],
+     "doc": "The load balancer sku for the managed cluster. The default is 'standard'. See [Azure Load Balancer SKUs](https://docs.microsoft.com/azure/load-balancer/skus) for more information about the differences between load balancer SKUs."
+    },
+    {
+     "path": "windowsProfile.licenseType",
+     "type": "string|azure-native:containerservice:LicenseType",
+     "required": false,
+     "enum": [
+      "None",
+      "Windows_Server"
+     ],
+     "doc": "The license type to use for Windows VMs. See [Azure Hybrid User Benefits](https://azure.microsoft.com/pricing/hybrid-benefit/faq/) for more details."
+    }
+   ],
+   "rules": {
+    "os": "agentPoolProfiles[].osType Linux|Windows",
+    "spot": "agentPoolProfiles[].scaleSetPriority=Spot (not allowed on system pool), scaleSetEvictionPolicy, spotMaxPrice",
+    "region": "location",
+    "sku": "sku.tier Free|Standard|Premium (control plane); sku.name Base|Automatic is NOT the tier; pools: agentPoolProfiles[].vmSize x count"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:containerservice:AgentPool",
+   "category": "aks",
+   "price_relevant_properties": [
+    {
+     "path": "vmSize",
+     "type": "string",
+     "required": false,
+     "doc": "The size of the agent pool VMs. VM size availability varies by region. If a node contains insufficient compute resources (memory, cpu, etc) pods might fail to run correctly. For more details on restricted VM sizes, see: https://docs.microsoft.com/azure/aks/quotas-skus-regions"
+    },
+    {
+     "path": "count",
+     "type": "integer",
+     "required": false,
+     "doc": "Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 1000 (inclusive) for user pools and in the range of 1 to 1000 (inclusive) for system pools. The default value is 1."
+    },
+    {
+     "path": "enableAutoScaling",
+     "type": "boolean",
+     "required": false,
+     "doc": "Whether to enable auto-scaler"
+    },
+    {
+     "path": "minCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The minimum number of nodes for auto-scaling"
+    },
+    {
+     "path": "maxCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The maximum number of nodes for auto-scaling"
+    },
+    {
+     "path": "osType",
+     "type": "string|azure-native:containerservice:OSType",
+     "required": false,
+     "enum": [
+      "Linux",
+      "Windows"
+     ],
+     "doc": "The operating system type. The default is Linux."
+    },
+    {
+     "path": "osSKU",
+     "type": "string|azure-native:containerservice:OSSKU",
+     "required": false,
+     "enum": [
+      "Ubuntu",
+      "AzureLinux",
+      "AzureLinux3",
+      "CBLMariner",
+      "Windows2019",
+      "Windows2022",
+      "Ubuntu2204"
+     ],
+     "doc": "Specifies the OS SKU used by the agent pool. The default is Ubuntu if OSType is Linux. The default is Windows2019 when Kubernetes <= 1.24 or Windows2022 when Kubernetes >= 1.25 if OSType is Windows."
+    },
+    {
+     "path": "osDiskType",
+     "type": "string|azure-native:containerservice:OSDiskType",
+     "required": false,
+     "enum": [
+      "Managed",
+      "Ephemeral"
+     ],
+     "doc": "The OS disk type to be used for machines in the agent pool. The default is 'Ephemeral' if the VM supports it and has a cache disk larger than the requested OSDiskSizeGB. Otherwise, defaults to 'Managed'. May not be changed after creation. For more information see [Ephemeral OS](https://docs.microsoft.com/azure/aks/cluster-configuration#ephemeral-os)."
+    },
+    {
+     "path": "osDiskSizeGB",
+     "type": "integer",
+     "required": false,
+     "doc": "OS Disk Size in GB to be used to specify the disk size for every machine in the master/agent pool. If you specify 0, it will apply the default osDisk size according to the vmSize specified."
+    },
+    {
+     "path": "scaleSetPriority",
+     "type": "string|azure-native:containerservice:ScaleSetPriority",
+     "required": false,
+     "enum": [
+      "Spot",
+      "Regular"
+     ],
+     "doc": "The Virtual Machine Scale Set priority. If not specified, the default is 'Regular'."
+    },
+    {
+     "path": "spotMaxPrice",
+     "type": "number",
+     "required": false,
+     "doc": "The max price (in US Dollars) you are willing to pay for spot instances. Possible values are any decimal value greater than zero or -1 which indicates default price to be up-to on-demand. Possible values are any decimal value greater than zero or -1 which indicates the willingness to pay any on-demand price. For more details on spot pricing, see [spot VMs pricing](https://docs.microsoft.com/azure/"
+    },
+    {
+     "path": "availabilityZones",
+     "type": "array<string>",
+     "required": false,
+     "doc": "The list of Availability zones to use for nodes. This can only be specified if the AgentPoolType property is 'VirtualMachineScaleSets'."
+    }
+   ],
+   "rules": {
+    "os": "osType",
+    "spot": "scaleSetPriority=Spot, scaleSetEvictionPolicy, spotMaxPrice",
+    "region": "NONE: via resourceName (cluster name reference)",
+    "sku": "vmSize"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:sql:Server",
+   "category": "sqlserver",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "Resource location."
+    }
+   ],
+   "rules": {
+    "region": "location"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:sql:Database",
+   "category": "sqldb",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "Resource location."
+    },
+    {
+     "path": "serverName",
+     "type": "string",
+     "required": true,
+     "doc": "The name of the server."
+    },
+    {
+     "path": "sku.name",
+     "type": "string",
+     "required": true,
+     "doc": "The name of the SKU, typically, a letter + Number code, e.g. P3."
+    },
+    {
+     "path": "sku.tier",
+     "type": "string",
+     "required": false,
+     "doc": "The tier or edition of the particular SKU, e.g. Basic, Premium."
+    },
+    {
+     "path": "sku.capacity",
+     "type": "integer",
+     "required": false,
+     "doc": "Capacity of the particular SKU."
+    },
+    {
+     "path": "sku.family",
+     "type": "string",
+     "required": false,
+     "doc": "If the service has different generations of hardware, for the same SKU, then that can be captured here."
+    },
+    {
+     "path": "sku.size",
+     "type": "string",
+     "required": false,
+     "doc": "Size of the particular SKU"
+    },
+    {
+     "path": "maxSizeBytes",
+     "type": "number",
+     "required": false,
+     "doc": "The max size of the database expressed in bytes."
+    },
+    {
+     "path": "zoneRedundant",
+     "type": "boolean",
+     "required": false,
+     "doc": "Whether or not this database is zone redundant, which means the replicas of this database will be spread across multiple availability zones."
+    },
+    {
+     "path": "licenseType",
+     "type": "string|azure-native:sql:DatabaseLicenseType",
+     "required": false,
+     "enum": [
+      "LicenseIncluded",
+      "BasePrice"
+     ],
+     "doc": "The license type to apply for this database. `LicenseIncluded` if you need a license, or `BasePrice` if you have a license and are eligible for the Azure Hybrid Benefit."
+    },
+    {
+     "path": "readScale",
+     "type": "string|azure-native:sql:DatabaseReadScale",
+     "required": false,
+     "enum": [
+      "Enabled",
+      "Disabled"
+     ],
+     "doc": "The state of read-only routing. If enabled, connections that have application intent set to readonly in their connection string may be routed to a readonly secondary replica in the same region. Not applicable to a Hyperscale database within an elastic pool."
+    },
+    {
+     "path": "highAvailabilityReplicaCount",
+     "type": "integer",
+     "required": false,
+     "doc": "The number of secondary replicas associated with the Business Critical, Premium, or Hyperscale edition database that are used to provide high availability. Not applicable to a Hyperscale database within an elastic pool."
+    },
+    {
+     "path": "elasticPoolId",
+     "type": "string",
+     "required": false,
+     "doc": "The resource identifier of the elastic pool containing this database."
+    },
+    {
+     "path": "autoPauseDelay",
+     "type": "integer",
+     "required": false,
+     "doc": "Time in minutes after which database is automatically paused. A value of -1 means that automatic pause is disabled"
+    },
+    {
+     "path": "minCapacity",
+     "type": "number",
+     "required": false,
+     "doc": "Minimal capacity that database will always have allocated, if not paused"
+    }
+   ],
+   "rules": {
+    "region": "location (optional; REQUIRED for create in practice; inherits from server UNVERIFIED)",
+    "sku": "sku.name (GP_Gen5, GP_S_Gen5, BC_Gen5, HS_Gen5, S0, P1, Basic) + sku.capacity (vCores or DTU) + sku.family (Gen5) + sku.tier: SPLIT across 4 nested fields"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:cosmosdb:DatabaseAccount",
+   "category": "cosmos",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "The location of the resource group to which the resource belongs."
+    },
+    {
+     "path": "databaseAccountOfferType",
+     "type": "azure-native:cosmosdb:DatabaseAccountOfferType",
+     "required": true,
+     "enum": [
+      "Standard"
+     ],
+     "doc": "The offer type for the database"
+    },
+    {
+     "path": "kind",
+     "type": "string|azure-native:cosmosdb:DatabaseAccountKind",
+     "required": false,
+     "enum": [
+      "GlobalDocumentDB",
+      "MongoDB",
+      "Parse"
+     ],
+     "default": "GlobalDocumentDB",
+     "doc": "Indicates the type of database account. This can only be set at database account creation."
+    },
+    {
+     "path": "enableMultipleWriteLocations",
+     "type": "boolean",
+     "required": false,
+     "doc": "Enables the account to write in multiple locations"
+    },
+    {
+     "path": "locations.locationName",
+     "type": "string",
+     "required": false,
+     "doc": "The name of the region."
+    },
+    {
+     "path": "locations.isZoneRedundant",
+     "type": "boolean",
+     "required": false,
+     "doc": "Flag to indicate whether or not this region is an AvailabilityZone region"
+    },
+    {
+     "path": "locations.failoverPriority",
+     "type": "integer",
+     "required": false,
+     "doc": "The failover priority of the region. A failover priority of 0 indicates a write region. The maximum value for a failover priority = (total number of regions - 1). Failover priority values must be unique for each of the regions in which the database account exists."
+    },
+    {
+     "path": "capabilities.name",
+     "type": "string",
+     "required": false,
+     "doc": "Name of the Cosmos DB capability. For example, \"name\": \"EnableCassandra\". Current values also include \"EnableTable\" and \"EnableGremlin\"."
+    },
+    {
+     "path": "capacity.totalThroughputLimit",
+     "type": "integer",
+     "required": false,
+     "doc": "The total throughput limit imposed on the account. A totalThroughputLimit of 2000 imposes a strict limit of max throughput that can be provisioned on that account to be 2000. A totalThroughputLimit of -1 indicates no limits on provisioning of throughput."
+    },
+    {
+     "path": "enableFreeTier",
+     "type": "boolean",
+     "required": false,
+     "doc": "Flag to indicate whether Free Tier is enabled."
+    },
+    {
+     "path": "enableAnalyticalStorage",
+     "type": "boolean",
+     "required": false,
+     "doc": "Flag to indicate whether to enable storage analytics."
+    },
+    {
+     "path": "enableBurstCapacity",
+     "type": "boolean",
+     "required": false,
+     "doc": "Flag to indicate enabling/disabling of Burst Capacity feature on the account"
+    }
+   ],
+   "rules": {
+    "region": "location plus locations[].locationName",
+    "note": "Module is cosmosdb (v3), NOT documentdb. Serverless = capabilities contains {name: EnableServerless}. Throughput lives in SqlResourceSqlDatabase/SqlResourceSqlContainer"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:cosmosdb:SqlResourceSqlDatabase",
+   "category": "cosmos",
+   "price_relevant_properties": [
+    {
+     "path": "accountName",
+     "type": "string",
+     "required": true,
+     "doc": "Cosmos DB database account name."
+    },
+    {
+     "path": "options.throughput",
+     "type": "integer",
+     "required": false,
+     "doc": "Request Units per second. For example, \"throughput\": 10000."
+    },
+    {
+     "path": "options.autoscaleSettings.maxThroughput",
+     "type": "integer",
+     "required": false,
+     "doc": "Represents maximum throughput, the resource can scale up to."
+    }
+   ],
+   "rules": {
+    "region": "location property exists but usually absent; via accountName reference"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:cosmosdb:SqlResourceSqlContainer",
+   "category": "cosmos",
+   "price_relevant_properties": [
+    {
+     "path": "accountName",
+     "type": "string",
+     "required": true,
+     "doc": "Cosmos DB database account name."
+    },
+    {
+     "path": "databaseName",
+     "type": "string",
+     "required": true,
+     "doc": "Cosmos DB database name."
+    },
+    {
+     "path": "options.throughput",
+     "type": "integer",
+     "required": false,
+     "doc": "Request Units per second. For example, \"throughput\": 10000."
+    },
+    {
+     "path": "options.autoscaleSettings.maxThroughput",
+     "type": "integer",
+     "required": false,
+     "doc": "Represents maximum throughput, the resource can scale up to."
+    }
+   ],
+   "rules": {
+    "region": "via accountName reference"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:network:LoadBalancer",
+   "category": "lb",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "Resource location."
+    },
+    {
+     "path": "sku.name",
+     "type": "string|azure-native:network:LoadBalancerSkuName",
+     "required": false,
+     "enum": [
+      "Basic",
+      "Standard",
+      "Gateway"
+     ],
+     "doc": "Name of a load balancer SKU."
+    },
+    {
+     "path": "sku.tier",
+     "type": "string|azure-native:network:LoadBalancerSkuTier",
+     "required": false,
+     "enum": [
+      "Regional",
+      "Global"
+     ],
+     "doc": "Tier of a load balancer SKU."
+    }
+   ],
+   "rules": {
+    "region": "location",
+    "sku": "sku.name Basic|Standard|Gateway, sku.tier Regional|Global (nested)"
+   }
+  },
+  {
+   "provider": "azure-native",
+   "token": "azure-native:network:NatGateway",
+   "category": "nat",
+   "price_relevant_properties": [
+    {
+     "path": "location",
+     "type": "string",
+     "required": false,
+     "doc": "Resource location."
+    },
+    {
+     "path": "sku.name",
+     "type": "string|azure-native:network:NatGatewaySkuName",
+     "required": false,
+     "enum": [
+      "Standard"
+     ],
+     "doc": "Name of Nat Gateway SKU."
+    },
+    {
+     "path": "idleTimeoutInMinutes",
+     "type": "integer",
+     "required": false,
+     "doc": "The idle timeout of the nat gateway."
+    },
+    {
+     "path": "zones",
+     "type": "array<string>",
+     "required": false,
+     "doc": "A list of availability zones denoting the zone in which Nat Gateway should be deployed."
+    }
+   ],
+   "rules": {
+    "region": "location",
+    "sku": "sku.name=Standard (nested)"
+   }
+  }
+ ]
+}

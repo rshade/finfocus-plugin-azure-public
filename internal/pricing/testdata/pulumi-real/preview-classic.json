@@ -1,0 +1,1514 @@
+{
+  "changeSummary": {
+    "create": 28
+  },
+  "config": {
+    "azure:resourceProviderRegistrations": "none",
+    "azure:subscriptionId": "00000000-0000-0000-0000-000000000000"
+  },
+  "diagnostics": [
+    {
+      "message": "warning: using pulumi-language-yaml from $PATH at <path> expected <path>\n",
+      "severity": "warning"
+    }
+  ],
+  "duration": 892432269,
+  "steps": [
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": false,
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "pulumi:pulumi:Stack",
+        "urn": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic"
+      },
+      "op": "create",
+      "urn": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "inputs": {
+          "__defaults": [],
+          "location": "westeurope",
+          "name": "rg-probe"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "location": [],
+          "name": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:core/resourceGroup:ResourceGroup",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__defaults": [
+            "idleTimeoutInMinutes"
+          ],
+          "idleTimeoutInMinutes": 4,
+          "location": "westeurope",
+          "name": "nat-probe",
+          "resourceGroupName": "rg-probe",
+          "skuName": "Standard",
+          "zones": [
+            "1"
+          ]
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "location": [],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "skuName": [],
+          "zones": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:network/natGateway:NatGateway",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:network/natGateway:NatGateway::nat"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:network/natGateway:NatGateway::nat"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__defaults": [
+            "privateEndpointVnetPolicies"
+          ],
+          "addressSpaces": [
+            "10.0.0.0/16"
+          ],
+          "location": "westeurope",
+          "name": "vnet-probe",
+          "privateEndpointVnetPolicies": "Disabled",
+          "resourceGroupName": "rg-probe"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "addressSpaces": [],
+          "location": [],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ]
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:network/virtualNetwork:VirtualNetwork",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:network/virtualNetwork:VirtualNetwork::vnet"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:network/virtualNetwork:VirtualNetwork::vnet"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__defaults": [],
+          "location": "westeurope",
+          "name": "plan-win",
+          "osType": "Windows",
+          "resourceGroupName": "rg-probe",
+          "skuName": "S1"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "location": [],
+          "name": [],
+          "osType": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "skuName": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:appservice/servicePlan:ServicePlan",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:appservice/servicePlan:ServicePlan::winPlan"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:appservice/servicePlan:ServicePlan::winPlan"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "additionalSecretOutputs": [
+          "kubeAdminConfigRaw",
+          "kubeAdminConfigs",
+          "kubeConfigRaw",
+          "kubeConfigs"
+        ],
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__defaults": [
+            "nodeOsUpgradeChannel",
+            "roleBasedAccessControlEnabled",
+            "runCommandEnabled",
+            "supportPlan"
+          ],
+          "defaultNodePool": {
+            "__defaults": [
+              "scaleDownMode",
+              "type"
+            ],
+            "name": "system",
+            "nodeCount": 3,
+            "osDiskSizeGb": 128,
+            "osDiskType": "Managed",
+            "scaleDownMode": "Delete",
+            "type": "VirtualMachineScaleSets",
+            "vmSize": "Standard_D4s_v5"
+          },
+          "dnsPrefix": "probe",
+          "identity": {
+            "__defaults": [],
+            "type": "SystemAssigned"
+          },
+          "location": "westeurope",
+          "name": "aks-probe",
+          "nodeOsUpgradeChannel": "NodeImage",
+          "resourceGroupName": "rg-probe",
+          "roleBasedAccessControlEnabled": true,
+          "runCommandEnabled": true,
+          "skuTier": "Standard",
+          "supportPlan": "KubernetesOfficial"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "defaultNodePool": [],
+          "dnsPrefix": [],
+          "identity": [],
+          "location": [],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "skuTier": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:containerservice/kubernetesCluster:KubernetesCluster",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:containerservice/kubernetesCluster:KubernetesCluster::aks"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:containerservice/kubernetesCluster:KubernetesCluster::aks"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__defaults": [
+            "publicNetworkAccessEnabled"
+          ],
+          "createOption": "Empty",
+          "diskSizeGb": 256,
+          "location": "westeurope",
+          "name": "disk-probe",
+          "publicNetworkAccessEnabled": true,
+          "resourceGroupName": "rg-probe",
+          "storageAccountType": "Premium_LRS"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "createOption": [],
+          "diskSizeGb": [],
+          "location": [],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "storageAccountType": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:compute/managedDisk:ManagedDisk",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:compute/managedDisk:ManagedDisk::disk"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:compute/managedDisk:ManagedDisk::disk"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "additionalSecretOutputs": [
+          "primaryAccessKey",
+          "primaryBlobConnectionString",
+          "primaryConnectionString",
+          "secondaryAccessKey",
+          "secondaryBlobConnectionString",
+          "secondaryConnectionString"
+        ],
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__defaults": [
+            "allowNestedItemsToBePublic",
+            "dnsEndpointType",
+            "httpsTrafficOnlyEnabled",
+            "localUserEnabled",
+            "minTlsVersion",
+            "publicNetworkAccessEnabled",
+            "queueEncryptionKeyType",
+            "sharedAccessKeyEnabled",
+            "tableEncryptionKeyType"
+          ],
+          "accessTier": "Cool",
+          "accountKind": "StorageV2",
+          "accountReplicationType": "GRS",
+          "accountTier": "Standard",
+          "allowNestedItemsToBePublic": true,
+          "dnsEndpointType": "Standard",
+          "httpsTrafficOnlyEnabled": true,
+          "localUserEnabled": true,
+          "location": "westeurope",
+          "minTlsVersion": "TLS1_2",
+          "name": "stprobe001",
+          "publicNetworkAccessEnabled": true,
+          "queueEncryptionKeyType": "Service",
+          "resourceGroupName": "rg-probe",
+          "sharedAccessKeyEnabled": true,
+          "tableEncryptionKeyType": "Service"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "accessTier": [],
+          "accountKind": [],
+          "accountReplicationType": [],
+          "accountTier": [],
+          "location": [],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ]
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:storage/account:Account",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:storage/account:Account::storage"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:storage/account:Account::storage"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__defaults": [],
+          "location": "westeurope",
+          "name": "plan-linux",
+          "osType": "Linux",
+          "resourceGroupName": "rg-probe",
+          "skuName": "P1v3",
+          "workerCount": 2
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "location": [],
+          "name": [],
+          "osType": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "skuName": [],
+          "workerCount": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:appservice/servicePlan:ServicePlan",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:appservice/servicePlan:ServicePlan::plan"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:appservice/servicePlan:ServicePlan::plan"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "additionalSecretOutputs": [
+          "primaryKey",
+          "primaryMongodbConnectionString",
+          "primaryReadonlyKey",
+          "primaryReadonlyMongodbConnectionString",
+          "primaryReadonlySqlConnectionString",
+          "primarySqlConnectionString",
+          "secondaryKey",
+          "secondaryMongodbConnectionString",
+          "secondaryReadonlyKey",
+          "secondaryReadonlyMongodbConnectionString",
+          "secondaryReadonlySqlConnectionString",
+          "secondarySqlConnectionString"
+        ],
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__defaults": [
+            "accessKeyMetadataWritesEnabled",
+            "defaultIdentityType",
+            "minimalTlsVersion",
+            "publicNetworkAccessEnabled"
+          ],
+          "accessKeyMetadataWritesEnabled": true,
+          "consistencyPolicy": {
+            "__defaults": [
+              "maxIntervalInSeconds",
+              "maxStalenessPrefix"
+            ],
+            "consistencyLevel": "Session",
+            "maxIntervalInSeconds": 5,
+            "maxStalenessPrefix": 100
+          },
+          "defaultIdentityType": "FirstPartyIdentity",
+          "geoLocations": [
+            {
+              "__defaults": [],
+              "failoverPriority": 0,
+              "location": "westeurope"
+            },
+            {
+              "__defaults": [],
+              "failoverPriority": 1,
+              "location": "northeurope",
+              "zoneRedundant": true
+            }
+          ],
+          "kind": "GlobalDocumentDB",
+          "location": "westeurope",
+          "minimalTlsVersion": "Tls12",
+          "multipleWriteLocationsEnabled": true,
+          "name": "cosmos-probe",
+          "offerType": "Standard",
+          "publicNetworkAccessEnabled": true,
+          "resourceGroupName": "rg-probe"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "consistencyPolicy": [],
+          "geoLocations": [],
+          "kind": [],
+          "location": [],
+          "multipleWriteLocationsEnabled": [],
+          "name": [],
+          "offerType": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ]
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:cosmosdb/account:Account",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:cosmosdb/account:Account::cosmos"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:cosmosdb/account:Account::cosmos"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__defaults": [],
+          "location": "westeurope",
+          "name": "lb-probe",
+          "resourceGroupName": "rg-probe",
+          "sku": "Standard",
+          "skuTier": "Regional"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "location": [],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "sku": [],
+          "skuTier": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:lb/loadBalancer:LoadBalancer",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:lb/loadBalancer:LoadBalancer::lb"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:lb/loadBalancer:LoadBalancer::lb"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "additionalSecretOutputs": [
+          "administratorLoginPassword"
+        ],
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__defaults": [
+            "connectionPolicy",
+            "minimumTlsVersion",
+            "publicNetworkAccessEnabled"
+          ],
+          "administratorLogin": "sqladmin",
+          "administratorLoginPassword": "[secret]",
+          "connectionPolicy": "Default",
+          "location": "westeurope",
+          "minimumTlsVersion": "1.2",
+          "name": "sql-probe",
+          "publicNetworkAccessEnabled": true,
+          "resourceGroupName": "rg-probe",
+          "version": "12.0"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "administratorLogin": [],
+          "administratorLoginPassword": [],
+          "location": [],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "version": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:mssql/server:Server",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:mssql/server:Server::sqlServer"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:mssql/server:Server::sqlServer"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg",
+          "urn:pulumi:classic::az-classic-probe::azure:network/virtualNetwork:VirtualNetwork::vnet"
+        ],
+        "inputs": {
+          "__defaults": [
+            "defaultOutboundAccessEnabled",
+            "privateEndpointNetworkPolicies",
+            "privateLinkServiceNetworkPoliciesEnabled"
+          ],
+          "addressPrefixes": [
+            "10.0.1.0/24"
+          ],
+          "defaultOutboundAccessEnabled": true,
+          "name": "subnet-probe",
+          "privateEndpointNetworkPolicies": "Disabled",
+          "privateLinkServiceNetworkPoliciesEnabled": true,
+          "resourceGroupName": "rg-probe",
+          "virtualNetworkName": "vnet-probe"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "addressPrefixes": [],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "virtualNetworkName": [
+            "urn:pulumi:classic::az-classic-probe::azure:network/virtualNetwork:VirtualNetwork::vnet"
+          ]
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:network/subnet:Subnet",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:network/subnet:Subnet::subnet"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:network/subnet:Subnet::subnet"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "additionalSecretOutputs": [
+          "customDomainVerificationId",
+          "siteCredentials"
+        ],
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg",
+          "urn:pulumi:classic::az-classic-probe::azure:appservice/servicePlan:ServicePlan::winPlan"
+        ],
+        "inputs": {
+          "__defaults": [
+            "clientCertificateMode",
+            "enabled",
+            "ftpPublishBasicAuthenticationEnabled",
+            "publicNetworkAccessEnabled",
+            "webdeployPublishBasicAuthenticationEnabled"
+          ],
+          "clientCertificateMode": "Required",
+          "enabled": true,
+          "ftpPublishBasicAuthenticationEnabled": true,
+          "location": "westeurope",
+          "name": "app-win-probe",
+          "publicNetworkAccessEnabled": true,
+          "resourceGroupName": "rg-probe",
+          "servicePlanId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "siteConfig": {
+            "__defaults": [
+              "alwaysOn",
+              "ftpsState",
+              "loadBalancingMode",
+              "managedPipelineMode",
+              "minimumTlsVersion",
+              "scmMinimumTlsVersion",
+              "use32BitWorker"
+            ],
+            "alwaysOn": true,
+            "ftpsState": "Disabled",
+            "loadBalancingMode": "LeastRequests",
+            "managedPipelineMode": "Integrated",
+            "minimumTlsVersion": "1.2",
+            "scmMinimumTlsVersion": "1.2",
+            "use32BitWorker": true
+          },
+          "webdeployPublishBasicAuthenticationEnabled": true
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "location": [],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "servicePlanId": [
+            "urn:pulumi:classic::az-classic-probe::azure:appservice/servicePlan:ServicePlan::winPlan"
+          ],
+          "siteConfig": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:appservice/windowsWebApp:WindowsWebApp",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:appservice/windowsWebApp:WindowsWebApp::winApp"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:appservice/windowsWebApp:WindowsWebApp::winApp"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "additionalSecretOutputs": [
+          "customDomainVerificationId",
+          "siteCredentials"
+        ],
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:appservice/servicePlan:ServicePlan::plan",
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__defaults": [
+            "clientCertificateMode",
+            "enabled",
+            "ftpPublishBasicAuthenticationEnabled",
+            "publicNetworkAccessEnabled",
+            "webdeployPublishBasicAuthenticationEnabled"
+          ],
+          "clientCertificateMode": "Required",
+          "enabled": true,
+          "ftpPublishBasicAuthenticationEnabled": true,
+          "location": "westeurope",
+          "name": "app-linux-probe",
+          "publicNetworkAccessEnabled": true,
+          "resourceGroupName": "rg-probe",
+          "servicePlanId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "siteConfig": {
+            "__defaults": [
+              "alwaysOn",
+              "ftpsState",
+              "loadBalancingMode",
+              "managedPipelineMode",
+              "minimumTlsVersion",
+              "scmMinimumTlsVersion",
+              "use32BitWorker"
+            ],
+            "alwaysOn": true,
+            "ftpsState": "Disabled",
+            "loadBalancingMode": "LeastRequests",
+            "managedPipelineMode": "Integrated",
+            "minimumTlsVersion": "1.2",
+            "scmMinimumTlsVersion": "1.2",
+            "use32BitWorker": true
+          },
+          "webdeployPublishBasicAuthenticationEnabled": true
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "location": [],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "servicePlanId": [
+            "urn:pulumi:classic::az-classic-probe::azure:appservice/servicePlan:ServicePlan::plan"
+          ],
+          "siteConfig": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:appservice/linuxWebApp:LinuxWebApp",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:appservice/linuxWebApp:LinuxWebApp::linuxApp"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:appservice/linuxWebApp:LinuxWebApp::linuxApp"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:containerservice/kubernetesCluster:KubernetesCluster::aks"
+        ],
+        "inputs": {
+          "__defaults": [
+            "mode",
+            "osType",
+            "scaleDownMode"
+          ],
+          "evictionPolicy": "Delete",
+          "kubernetesClusterId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "mode": "User",
+          "name": "spot",
+          "nodeCount": 2,
+          "osType": "Linux",
+          "priority": "Spot",
+          "scaleDownMode": "Delete",
+          "spotMaxPrice": -1,
+          "vmSize": "Standard_D8s_v5"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "evictionPolicy": [],
+          "kubernetesClusterId": [
+            "urn:pulumi:classic::az-classic-probe::azure:containerservice/kubernetesCluster:KubernetesCluster::aks"
+          ],
+          "name": [],
+          "nodeCount": [],
+          "priority": [],
+          "spotMaxPrice": [],
+          "vmSize": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:containerservice/kubernetesClusterNodePool:KubernetesClusterNodePool",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:containerservice/kubernetesClusterNodePool:KubernetesClusterNodePool::aksPool"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:containerservice/kubernetesClusterNodePool:KubernetesClusterNodePool::aksPool"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "additionalSecretOutputs": [
+          "customDomainVerificationId",
+          "siteCredentials",
+          "storageAccountAccessKey"
+        ],
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:appservice/servicePlan:ServicePlan::plan",
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg",
+          "urn:pulumi:classic::az-classic-probe::azure:storage/account:Account::storage"
+        ],
+        "inputs": {
+          "__defaults": [
+            "builtinLoggingEnabled",
+            "enabled",
+            "ftpPublishBasicAuthenticationEnabled",
+            "functionsExtensionVersion",
+            "publicNetworkAccessEnabled",
+            "webdeployPublishBasicAuthenticationEnabled"
+          ],
+          "builtinLoggingEnabled": true,
+          "enabled": true,
+          "ftpPublishBasicAuthenticationEnabled": true,
+          "functionsExtensionVersion": "~4",
+          "location": "westeurope",
+          "name": "func-linux-probe",
+          "publicNetworkAccessEnabled": true,
+          "resourceGroupName": "rg-probe",
+          "servicePlanId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "siteConfig": {
+            "__defaults": [
+              "ftpsState",
+              "loadBalancingMode",
+              "managedPipelineMode",
+              "minimumTlsVersion",
+              "scmMinimumTlsVersion"
+            ],
+            "ftpsState": "Disabled",
+            "loadBalancingMode": "LeastRequests",
+            "managedPipelineMode": "Integrated",
+            "minimumTlsVersion": "1.2",
+            "scmMinimumTlsVersion": "1.2"
+          },
+          "storageAccountAccessKey": "[secret]",
+          "storageAccountName": "stprobe001",
+          "webdeployPublishBasicAuthenticationEnabled": true
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "location": [],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "servicePlanId": [
+            "urn:pulumi:classic::az-classic-probe::azure:appservice/servicePlan:ServicePlan::plan"
+          ],
+          "siteConfig": [],
+          "storageAccountAccessKey": [
+            "urn:pulumi:classic::az-classic-probe::azure:storage/account:Account::storage"
+          ],
+          "storageAccountName": [
+            "urn:pulumi:classic::az-classic-probe::azure:storage/account:Account::storage"
+          ]
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:appservice/linuxFunctionApp:LinuxFunctionApp",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:appservice/linuxFunctionApp:LinuxFunctionApp::linuxFunc"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:appservice/linuxFunctionApp:LinuxFunctionApp::linuxFunc"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "additionalSecretOutputs": [
+          "customDomainVerificationId",
+          "siteCredentials",
+          "storageAccountAccessKey"
+        ],
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:appservice/servicePlan:ServicePlan::winPlan",
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg",
+          "urn:pulumi:classic::az-classic-probe::azure:storage/account:Account::storage"
+        ],
+        "inputs": {
+          "__defaults": [
+            "builtinLoggingEnabled",
+            "enabled",
+            "ftpPublishBasicAuthenticationEnabled",
+            "functionsExtensionVersion",
+            "publicNetworkAccessEnabled",
+            "webdeployPublishBasicAuthenticationEnabled"
+          ],
+          "builtinLoggingEnabled": true,
+          "enabled": true,
+          "ftpPublishBasicAuthenticationEnabled": true,
+          "functionsExtensionVersion": "~4",
+          "location": "westeurope",
+          "name": "func-win-probe",
+          "publicNetworkAccessEnabled": true,
+          "resourceGroupName": "rg-probe",
+          "servicePlanId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "siteConfig": {
+            "__defaults": [
+              "ftpsState",
+              "loadBalancingMode",
+              "managedPipelineMode",
+              "minimumTlsVersion",
+              "scmMinimumTlsVersion",
+              "use32BitWorker"
+            ],
+            "ftpsState": "Disabled",
+            "loadBalancingMode": "LeastRequests",
+            "managedPipelineMode": "Integrated",
+            "minimumTlsVersion": "1.2",
+            "scmMinimumTlsVersion": "1.2",
+            "use32BitWorker": true
+          },
+          "storageAccountAccessKey": "[secret]",
+          "storageAccountName": "stprobe001",
+          "webdeployPublishBasicAuthenticationEnabled": true
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "location": [],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "servicePlanId": [
+            "urn:pulumi:classic::az-classic-probe::azure:appservice/servicePlan:ServicePlan::winPlan"
+          ],
+          "siteConfig": [],
+          "storageAccountAccessKey": [
+            "urn:pulumi:classic::az-classic-probe::azure:storage/account:Account::storage"
+          ],
+          "storageAccountName": [
+            "urn:pulumi:classic::az-classic-probe::azure:storage/account:Account::storage"
+          ]
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:appservice/windowsFunctionApp:WindowsFunctionApp",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:appservice/windowsFunctionApp:WindowsFunctionApp::winFunc"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:appservice/windowsFunctionApp:WindowsFunctionApp::winFunc"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg",
+          "urn:pulumi:classic::az-classic-probe::azure:cosmosdb/account:Account::cosmos"
+        ],
+        "inputs": {
+          "__defaults": [],
+          "accountName": "cosmos-probe",
+          "name": "appdb",
+          "resourceGroupName": "rg-probe",
+          "throughput": 400
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "accountName": [
+            "urn:pulumi:classic::az-classic-probe::azure:cosmosdb/account:Account::cosmos"
+          ],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "throughput": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:cosmosdb/sqlDatabase:SqlDatabase",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:cosmosdb/sqlDatabase:SqlDatabase::cosmosDb"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:cosmosdb/sqlDatabase:SqlDatabase::cosmosDb"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:mssql/server:Server::sqlServer"
+        ],
+        "inputs": {
+          "__defaults": [
+            "createMode",
+            "geoBackupEnabled",
+            "storageAccountType",
+            "transparentDataEncryptionEnabled"
+          ],
+          "autoPauseDelayInMinutes": 60,
+          "createMode": "Default",
+          "geoBackupEnabled": true,
+          "maxSizeGb": 32,
+          "minCapacity": 0.5,
+          "name": "db-serverless",
+          "serverId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "skuName": "GP_S_Gen5_2",
+          "storageAccountType": "Geo",
+          "transparentDataEncryptionEnabled": true
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "autoPauseDelayInMinutes": [],
+          "maxSizeGb": [],
+          "minCapacity": [],
+          "name": [],
+          "serverId": [
+            "urn:pulumi:classic::az-classic-probe::azure:mssql/server:Server::sqlServer"
+          ],
+          "skuName": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:mssql/database:Database",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:mssql/database:Database::sqlDbNoSku"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:mssql/database:Database::sqlDbNoSku"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:mssql/server:Server::sqlServer"
+        ],
+        "inputs": {
+          "__defaults": [
+            "createMode",
+            "geoBackupEnabled",
+            "storageAccountType",
+            "transparentDataEncryptionEnabled"
+          ],
+          "createMode": "Default",
+          "geoBackupEnabled": true,
+          "licenseType": "BasePrice",
+          "maxSizeGb": 64,
+          "name": "db-probe",
+          "serverId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+          "skuName": "GP_Gen5_4",
+          "storageAccountType": "Geo",
+          "transparentDataEncryptionEnabled": true,
+          "zoneRedundant": true
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "licenseType": [],
+          "maxSizeGb": [],
+          "name": [],
+          "serverId": [
+            "urn:pulumi:classic::az-classic-probe::azure:mssql/server:Server::sqlServer"
+          ],
+          "skuName": [],
+          "zoneRedundant": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:mssql/database:Database",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:mssql/database:Database::sqlDb"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:mssql/database:Database::sqlDb"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg",
+          "urn:pulumi:classic::az-classic-probe::azure:network/subnet:Subnet::subnet"
+        ],
+        "inputs": {
+          "__defaults": [],
+          "ipConfigurations": [
+            {
+              "__defaults": [
+                "privateIpAddressVersion"
+              ],
+              "name": "internal",
+              "privateIpAddressAllocation": "Dynamic",
+              "privateIpAddressVersion": "IPv4",
+              "subnetId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9"
+            }
+          ],
+          "location": "westeurope",
+          "name": "nic-probe",
+          "resourceGroupName": "rg-probe"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "ipConfigurations": [
+            "urn:pulumi:classic::az-classic-probe::azure:network/subnet:Subnet::subnet"
+          ],
+          "location": [],
+          "name": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ]
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:network/networkInterface:NetworkInterface",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:network/networkInterface:NetworkInterface::nic"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:network/networkInterface:NetworkInterface::nic"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "additionalSecretOutputs": [
+          "adminPassword",
+          "customData"
+        ],
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg",
+          "urn:pulumi:classic::az-classic-probe::azure:network/subnet:Subnet::subnet"
+        ],
+        "inputs": {
+          "__defaults": [
+            "extensionOperationsEnabled",
+            "extensionsTimeBudget",
+            "overprovision",
+            "priority",
+            "provisionVmAgent",
+            "singlePlacementGroup",
+            "upgradeMode"
+          ],
+          "adminPassword": "[secret]",
+          "adminUsername": "azureuser",
+          "disablePasswordAuthentication": false,
+          "extensionOperationsEnabled": true,
+          "extensionsTimeBudget": "PT1H30M",
+          "instances": 3,
+          "location": "westeurope",
+          "name": "vmss-probe",
+          "networkInterfaces": [
+            {
+              "__defaults": [],
+              "ipConfigurations": [
+                {
+                  "__defaults": [
+                    "version"
+                  ],
+                  "name": "internal",
+                  "primary": true,
+                  "subnetId": "04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+                  "version": "IPv4"
+                }
+              ],
+              "name": "nic",
+              "primary": true
+            }
+          ],
+          "osDisk": {
+            "__defaults": [],
+            "caching": "ReadWrite",
+            "storageAccountType": "Standard_LRS"
+          },
+          "overprovision": true,
+          "priority": "Regular",
+          "provisionVmAgent": true,
+          "resourceGroupName": "rg-probe",
+          "singlePlacementGroup": true,
+          "sku": "Standard_D2s_v5",
+          "sourceImageReference": {
+            "__defaults": [],
+            "offer": "0001-com-ubuntu-server-jammy",
+            "publisher": "Canonical",
+            "sku": "22_04-lts",
+            "version": "latest"
+          },
+          "upgradeMode": "Manual"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "adminPassword": [],
+          "adminUsername": [],
+          "disablePasswordAuthentication": [],
+          "instances": [],
+          "location": [],
+          "name": [],
+          "networkInterfaces": [
+            "urn:pulumi:classic::az-classic-probe::azure:network/subnet:Subnet::subnet"
+          ],
+          "osDisk": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "sku": [],
+          "sourceImageReference": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:compute/linuxVirtualMachineScaleSet:LinuxVirtualMachineScaleSet",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:compute/linuxVirtualMachineScaleSet:LinuxVirtualMachineScaleSet::vmss"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:compute/linuxVirtualMachineScaleSet:LinuxVirtualMachineScaleSet::vmss"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg",
+          "urn:pulumi:classic::az-classic-probe::azure:cosmosdb/account:Account::cosmos",
+          "urn:pulumi:classic::az-classic-probe::azure:cosmosdb/sqlDatabase:SqlDatabase::cosmosDb"
+        ],
+        "inputs": {
+          "__defaults": [
+            "partitionKeyKind"
+          ],
+          "accountName": "cosmos-probe",
+          "autoscaleSettings": {
+            "__defaults": [],
+            "maxThroughput": 4000
+          },
+          "databaseName": "appdb",
+          "name": "items",
+          "partitionKeyKind": "Hash",
+          "partitionKeyPaths": [
+            "/id"
+          ],
+          "resourceGroupName": "rg-probe"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "accountName": [
+            "urn:pulumi:classic::az-classic-probe::azure:cosmosdb/account:Account::cosmos"
+          ],
+          "autoscaleSettings": [],
+          "databaseName": [
+            "urn:pulumi:classic::az-classic-probe::azure:cosmosdb/sqlDatabase:SqlDatabase::cosmosDb"
+          ],
+          "name": [],
+          "partitionKeyPaths": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ]
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:cosmosdb/sqlContainer:SqlContainer",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:cosmosdb/sqlContainer:SqlContainer::cosmosContainer"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:cosmosdb/sqlContainer:SqlContainer::cosmosContainer"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:network/networkInterface:NetworkInterface::nic",
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+        ],
+        "inputs": {
+          "__defaults": [],
+          "location": "westeurope",
+          "name": "vm-legacy",
+          "networkInterfaceIds": [
+            "04da6b54-80e4-46f7-96ec-b56ff0331ba9"
+          ],
+          "osProfile": {
+            "__defaults": [],
+            "adminPassword": "[secret]",
+            "adminUsername": "azureuser",
+            "computerName": "legacy"
+          },
+          "osProfileLinuxConfig": {
+            "__defaults": [],
+            "disablePasswordAuthentication": false
+          },
+          "resourceGroupName": "rg-probe",
+          "storageImageReference": {
+            "__defaults": [],
+            "offer": "0001-com-ubuntu-server-jammy",
+            "publisher": "Canonical",
+            "sku": "22_04-lts",
+            "version": "latest"
+          },
+          "storageOsDisk": {
+            "__defaults": [],
+            "createOption": "FromImage",
+            "managedDiskType": "Standard_LRS",
+            "name": "osdisk"
+          },
+          "vmSize": "Standard_DS2_v2"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "location": [],
+          "name": [],
+          "networkInterfaceIds": [
+            "urn:pulumi:classic::az-classic-probe::azure:network/networkInterface:NetworkInterface::nic"
+          ],
+          "osProfile": [],
+          "osProfileLinuxConfig": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "storageImageReference": [],
+          "storageOsDisk": [],
+          "vmSize": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:compute/virtualMachine:VirtualMachine",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:compute/virtualMachine:VirtualMachine::legacyVm"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:compute/virtualMachine:VirtualMachine::legacyVm"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "additionalSecretOutputs": [
+          "adminPassword",
+          "customData"
+        ],
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg",
+          "urn:pulumi:classic::az-classic-probe::azure:network/networkInterface:NetworkInterface::nic"
+        ],
+        "inputs": {
+          "__defaults": [
+            "extensionsTimeBudget",
+            "platformFaultDomain",
+            "priority"
+          ],
+          "adminPassword": "[secret]",
+          "adminUsername": "azureuser",
+          "disablePasswordAuthentication": false,
+          "extensionsTimeBudget": "PT1H30M",
+          "location": "westeurope",
+          "name": "vm-linux-regular",
+          "networkInterfaceIds": [
+            "04da6b54-80e4-46f7-96ec-b56ff0331ba9"
+          ],
+          "osDisk": {
+            "__defaults": [],
+            "caching": "ReadWrite",
+            "storageAccountType": "Standard_LRS"
+          },
+          "platformFaultDomain": -1,
+          "priority": "Regular",
+          "resourceGroupName": "rg-probe",
+          "size": "Standard_B2s",
+          "sourceImageReference": {
+            "__defaults": [],
+            "offer": "0001-com-ubuntu-server-jammy",
+            "publisher": "Canonical",
+            "sku": "22_04-lts",
+            "version": "latest"
+          }
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "adminPassword": [],
+          "adminUsername": [],
+          "disablePasswordAuthentication": [],
+          "location": [],
+          "name": [],
+          "networkInterfaceIds": [
+            "urn:pulumi:classic::az-classic-probe::azure:network/networkInterface:NetworkInterface::nic"
+          ],
+          "osDisk": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "size": [],
+          "sourceImageReference": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:compute/linuxVirtualMachine:LinuxVirtualMachine",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:compute/linuxVirtualMachine:LinuxVirtualMachine::linuxVmRegular"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:compute/linuxVirtualMachine:LinuxVirtualMachine::linuxVmRegular"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "additionalSecretOutputs": [
+          "adminPassword",
+          "customData"
+        ],
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg",
+          "urn:pulumi:classic::az-classic-probe::azure:network/networkInterface:NetworkInterface::nic"
+        ],
+        "inputs": {
+          "__defaults": [
+            "extensionsTimeBudget",
+            "platformFaultDomain"
+          ],
+          "adminPassword": "[secret]",
+          "adminUsername": "azureuser",
+          "disablePasswordAuthentication": false,
+          "evictionPolicy": "Deallocate",
+          "extensionsTimeBudget": "PT1H30M",
+          "location": "westeurope",
+          "maxBidPrice": 0.05,
+          "name": "vm-linux",
+          "networkInterfaceIds": [
+            "04da6b54-80e4-46f7-96ec-b56ff0331ba9"
+          ],
+          "osDisk": {
+            "__defaults": [],
+            "caching": "ReadWrite",
+            "diskSizeGb": 128,
+            "storageAccountType": "Premium_LRS"
+          },
+          "platformFaultDomain": -1,
+          "priority": "Spot",
+          "resourceGroupName": "rg-probe",
+          "size": "Standard_D4s_v5",
+          "sourceImageReference": {
+            "__defaults": [],
+            "offer": "0001-com-ubuntu-server-jammy",
+            "publisher": "Canonical",
+            "sku": "22_04-lts",
+            "version": "latest"
+          },
+          "zone": "1"
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "adminPassword": [],
+          "adminUsername": [],
+          "disablePasswordAuthentication": [],
+          "evictionPolicy": [],
+          "location": [],
+          "maxBidPrice": [],
+          "name": [],
+          "networkInterfaceIds": [
+            "urn:pulumi:classic::az-classic-probe::azure:network/networkInterface:NetworkInterface::nic"
+          ],
+          "osDisk": [],
+          "priority": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "size": [],
+          "sourceImageReference": [],
+          "zone": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:compute/linuxVirtualMachine:LinuxVirtualMachine",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:compute/linuxVirtualMachine:LinuxVirtualMachine::linuxVm"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:compute/linuxVirtualMachine:LinuxVirtualMachine::linuxVm"
+    },
+    {
+      "detailedDiff": null,
+      "newState": {
+        "additionalSecretOutputs": [
+          "adminPassword",
+          "customData"
+        ],
+        "custom": true,
+        "dependencies": [
+          "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg",
+          "urn:pulumi:classic::az-classic-probe::azure:network/networkInterface:NetworkInterface::nic"
+        ],
+        "inputs": {
+          "__defaults": [
+            "extensionsTimeBudget",
+            "platformFaultDomain",
+            "priority"
+          ],
+          "adminPassword": "[secret]",
+          "adminUsername": "azureuser",
+          "extensionsTimeBudget": "PT1H30M",
+          "licenseType": "Windows_Server",
+          "location": "westeurope",
+          "name": "vm-win",
+          "networkInterfaceIds": [
+            "04da6b54-80e4-46f7-96ec-b56ff0331ba9"
+          ],
+          "osDisk": {
+            "__defaults": [],
+            "caching": "ReadWrite",
+            "storageAccountType": "StandardSSD_LRS"
+          },
+          "platformFaultDomain": -1,
+          "priority": "Regular",
+          "resourceGroupName": "rg-probe",
+          "size": "Standard_D4s_v5",
+          "sourceImageReference": {
+            "__defaults": [],
+            "offer": "WindowsServer",
+            "publisher": "MicrosoftWindowsServer",
+            "sku": "2022-datacenter-azure-edition",
+            "version": "latest"
+          }
+        },
+        "parent": "urn:pulumi:classic::az-classic-probe::pulumi:pulumi:Stack::az-classic-probe-classic",
+        "propertyDependencies": {
+          "adminPassword": [],
+          "adminUsername": [],
+          "licenseType": [],
+          "location": [],
+          "name": [],
+          "networkInterfaceIds": [
+            "urn:pulumi:classic::az-classic-probe::azure:network/networkInterface:NetworkInterface::nic"
+          ],
+          "osDisk": [],
+          "resourceGroupName": [
+            "urn:pulumi:classic::az-classic-probe::azure:core/resourceGroup:ResourceGroup::rg"
+          ],
+          "size": [],
+          "sourceImageReference": []
+        },
+        "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+        "sourcePosition": "project:///Pulumi.yaml",
+        "type": "azure:compute/windowsVirtualMachine:WindowsVirtualMachine",
+        "urn": "urn:pulumi:classic::az-classic-probe::azure:compute/windowsVirtualMachine:WindowsVirtualMachine::windowsVm"
+      },
+      "op": "create",
+      "provider": "urn:pulumi:classic::az-classic-probe::pulumi:providers:azure::default::04da6b54-80e4-46f7-96ec-b56ff0331ba9",
+      "urn": "urn:pulumi:classic::az-classic-probe::azure:compute/windowsVirtualMachine:WindowsVirtualMachine::windowsVm"
+    }
+  ]
+}

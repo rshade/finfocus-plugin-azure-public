@@ -1,0 +1,983 @@
+{
+  "cases": [
+    {
+      "expect": {
+        "expected_monthly": 576.7,
+        "formula": "0.1 x 730 + 3 x 0.23 x 730",
+        "notes": [
+          "Standard tier control plane plus the default node pool; node OS disks and the user node pool are separate"
+        ],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2020-09-01T00:00:00Z",
+            "isPrimaryMeterRegion": false,
+            "location": "EU West",
+            "meterId": "251a08e1-40d6-48e6-8368-4c3e5ee3bbff",
+            "meterName": "Standard Uptime SLA",
+            "productId": "DZH318Z0CQSH",
+            "productName": "Azure Kubernetes Service",
+            "retailPrice": 0.1,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH315HTQSK6",
+            "serviceName": "Azure Kubernetes Service",
+            "skuId": "DZH318Z0CQSH/0013",
+            "skuName": "Standard",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.1
+          },
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Standard_D4s_v5",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2021-11-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "1ab41620-5ffa-51b3-ac16-6416f9f747a9",
+            "meterName": "D4s v5",
+            "productId": "DZH318Z08M9W",
+            "productName": "Virtual Machines Dsv5 Series",
+            "retailPrice": 0.23,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH313Z7MMC8",
+            "serviceName": "Virtual Machines",
+            "skuId": "DZH318Z08M9W/008H",
+            "skuName": "Standard_D4s_v5",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.23
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure-native/aks",
+      "provider": "azure-native",
+      "resource_name": "aks",
+      "type_token": "azure-native:containerservice:ManagedCluster"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "this resource's cost is on another resource referenced by id (a sentinel value in preview): return an explicit error or note saying where the cost is, never zero; the pool itself is 2 x D8s_v5 Spot",
+        "notes": [],
+        "status": "needs_parent_resource"
+      },
+      "id": "azure-native/aksPool",
+      "provider": "azure-native",
+      "resource_name": "aksPool",
+      "type_token": "azure-native:containerservice:AgentPool"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "this resource's cost is on another resource referenced by id (a sentinel value in preview): return an explicit error or note saying where the cost is, never zero; the cost is on the App Service plan",
+        "notes": [],
+        "status": "needs_parent_resource"
+      },
+      "id": "azure-native/app",
+      "provider": "azure-native",
+      "resource_name": "app",
+      "type_token": "azure-native:web:WebApp"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "account has no throughput (it is on databases and containers) and two regions with multi-region writes: state the assumption or return an explicit error",
+        "notes": [],
+        "status": "usage_required"
+      },
+      "id": "azure-native/cosmos",
+      "provider": "azure-native",
+      "resource_name": "cosmos",
+      "type_token": "azure-native:cosmosdb:DatabaseAccount"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "this resource's cost is on another resource referenced by id (a sentinel value in preview): return an explicit error or note saying where the cost is, never zero; autoscale max 4000 RU/s",
+        "notes": [],
+        "status": "needs_parent_resource"
+      },
+      "id": "azure-native/cosmosContainer",
+      "provider": "azure-native",
+      "resource_name": "cosmosContainer",
+      "type_token": "azure-native:cosmosdb:SqlResourceSqlContainer"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "this resource's cost is on another resource referenced by id (a sentinel value in preview): return an explicit error or note saying where the cost is, never zero; 400 RU/s manual at database level",
+        "notes": [],
+        "status": "needs_parent_resource"
+      },
+      "id": "azure-native/cosmosDb",
+      "provider": "azure-native",
+      "resource_name": "cosmosDb",
+      "type_token": "azure-native:cosmosdb:SqlResourceSqlDatabase"
+    },
+    {
+      "expect": {
+        "expected_monthly": 41.8114,
+        "formula": "1 x 41.811428",
+        "notes": [],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Premium_SSD_Managed_Disk_P15",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2018-05-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "187d6ced-d839-408a-ba49-f2f4ec5b37df",
+            "meterName": "P15 LRS Disk",
+            "productId": "DZH318Z0BP04",
+            "productName": "Premium SSD Managed Disks",
+            "retailPrice": 41.811428,
+            "serviceFamily": "Storage",
+            "serviceId": "DZH317F1HKN0",
+            "serviceName": "Storage",
+            "skuId": "DZH318Z0BP04/00G9",
+            "skuName": "P15 LRS",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1/Month",
+            "unitPrice": 41.811428
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure-native/disk",
+      "provider": "azure-native",
+      "resource_name": "disk",
+      "type_token": "azure-native:compute:Disk"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "this resource's cost is on another resource referenced by id (a sentinel value in preview): return an explicit error or note saying where the cost is, never zero; the cost is on the App Service plan",
+        "notes": [],
+        "status": "needs_parent_resource"
+      },
+      "id": "azure-native/funcApp",
+      "provider": "azure-native",
+      "resource_name": "funcApp",
+      "type_token": "azure-native:web:WebApp"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "Standard load balancer: Global-only pricing, rules-hours plus data processed; a stated assumption is required",
+        "notes": [],
+        "status": "ambiguous"
+      },
+      "id": "azure-native/lb",
+      "provider": "azure-native",
+      "resource_name": "lb",
+      "type_token": "azure-native:network:LoadBalancer"
+    },
+    {
+      "expect": {
+        "expected_monthly": 31.0279,
+        "formula": "1 x 0.042504 x 730",
+        "notes": [],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Standard_D4s_v5",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2026-02-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "4f399ad3-d7e8-5c30-aa2f-9e7a107f5a2b",
+            "meterName": "D4s v5 Spot",
+            "productId": "DZH318Z08M9W",
+            "productName": "Virtual Machines Dsv5 Series",
+            "retailPrice": 0.042504,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH313Z7MMC8",
+            "serviceName": "Virtual Machines",
+            "skuId": "DZH318Z08M9W/008K",
+            "skuName": "Standard_D4s_v5 Spot",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.042504
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure-native/linuxVm",
+      "provider": "azure-native",
+      "resource_name": "linuxVm",
+      "type_token": "azure-native:compute:VirtualMachine"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "NAT gateway has hourly and data meters: price it or return an explicit unsupported error, never zero",
+        "notes": [],
+        "status": "unsupported_must_error"
+      },
+      "id": "azure-native/nat",
+      "provider": "azure-native",
+      "resource_name": "nat",
+      "type_token": "azure-native:network:NatGateway"
+    },
+    {
+      "expect": {
+        "expected_monthly": 259.88,
+        "formula": "2 x 0.178 x 730",
+        "notes": [],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Azure_App_Service_Premium_v3_Plan_Linux_P1_v3",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2020-10-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "cc659186-8327-58c4-beb4-1900b2b64af2",
+            "meterName": "P1 v3 App",
+            "productId": "DZH318Z0DCR6",
+            "productName": "Azure App Service Premium v3 Plan - Linux",
+            "retailPrice": 0.178,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH317GT8G5N",
+            "serviceName": "Azure App Service",
+            "skuId": "DZH318Z0DCR6/000X",
+            "skuName": "P1 v3",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.178
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure-native/plan",
+      "provider": "azure-native",
+      "resource_name": "plan",
+      "type_token": "azure-native:web:AppServicePlan"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "GP_Gen5_4, 64 GB, zone redundant, licenseType BasePrice (Hybrid Benefit): the zone-redundancy rule and the licence rate are both unresolved by the Retail API. Needs a Pricing Calculator value; state the reading chosen",
+        "notes": [],
+        "status": "ambiguous"
+      },
+      "id": "azure-native/sqlDb",
+      "provider": "azure-native",
+      "resource_name": "sqlDb",
+      "type_token": "azure-native:sql:Database"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "storage has no capacity property: the plugin must state the size it assumed (or ask for it); never a silent zero",
+        "notes": [],
+        "status": "usage_required"
+      },
+      "id": "azure-native/storage",
+      "provider": "azure-native",
+      "resource_name": "storage",
+      "type_token": "azure-native:storage:StorageAccount"
+    },
+    {
+      "expect": {
+        "expected_monthly": 35.04,
+        "formula": "1 x 0.048 x 730",
+        "notes": [],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Standard_B2s",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2025-10-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "15a6938e-e86b-4b1b-9a76-7cce5581553a",
+            "meterName": "B2s",
+            "productId": "DZH318Z0BQ35",
+            "productName": "Virtual Machines BS Series",
+            "retailPrice": 0.048,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH313Z7MMC8",
+            "serviceName": "Virtual Machines",
+            "skuId": "DZH318Z0BQ35/00KL",
+            "skuName": "B2s",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.048
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure-native/vmNoLocation",
+      "provider": "azure-native",
+      "resource_name": "vmNoLocation",
+      "type_token": "azure-native:compute:VirtualMachine"
+    },
+    {
+      "expect": {
+        "expected_monthly": 251.85,
+        "formula": "3 x 0.115 x 730",
+        "notes": [],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Standard_D2s_v5",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2021-11-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "0561adcb-1c48-542e-9e0c-10dea22fc392",
+            "meterName": "D2s v5",
+            "productId": "DZH318Z08M9W",
+            "productName": "Virtual Machines Dsv5 Series",
+            "retailPrice": 0.115,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH313Z7MMC8",
+            "serviceName": "Virtual Machines",
+            "skuId": "DZH318Z08M9W/0092",
+            "skuName": "Standard_D2s_v5",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.115
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure-native/vmss",
+      "provider": "azure-native",
+      "resource_name": "vmss",
+      "type_token": "azure-native:compute:VirtualMachineScaleSet"
+    },
+    {
+      "expect": {
+        "expected_monthly": 73.0,
+        "formula": "1 x 0.1 x 730",
+        "notes": [],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2013-12-08T00:00:00Z",
+            "isPrimaryMeterRegion": false,
+            "location": "EU West",
+            "meterId": "505db374-df8a-44df-9d8c-13c14b61dee1",
+            "meterName": "S1 App",
+            "productId": "DZH318Z0BQJJ",
+            "productName": "Azure App Service Standard Plan",
+            "retailPrice": 0.1,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH317GT8G5N",
+            "serviceName": "Azure App Service",
+            "skuId": "DZH318Z0BQJJ/003Q",
+            "skuName": "S1",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.1
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure-native/winPlan",
+      "provider": "azure-native",
+      "resource_name": "winPlan",
+      "type_token": "azure-native:web:AppServicePlan"
+    },
+    {
+      "expect": {
+        "alternative_if_licence_included": {
+          "expected_monthly": 302.22,
+          "when": "licenseType empty: the Windows meter applies"
+        },
+        "expected_monthly": 167.9,
+        "formula": "1 x 0.23 x 730",
+        "notes": [
+          "licenseType Windows_Server is Azure Hybrid Benefit: the licence is already paid, so the compute rate is the base (Linux) rate. Confidence Medium (Azure documentation, not verified against the Calculator)"
+        ],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Standard_D4s_v5",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2021-11-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "1ab41620-5ffa-51b3-ac16-6416f9f747a9",
+            "meterName": "D4s v5",
+            "productId": "DZH318Z08M9W",
+            "productName": "Virtual Machines Dsv5 Series",
+            "retailPrice": 0.23,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH313Z7MMC8",
+            "serviceName": "Virtual Machines",
+            "skuId": "DZH318Z08M9W/008H",
+            "skuName": "Standard_D4s_v5",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.23
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure-native/windowsVm",
+      "provider": "azure-native",
+      "resource_name": "windowsVm",
+      "type_token": "azure-native:compute:VirtualMachine"
+    },
+    {
+      "expect": {
+        "expected_monthly": 576.7,
+        "formula": "0.1 x 730 + 3 x 0.23 x 730",
+        "notes": [
+          "Standard tier control plane plus the default node pool; node OS disks and the user node pool are separate"
+        ],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2020-09-01T00:00:00Z",
+            "isPrimaryMeterRegion": false,
+            "location": "EU West",
+            "meterId": "251a08e1-40d6-48e6-8368-4c3e5ee3bbff",
+            "meterName": "Standard Uptime SLA",
+            "productId": "DZH318Z0CQSH",
+            "productName": "Azure Kubernetes Service",
+            "retailPrice": 0.1,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH315HTQSK6",
+            "serviceName": "Azure Kubernetes Service",
+            "skuId": "DZH318Z0CQSH/0013",
+            "skuName": "Standard",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.1
+          },
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Standard_D4s_v5",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2021-11-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "1ab41620-5ffa-51b3-ac16-6416f9f747a9",
+            "meterName": "D4s v5",
+            "productId": "DZH318Z08M9W",
+            "productName": "Virtual Machines Dsv5 Series",
+            "retailPrice": 0.23,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH313Z7MMC8",
+            "serviceName": "Virtual Machines",
+            "skuId": "DZH318Z08M9W/008H",
+            "skuName": "Standard_D4s_v5",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.23
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure/aks",
+      "provider": "azure",
+      "resource_name": "aks",
+      "type_token": "azure:containerservice/kubernetesCluster:KubernetesCluster"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "this resource's cost is on another resource referenced by id (a sentinel value in preview): return an explicit error or note saying where the cost is, never zero; the pool itself is 2 x D8s_v5 Spot",
+        "notes": [],
+        "status": "needs_parent_resource"
+      },
+      "id": "azure/aksPool",
+      "provider": "azure",
+      "resource_name": "aksPool",
+      "type_token": "azure:containerservice/kubernetesClusterNodePool:KubernetesClusterNodePool"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "account has no throughput (it is on databases and containers) and two regions with multi-region writes: state the assumption or return an explicit error",
+        "notes": [],
+        "status": "usage_required"
+      },
+      "id": "azure/cosmos",
+      "provider": "azure",
+      "resource_name": "cosmos",
+      "type_token": "azure:cosmosdb/account:Account"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "this resource's cost is on another resource referenced by id (a sentinel value in preview): return an explicit error or note saying where the cost is, never zero; autoscale max 4000 RU/s",
+        "notes": [],
+        "status": "needs_parent_resource"
+      },
+      "id": "azure/cosmosContainer",
+      "provider": "azure",
+      "resource_name": "cosmosContainer",
+      "type_token": "azure:cosmosdb/sqlContainer:SqlContainer"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "this resource's cost is on another resource referenced by id (a sentinel value in preview): return an explicit error or note saying where the cost is, never zero; 400 RU/s manual at database level",
+        "notes": [],
+        "status": "needs_parent_resource"
+      },
+      "id": "azure/cosmosDb",
+      "provider": "azure",
+      "resource_name": "cosmosDb",
+      "type_token": "azure:cosmosdb/sqlDatabase:SqlDatabase"
+    },
+    {
+      "expect": {
+        "expected_monthly": 41.8114,
+        "formula": "1 x 41.811428",
+        "notes": [],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Premium_SSD_Managed_Disk_P15",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2018-05-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "187d6ced-d839-408a-ba49-f2f4ec5b37df",
+            "meterName": "P15 LRS Disk",
+            "productId": "DZH318Z0BP04",
+            "productName": "Premium SSD Managed Disks",
+            "retailPrice": 41.811428,
+            "serviceFamily": "Storage",
+            "serviceId": "DZH317F1HKN0",
+            "serviceName": "Storage",
+            "skuId": "DZH318Z0BP04/00G9",
+            "skuName": "P15 LRS",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1/Month",
+            "unitPrice": 41.811428
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure/disk",
+      "provider": "azure",
+      "resource_name": "disk",
+      "type_token": "azure:compute/managedDisk:ManagedDisk"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "Standard load balancer: Global-only pricing, rules-hours plus data processed; a stated assumption is required",
+        "notes": [],
+        "status": "ambiguous"
+      },
+      "id": "azure/lb",
+      "provider": "azure",
+      "resource_name": "lb",
+      "type_token": "azure:lb/loadBalancer:LoadBalancer"
+    },
+    {
+      "expect": {
+        "expected_monthly": 99.28,
+        "formula": "1 x 0.136 x 730",
+        "notes": [],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Standard_DS2_v2",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2025-05-01T00:00:00Z",
+            "isPrimaryMeterRegion": false,
+            "location": "EU West",
+            "meterId": "f8cc8e26-97d3-468e-a156-ee9f80e395c0",
+            "meterName": "DS2 v2",
+            "productId": "DZH318Z0BQ4C",
+            "productName": "Virtual Machines DSv2 Series",
+            "retailPrice": 0.136,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH313Z7MMC8",
+            "serviceName": "Virtual Machines",
+            "skuId": "DZH318Z0BQ4C/01BM",
+            "skuName": "DS2 v2",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.136
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure/legacyVm",
+      "provider": "azure",
+      "resource_name": "legacyVm",
+      "type_token": "azure:compute/virtualMachine:VirtualMachine"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "this resource's cost is on another resource referenced by id (a sentinel value in preview): return an explicit error or note saying where the cost is, never zero; the cost is on the App Service plan",
+        "notes": [],
+        "status": "needs_parent_resource"
+      },
+      "id": "azure/linuxApp",
+      "provider": "azure",
+      "resource_name": "linuxApp",
+      "type_token": "azure:appservice/linuxWebApp:LinuxWebApp"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "this resource's cost is on another resource referenced by id (a sentinel value in preview): return an explicit error or note saying where the cost is, never zero; the cost is on the App Service plan",
+        "notes": [],
+        "status": "needs_parent_resource"
+      },
+      "id": "azure/linuxFunc",
+      "provider": "azure",
+      "resource_name": "linuxFunc",
+      "type_token": "azure:appservice/linuxFunctionApp:LinuxFunctionApp"
+    },
+    {
+      "expect": {
+        "expected_monthly": 31.0279,
+        "formula": "1 x 0.042504 x 730",
+        "notes": [],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Standard_D4s_v5",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2026-02-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "4f399ad3-d7e8-5c30-aa2f-9e7a107f5a2b",
+            "meterName": "D4s v5 Spot",
+            "productId": "DZH318Z08M9W",
+            "productName": "Virtual Machines Dsv5 Series",
+            "retailPrice": 0.042504,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH313Z7MMC8",
+            "serviceName": "Virtual Machines",
+            "skuId": "DZH318Z08M9W/008K",
+            "skuName": "Standard_D4s_v5 Spot",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.042504
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure/linuxVm",
+      "provider": "azure",
+      "resource_name": "linuxVm",
+      "type_token": "azure:compute/linuxVirtualMachine:LinuxVirtualMachine"
+    },
+    {
+      "expect": {
+        "expected_monthly": 35.04,
+        "formula": "1 x 0.048 x 730",
+        "notes": [],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Standard_B2s",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2025-10-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "15a6938e-e86b-4b1b-9a76-7cce5581553a",
+            "meterName": "B2s",
+            "productId": "DZH318Z0BQ35",
+            "productName": "Virtual Machines BS Series",
+            "retailPrice": 0.048,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH313Z7MMC8",
+            "serviceName": "Virtual Machines",
+            "skuId": "DZH318Z0BQ35/00KL",
+            "skuName": "B2s",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.048
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure/linuxVmRegular",
+      "provider": "azure",
+      "resource_name": "linuxVmRegular",
+      "type_token": "azure:compute/linuxVirtualMachine:LinuxVirtualMachine"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "NAT gateway has hourly and data meters: price it or return an explicit unsupported error, never zero",
+        "notes": [],
+        "status": "unsupported_must_error"
+      },
+      "id": "azure/nat",
+      "provider": "azure",
+      "resource_name": "nat",
+      "type_token": "azure:network/natGateway:NatGateway"
+    },
+    {
+      "expect": {
+        "expected_monthly": 259.88,
+        "formula": "2 x 0.178 x 730",
+        "notes": [],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Azure_App_Service_Premium_v3_Plan_Linux_P1_v3",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2020-10-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "cc659186-8327-58c4-beb4-1900b2b64af2",
+            "meterName": "P1 v3 App",
+            "productId": "DZH318Z0DCR6",
+            "productName": "Azure App Service Premium v3 Plan - Linux",
+            "retailPrice": 0.178,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH317GT8G5N",
+            "serviceName": "Azure App Service",
+            "skuId": "DZH318Z0DCR6/000X",
+            "skuName": "P1 v3",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.178
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure/plan",
+      "provider": "azure",
+      "resource_name": "plan",
+      "type_token": "azure:appservice/servicePlan:ServicePlan"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "GP_Gen5_4, 64 GB, zone redundant, licenseType BasePrice (Hybrid Benefit): the zone-redundancy rule and the licence rate are both unresolved by the Retail API. Needs a Pricing Calculator value; state the reading chosen",
+        "notes": [],
+        "status": "ambiguous"
+      },
+      "id": "azure/sqlDb",
+      "provider": "azure",
+      "resource_name": "sqlDb",
+      "type_token": "azure:mssql/database:Database"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "skuName GP_S_Gen5_2 is serverless: return an explicit unsupported error, never the provisioned price",
+        "notes": [],
+        "status": "unsupported_must_error"
+      },
+      "id": "azure/sqlDbNoSku",
+      "provider": "azure",
+      "resource_name": "sqlDbNoSku",
+      "type_token": "azure:mssql/database:Database"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "storage has no capacity property: the plugin must state the size it assumed (or ask for it); never a silent zero",
+        "notes": [],
+        "status": "usage_required"
+      },
+      "id": "azure/storage",
+      "provider": "azure",
+      "resource_name": "storage",
+      "type_token": "azure:storage/account:Account"
+    },
+    {
+      "expect": {
+        "expected_monthly": 251.85,
+        "formula": "3 x 0.115 x 730",
+        "notes": [],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Standard_D2s_v5",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2021-11-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "0561adcb-1c48-542e-9e0c-10dea22fc392",
+            "meterName": "D2s v5",
+            "productId": "DZH318Z08M9W",
+            "productName": "Virtual Machines Dsv5 Series",
+            "retailPrice": 0.115,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH313Z7MMC8",
+            "serviceName": "Virtual Machines",
+            "skuId": "DZH318Z08M9W/0092",
+            "skuName": "Standard_D2s_v5",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.115
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure/vmss",
+      "provider": "azure",
+      "resource_name": "vmss",
+      "type_token": "azure:compute/linuxVirtualMachineScaleSet:LinuxVirtualMachineScaleSet"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "this resource's cost is on another resource referenced by id (a sentinel value in preview): return an explicit error or note saying where the cost is, never zero; the cost is on the App Service plan",
+        "notes": [],
+        "status": "needs_parent_resource"
+      },
+      "id": "azure/winApp",
+      "provider": "azure",
+      "resource_name": "winApp",
+      "type_token": "azure:appservice/windowsWebApp:WindowsWebApp"
+    },
+    {
+      "expect": {
+        "expected_monthly": null,
+        "must": "this resource's cost is on another resource referenced by id (a sentinel value in preview): return an explicit error or note saying where the cost is, never zero; the cost is on the App Service plan",
+        "notes": [],
+        "status": "needs_parent_resource"
+      },
+      "id": "azure/winFunc",
+      "provider": "azure",
+      "resource_name": "winFunc",
+      "type_token": "azure:appservice/windowsFunctionApp:WindowsFunctionApp"
+    },
+    {
+      "expect": {
+        "expected_monthly": 73.0,
+        "formula": "1 x 0.1 x 730",
+        "notes": [],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2013-12-08T00:00:00Z",
+            "isPrimaryMeterRegion": false,
+            "location": "EU West",
+            "meterId": "505db374-df8a-44df-9d8c-13c14b61dee1",
+            "meterName": "S1 App",
+            "productId": "DZH318Z0BQJJ",
+            "productName": "Azure App Service Standard Plan",
+            "retailPrice": 0.1,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH317GT8G5N",
+            "serviceName": "Azure App Service",
+            "skuId": "DZH318Z0BQJJ/003Q",
+            "skuName": "S1",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.1
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure/winPlan",
+      "provider": "azure",
+      "resource_name": "winPlan",
+      "type_token": "azure:appservice/servicePlan:ServicePlan"
+    },
+    {
+      "expect": {
+        "alternative_if_licence_included": {
+          "expected_monthly": 302.22,
+          "when": "licenseType empty or None: the Windows meter applies"
+        },
+        "expected_monthly": 167.9,
+        "formula": "1 x 0.23 x 730",
+        "notes": [
+          "licenseType Windows_Server is Azure Hybrid Benefit: the licence is already paid, so the compute rate is the base (Linux) rate. Confidence Medium (Azure documentation, not verified against the Calculator)"
+        ],
+        "rows": [
+          {
+            "armRegionName": "westeurope",
+            "armSkuName": "Standard_D4s_v5",
+            "currencyCode": "USD",
+            "effectiveStartDate": "2021-11-01T00:00:00Z",
+            "isPrimaryMeterRegion": true,
+            "location": "EU West",
+            "meterId": "1ab41620-5ffa-51b3-ac16-6416f9f747a9",
+            "meterName": "D4s v5",
+            "productId": "DZH318Z08M9W",
+            "productName": "Virtual Machines Dsv5 Series",
+            "retailPrice": 0.23,
+            "serviceFamily": "Compute",
+            "serviceId": "DZH313Z7MMC8",
+            "serviceName": "Virtual Machines",
+            "skuId": "DZH318Z08M9W/008H",
+            "skuName": "Standard_D4s_v5",
+            "tierMinimumUnits": 0.0,
+            "type": "Consumption",
+            "unitOfMeasure": "1 Hour",
+            "unitPrice": 0.23
+          }
+        ],
+        "status": "ok"
+      },
+      "id": "azure/windowsVm",
+      "provider": "azure",
+      "resource_name": "windowsVm",
+      "type_token": "azure:compute/windowsVirtualMachine:WindowsVirtualMachine"
+    }
+  ],
+  "expectations_without_a_resource": [],
+  "hours_per_month": 730,
+  "not_priced": [
+    {
+      "id": "azure-native/sqlServer",
+      "reason": "no price-bearing meaning (network plumbing, server, nic)",
+      "type_token": "azure-native:sql:Server"
+    },
+    {
+      "id": "azure/nic",
+      "reason": "no price-bearing meaning (network plumbing, server, nic)",
+      "type_token": "azure:network/networkInterface:NetworkInterface"
+    },
+    {
+      "id": "azure/sqlServer",
+      "reason": "no price-bearing meaning (network plumbing, server, nic)",
+      "type_token": "azure:mssql/server:Server"
+    },
+    {
+      "id": "azure/subnet",
+      "reason": "no price-bearing meaning (network plumbing, server, nic)",
+      "type_token": "azure:network/subnet:Subnet"
+    },
+    {
+      "id": "azure/vnet",
+      "reason": "no price-bearing meaning (network plumbing, server, nic)",
+      "type_token": "azure:network/virtualNetwork:VirtualNetwork"
+    }
+  ],
+  "purpose": "expected results for the genuine Pulumi previews",
+  "region": "westeurope"
+}

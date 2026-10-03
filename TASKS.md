@@ -966,6 +966,151 @@ rejected, and every rejected real token either fixed or in the Not delivered reg
 
 **Status:** DONE, `finfocus cost projected --pulumi-json testdata/pulumi/azure-plan.json --output json` exited 0. Both token families priced the ten types. The monthly total was 994.51764 USD. A scale set and a NAT gateway were declined. Break check: `TestSupportsRealPulumiTokens` failed on `unsupported provider: azure-native` before that provider was accepted.
 
+### Phase 7: Real Pulumi inputs and review fixes (AZ-7.x), run 3
+
+**Rationale**: the 2026-10-02 review of runs 1 and 2 found the pricing correct but the input
+names invented. A genuine `pulumi preview --json` for both providers shows the plugin cannot price
+most real programs. Evidence and the gap table are in `internal/pricing/testdata/pulumi-real/`
+(`README.md`, `gap-table.md`, `pulumi-property-map.json`, `core-view.json`, `plan-expected.json`).
+Property names must come from there (rule 25). Each type task is finished and committed before the
+next.
+
+#### AZ-7.1 — Real-plan comparison harness (run first)
+
+**Description**: Write the test specified in `testdata/pulumi-real/README.md`: for every resource in
+the genuine previews, build a request from `core-view.json` and from a deterministic dotted-key
+flattening of the real inputs, call `GetProjectedCost` through a real gRPC server (offline price
+rows), and compare with `plan-expected.json`. Its failures set the order of AZ-7.2 to AZ-7.9.
+
+**Acceptance Criteria**: a results table in `.superpowers/real-plan-results.md` and the report, per
+input set. A failing resource is a named finding with a fix commit or a Not delivered entry. A break
+check: change one real property name in the plugin and watch a resource fail.
+
+#### AZ-7.2 — Virtual machines
+
+**Description**: Classic `size` (and `vmSize` for the legacy type), `location`, and `priority`
+including the provider default `Regular` (on-demand, never an error). Native `hardwareProfile.vmSize`
+(today the core sends the bare tag `hardwareProfile=<size>`, and `hardwareProfile.vmSize` once
+flattened). Windows: classic `windowsVirtualMachine`, native `osProfile.windowsConfiguration`, legacy
+`osProfileWindowsConfig`; `licenseType` `Windows_Server` or `Windows_Client` is Hybrid Benefit and
+prices at the base rate with a note, no `licenseType` uses the Windows meter. Scale sets: classic
+`sku` and `instances`, native `sku.name` and `sku.capacity`, multiplied. Spot through `priority`.
+
+**Acceptance Criteria**: every VM and scale set row of `plan-expected.json` passes for both input
+sets, and a native Windows VM is never priced on the Linux meter without the Hybrid Benefit note.
+
+#### AZ-7.3 — Managed disks
+
+**Description**: Classic `storageAccountType` and `diskSizeGb`; native `sku.name` and `diskSizeGB`
+(capital GB). Accept the real ARM names `Premium_LRS`, `StandardSSD_LRS`, `Standard_LRS`, and the
+ZRS forms; return an explicit unsupported error for Ultra and Premium v2 unless priced. Map size to
+tier (256 GiB Premium is P15).
+
+**Acceptance Criteria**: the disk rows pass; the old invented names are no longer the only accepted
+ones.
+
+#### AZ-7.4 — Storage accounts
+
+**Description**: Classic `accountTier`, `accountReplicationType`, `accessTier` (default Hot); native
+`sku.name` such as `Standard_GRS` plus `accessTier`. There is no capacity input: state the size
+assumed in the response, or return an explicit error (the `usage_required` rule).
+
+**Acceptance Criteria**: the storage rows pass the `usage_required` rule for both input sets.
+
+#### AZ-7.5 — App Service plans
+
+**Description**: Classic `skuName`, `osType` (Linux, Windows, WindowsContainer), `workerCount`;
+native `sku.name` (the core sends it as the SKU), `sku.capacity`, `kind`, `reserved`. A plan with
+no `kind` and no `reserved` is Windows. Multiply by the worker count.
+
+**Acceptance Criteria**: the plan rows pass; no Windows plan is priced on a Linux meter.
+
+#### AZ-7.6 — AKS
+
+**Description**: Classic `skuTier` and `defaultNodePool` (`vmSize`, `nodeCount`); native `sku.tier`
+(not `sku.name`, which is `Base` or `Automatic`) and `agentPoolProfiles[]`. Today the core flattens
+the pools to a bare name, so node pools need the dotted form: price the control plane and say that
+node pools were not included when the data is missing. Node pool child resources are
+`needs_parent_resource`. Free tier: the live `FreeTierInfrastructureCost` meter is not proven
+billable: say so in the response and the register, never quote it as a fact.
+
+**Acceptance Criteria**: the AKS rows pass; the register has the Free tier assumption.
+
+#### AZ-7.7 — SQL Database
+
+**Description**: Classic `skuName` (`GP_Gen5_4`), `maxSizeGb`, `zoneRedundant`, `licenseType`, and no
+`location` (join from `serverId`: `needs_parent_resource`); native `sku.name` and `sku.capacity`
+(today lost), `maxSizeBytes`. Serverless `GP_S_*` returns an explicit unsupported error, never the
+provisioned price. Zone redundancy and `licenseType: BasePrice` are ambiguous in the Retail API: take
+a documented reading and record it.
+
+**Acceptance Criteria**: the SQL rows pass; the ambiguity is in the register with both readings.
+
+#### AZ-7.8 — Cosmos DB
+
+**Description**: Native token `azure-native:cosmosdb:DatabaseAccount` (the plugin matches only
+`documentdb`); classic `cosmosdb/account`. Throughput lives on child resources
+(`options.throughput`, `autoscaleSettings.maxThroughput`, classic `throughput`): the account is
+`usage_required`, the children `needs_parent_resource`. Multi-region and multi-write multiply cost:
+state it.
+
+**Acceptance Criteria**: the Cosmos rows pass for both providers.
+
+#### AZ-7.9 — Function apps and web apps
+
+**Description**: Classic `appservice/linuxFunctionApp`, `windowsFunctionApp`, `linuxWebApp`,
+`windowsWebApp`; native `web:WebApp` with `kind` containing `functionapp` or `app`. Their cost is on
+the plan referenced by `servicePlanId` or `serverFarmId`. Return an explicit error that names the
+plan, never zero and never an "unsupported" that hides the reason.
+
+**Acceptance Criteria**: all function and web app rows pass the `needs_parent_resource` rule.
+
+#### AZ-7.10 — Core issue drafts
+
+**Description**: Write complete prompt-style drafts in `.superpowers/issue-drafts/` (not filed): (1)
+flatten nested inputs into dotted keys in the tags the plugin receives, additively, with a
+before-and-after table from `core-view.json`; (2) plan-wide resolution of child to parent
+(region from the server, plan SKU for apps, cluster for node pools, account for Cosmos children).
+
+**Acceptance Criteria**: two drafts, each with evidence, a proposal, and acceptance criteria.
+
+#### AZ-7.11 — Spec issue for the mapping helpers
+
+**Description**: `mapping.ExtractAzureSKU` and `ExtractAzureRegion` read too few keys (`size`,
+`skuName`, `skuTier`, `storageAccountType`, `accountTier`, nested `sku.name`, `hardwareProfile.vmSize`).
+Prove it, check for an existing issue, and file one in `finfocus-spec` (section 4b).
+
+**Acceptance Criteria**: the issue URL, or the link to the existing issue, in the status line.
+
+#### AZ-7.12 — Review fixes
+
+**Description**: (1) `grpc` to v1.83.2, prove GO-2026-6443 clears with govulncheck before and after,
+make the CI govulncheck step blocking; (2) AKS Free tier in the register and the response; (3) remove
+the stale `TODO` and comment at `calculator_test.go` lines 258 to 262; (4) the header of this
+file says "nine" skips and names the old branch: correct it; (5) `PluginInfo.Name` is
+`finfocus-plugin-azure-public` in `main.go` and `azure-public` in `calculator.go`: decide, make them
+agree, and test what is served; (6) a misattached doc comment on `isVirtualMachineResourceType`;
+(7) `CHANGELOG.md` was hand-edited: Release Please owns it, restore it; (8) refresh `ROADMAP.md`,
+`TASKS.md` and `IMPLEMENTATION_SUMMARY.md` for the issues closed on 2026-10-02; (9) the AZ-6.7 test
+accepts NotFound on empty rows: make it assert real prices for blob, AKS, Cosmos and App Service.
+
+**Acceptance Criteria**: each item has a commit and a test or command output.
+
+#### AZ-7.13 — Fixture and end to end
+
+**Description**: Replace `testdata/pulumi/azure-plan.json` (invented names) with a plan built from the
+genuine previews, and rerun the end-to-end test through core with it. Report which resources core
+prices, which return an explicit error, and the totals.
+
+**Acceptance Criteria**: pasted CLI output per resource, matching the AZ-7.1 table.
+
+#### AZ-7.14 — Whole-branch review and report
+
+**Description**: review the whole run branch, fix Critical and Important findings in new commits, then
+write `superpowers-run-report.md` with the Not delivered register and the assumptions register.
+
+**Acceptance Criteria**: report follows section 8 of the prompt.
+
 ## Issue Index
 
 ### Legend
