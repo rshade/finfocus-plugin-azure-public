@@ -307,7 +307,7 @@ func newFocusActualCalc(t *testing.T) *Calculator {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		filter := r.URL.Query().Get("$filter")
-		var items []azureclient.PriceItem
+		items := []azureclient.PriceItem{}
 		switch {
 		case strings.Contains(filter, "Azure Kubernetes Service"):
 			items = aks
