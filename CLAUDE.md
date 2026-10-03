@@ -458,6 +458,15 @@ wins. An empty request id uses `SetBillingAccountID`, which the process sets
 from `FINFOCUS_BILLING_ACCOUNT_ID`. Dry run ignores the request id. An empty
 id logs the validation error and leaves `FocusRecord` nil. No id is invented.
 
+The record follows FOCUS 1.3. The service, host, provider, publisher, and
+invoice issuer names are `Microsoft`, and `billing_account_name` is the id.
+Contracted cost equals list cost. One positive `1 Hour` or `1/Month` meter
+sets the pricing unit (`Hours` or `Months`) and price, with quantity equal to
+cost divided by price. Every other quote uses window `Hours`. Category and
+subcategory follow Microsoft's FOCUS service mapping, so disks are Compute /
+Virtual Machines. App Service plans are Compute / Other (Compute) until
+finfocus-spec#612 adds Web. `docs/focus-mapping.md` lists each column.
+
 `estimation.SavingsFraction` returns `(onDemand-other)/onDemand` with no
 rounding. `PriceItem.SavingsPlan` keeps the nested `savingsPlan` array when
 a preview Consumption body includes it. `priceType eq 'SavingsPlan'` does
