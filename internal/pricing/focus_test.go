@@ -267,8 +267,9 @@ func TestFocusServiceCategory(t *testing.T) {
 			if record.GetServiceCategory() != want {
 				t.Fatalf("category = %s, want %s", record.GetServiceCategory(), want)
 			}
-			if record.GetServiceCategory() == finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_OTHER {
-				t.Fatal("category must not be OTHER")
+			if record.GetServiceCategory() == finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_OTHER &&
+				record.GetExtendedColumns()[focusExtServiceCategory] == "" {
+				t.Fatal("category OTHER must carry the FOCUS category in x_ServiceCategory")
 			}
 		})
 	}
@@ -400,7 +401,7 @@ func focusCategoryCases() map[string]finfocusv1.FocusServiceCategory {
 		"storage/BlobStorage":                finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_STORAGE,
 		"storage/ManagedDisk":                finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE,
 		"storage/StorageAccount":             finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_STORAGE,
-		"web/AppServicePlan":                 finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE,
+		"web/AppServicePlan":                 finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_OTHER,
 		"web/FunctionApp":                    finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE,
 	}
 }
@@ -422,6 +423,10 @@ func focusTypedDescriptor(resourceType string) *finfocusv1.ResourceDescriptor {
 		sku = "Hot LRS"
 	case canonicalKubernetesCluster:
 		sku = aksLabelStandard
+	case "web/AppServicePlan":
+		sku = "B1"
+	case "web/FunctionApp":
+		sku = "Y1"
 	}
 	return &finfocusv1.ResourceDescriptor{
 		Provider:     "azure",
@@ -749,7 +754,13 @@ func TestFocusServiceClass_EverySupportedType_MatchesMicrosoftMapping(t *testing
 	network := finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_NETWORK
 	vms := focusService{name: "Virtual Machines", category: compute, subcategory: "Virtual Machines"}
 	scaleSets := focusService{name: "Virtual Machine Scale Sets", category: compute, subcategory: "Virtual Machines"}
-	appService := focusService{name: "Azure App Service", category: compute, subcategory: "Other (Compute)"}
+	appService := focusService{
+		name:           "Azure App Service",
+		category:       finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_OTHER,
+		subcategory:    "Other (Other)",
+		rawCategory:    "Web",
+		rawSubcategory: "Application Platforms",
+	}
 	functions := focusService{name: "Functions", category: compute, subcategory: "Serverless Compute"}
 	accounts := focusService{name: "Storage Accounts", category: storage, subcategory: "Storage Platforms"}
 	tests := []struct {
@@ -857,6 +868,69 @@ func TestBuildFocusRecord_EverySupportedType_PassesAggregateValidation(t *testin
 	}
 }
 
+func TestBuildFocusRecord_CategoryOutsideEnum_CarriesFocusValuesInExtendedColumns(t *testing.T) {
+	t.Parallel()
+
+	web := map[string]string{
+		focusExtServiceCategory:    "Web",
+		focusExtServiceSubcategory: "Application Platforms",
+	}
+	tests := []struct {
+		name         string
+		resourceType string
+		sku          string
+		wantCategory finfocusv1.FocusServiceCategory
+		wantSub      string
+		wantColumns  map[string]string
+	}{
+		{
+			name:         "app service plan is web",
+			resourceType: "web/AppServicePlan",
+			sku:          "P1v3",
+			wantCategory: finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_OTHER,
+			wantSub:      "Other (Other)",
+			wantColumns:  web,
+		},
+		{
+			name:         "function app on a plan is web",
+			resourceType: "web/FunctionApp",
+			sku:          "B1",
+			wantCategory: finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_OTHER,
+			wantSub:      "Other (Other)",
+			wantColumns:  web,
+		},
+		{
+			name:         "virtual machine stays in the enum",
+			resourceType: "compute/VirtualMachine",
+			sku:          "Standard_B1s",
+			wantCategory: finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE,
+			wantSub:      "Virtual Machines",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			descriptor := focusTypedDescriptor(tt.resourceType)
+			descriptor.Sku = tt.sku
+			quote := focusQuote(73, "USD", "detail")
+			record, err := buildFocusRecord(descriptor, quote, focusWindow(24), "ba-1", "res-1")
+			if err != nil {
+				t.Fatalf("buildFocusRecord() failed: %v", err)
+			}
+			if record.GetServiceCategory() != tt.wantCategory || record.GetServiceSubcategory() != tt.wantSub {
+				t.Fatalf("category = %s / %q, want %s / %q",
+					record.GetServiceCategory(), record.GetServiceSubcategory(), tt.wantCategory, tt.wantSub)
+			}
+			for _, key := range []string{focusExtServiceCategory, focusExtServiceSubcategory} {
+				if got, want := record.GetExtendedColumns()[key], tt.wantColumns[key]; got != want {
+					t.Errorf("extended column %s = %q, want %q", key, got, want)
+				}
+			}
+		})
+	}
+}
+
 // focus13SubcategoryParents lists the FOCUS 1.3 ServiceSubcategory allowed
 // values this plugin uses, with their only parent ServiceCategory.
 func focus13SubcategoryParents() map[string]finfocusv1.FocusServiceCategory {
@@ -864,7 +938,7 @@ func focus13SubcategoryParents() map[string]finfocusv1.FocusServiceCategory {
 		"Virtual Machines":       finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE,
 		"Serverless Compute":     finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE,
 		"Containers":             finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE,
-		"Other (Compute)":        finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE,
+		"Other (Other)":          finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_OTHER,
 		"Storage Platforms":      finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_STORAGE,
 		"Relational Databases":   finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_DATABASE,
 		"NoSQL Databases":        finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_DATABASE,

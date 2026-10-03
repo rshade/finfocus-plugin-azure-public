@@ -21,14 +21,22 @@ const (
 	// focusVirtualMachines is both a Services.csv ServiceName and a FOCUS 1.3
 	// ServiceSubcategory.
 	focusVirtualMachines = "Virtual Machines"
+	// focusExtServiceCategory and focusExtServiceSubcategory carry the FOCUS
+	// 1.3 category and subcategory when FocusServiceCategory has no value for
+	// them. The x_ prefix is the FOCUS custom-column convention.
+	focusExtServiceCategory    = "x_ServiceCategory"
+	focusExtServiceSubcategory = "x_ServiceSubcategory"
 )
 
 // focusService is the FOCUS 1.3 ServiceName, ServiceCategory, and
-// ServiceSubcategory of one priced resource.
+// ServiceSubcategory of one priced resource. rawCategory and rawSubcategory
+// are set only when category is OTHER because the enum lacks the real value.
 type focusService struct {
-	name        string
-	category    finfocusv1.FocusServiceCategory
-	subcategory string
+	name           string
+	category       finfocusv1.FocusServiceCategory
+	subcategory    string
+	rawCategory    string
+	rawSubcategory string
 }
 
 // buildFocusRecord maps one actual-cost quote onto a FOCUS record.
@@ -89,6 +97,11 @@ func buildFocusRecord(
 	// FOCUS 1.3 deprecates PublisherName but still lists it as mandatory.
 	//nolint:staticcheck // SA1019: required until FOCUS 1.4 removes the column.
 	builder = builder.WithPublisher(focusProviderMicrosoft)
+	if service.rawCategory != "" {
+		builder = builder.
+			WithExtension(focusExtServiceCategory, service.rawCategory).
+			WithExtension(focusExtServiceSubcategory, service.rawSubcategory)
+	}
 	if window.hours > 0 {
 		quantity, unit, unitPrice := focusPricingBasis(quote.meters, quote.monthly, window.hours)
 		builder = builder.
@@ -104,14 +117,23 @@ func buildFocusRecord(
 // type. Name, category, and subcategory follow microsoft/finops-toolkit
 // Services.csv, so rows line up with Azure's own FOCUS data. Azure App Service
 // (server farms, and a Function App billed on a plan) is Web / Application
-// Platforms there, but FocusServiceCategory has no Web value until
-// rshade/finfocus-spec#612, so it uses Compute / Other (Compute). sku is only
-// read to tell a Function App on a plan from a serverless one.
+// Platforms there. FocusServiceCategory has no Web value, so following
+// finfocus-spec specs/009-focus-1-2-integration (an unlisted category maps to
+// Other with the raw value in extended columns), it is Other / Other (Other),
+// the only FOCUS 1.3 subcategory under Other, with Web and Application
+// Platforms in x_ServiceCategory and x_ServiceSubcategory. sku is only read to
+// tell a Function App on a plan from a serverless one.
 func focusServiceClass(resourceType string, tags map[string]string, sku string) (focusService, error) {
 	lower := strings.ToLower(strings.TrimSpace(resourceType))
 	compute := finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_COMPUTE
 	database := finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_DATABASE
-	appService := focusService{name: "Azure App Service", category: compute, subcategory: "Other (Compute)"}
+	appService := focusService{
+		name:           "Azure App Service",
+		category:       finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_OTHER,
+		subcategory:    "Other (Other)",
+		rawCategory:    "Web",
+		rawSubcategory: "Application Platforms",
+	}
 	switch {
 	case isVirtualMachineScaleSetResourceType(lower):
 		return focusService{

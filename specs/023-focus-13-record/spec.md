@@ -98,8 +98,11 @@ it is the main dimension for workload-type analysis.
 
 1. **Given** each supported type, **When** the record is built, **Then**
    category and subcategory follow microsoft/finops-toolkit `Services.csv`,
-   except App Service plans, which use `Compute` / `Other (Compute)` until the
-   spec adds `Web` (finfocus-spec#612).
+   except App Service plans, whose `Web` category is missing from the enum.
+   Per finfocus-spec `specs/009-focus-1-2-integration`, they use `Other` /
+   `Other (Other)` with `x_ServiceCategory=Web` and
+   `x_ServiceSubcategory=Application Platforms` in extended columns
+   (finfocus-spec#612 tracks the enum).
 2. **Given** any supported type, **When** the record is built, **Then** the
    subcategory is a FOCUS 1.3 allowed value whose parent is the record's
    category.

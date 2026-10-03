@@ -60,9 +60,16 @@ duplicates the existing message.
 | microsoft.network/loadbalancers | Networking | Application Networking |
 
 **Gap**: The `Web` category is missing from `FocusServiceCategory`, which has
-10 values plus `UNSPECIFIED` against 19 in FOCUS 1.3, so nine are missing. App Service plans therefore use `Compute` /
-`Other (Compute)` for now, which is a valid FOCUS pair. This is filed as
-rshade/finfocus-spec#612.
+10 values plus `UNSPECIFIED` against 19 in FOCUS 1.3, so nine are missing.
+The finfocus-spec rule for this case (`specs/009-focus-1-2-integration`
+spec.md, edge cases) is to send `Other` and keep the raw value in
+`extended_columns`. FOCUS 1.3 `ServiceSubcategory` allows only
+`Other (Other)` under `Other` (FOCUS_Spec v1.3
+`specification/datasets/cost_and_usage/columns/servicesubcategory.md`, read
+2026-10-03). App Service plans therefore send `Other` / `Other (Other)` with
+`x_ServiceCategory=Web` and `x_ServiceSubcategory=Application Platforms`.
+finfocus core never reads `service_category`, so nothing downstream depends
+on the enum value. rshade/finfocus-spec#612 tracks adding the values.
 
 ## R5: Who reads the record today?
 
