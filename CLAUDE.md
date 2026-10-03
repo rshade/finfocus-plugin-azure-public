@@ -264,18 +264,20 @@ and that fixture has no Spot row, so the dotted quote is `NotFound`.
 ### Real Pulumi SKU properties
 
 `GetProjectedCost`, `Supports`, and `DryRun` read the SKU from the real
-Pulumi property for each type. The descriptor `Sku` wins, then the property
-below, then the generic tags (`sku`, `vmSize`, `armSkuName`, `disk_type`).
-The Pulumi unknown placeholder `04da6b54-80e4-46f7-96ec-b56ff0331ba9` is
-skipped.
+Pulumi property for each type. For most types the descriptor `Sku` wins,
+then the property below, then the generic tags (`sku`, `vmSize`,
+`armSkuName`, `disk_type`, `diskType`). AKS and storage accounts differ, as
+the table says. The Pulumi unknown placeholder
+`04da6b54-80e4-46f7-96ec-b56ff0331ba9` is skipped everywhere, including in
+`Sku`. `Supports` and `DryRun` refuse the inputs the quote refuses below.
 
 | Type | SKU source |
 | --- | --- |
-| Managed disk | classic `storageAccountType`, native `sku.name` (`Premium_LRS` is accepted). Size also reads native `diskSizeGB` |
-| Storage account | native `sku.name` such as `Standard_GRS`, or classic `accountTier` plus `accountReplicationType`. The access tier is `accessTier`, default Hot. `Premium` performance is `InvalidArgument` |
-| App Service plan | classic `skuName`, native `sku.name`. Classic `osType` is Linux or Windows when `os` is empty. `WindowsContainer` is `InvalidArgument`. Monthly cost is multiplied by `workerCount`, then `sku.capacity` |
-| AKS | native `sku.tier`, classic `skuTier`, both before `Sku` (native `sku.name` is `Base`). `supportPlan=AKSLongTermSupport` is the same as `support=lts`. With no node pool tags the note says node pools are not included |
-| SQL Database | classic `skuName` (`GP_Gen5_4`), native `sku.name` plus `sku.capacity` (`GP_Gen5` and 4 is `GP_Gen5_4`). A non-numeric capacity is `InvalidArgument` |
+| Managed disk | classic `storageAccountType`, native `sku.name` (`Premium_LRS` is accepted). Size also reads native `diskSizeGB`. Pulumi `tier` is the performance tier: a higher Premium SSD tier (`P30` on a 256 GB disk) is billed instead of the size tier, a lower one is ignored, and a value that is not a P tier is `InvalidArgument` |
+| Storage account | `Sku`, then tag `sku`, before the classic properties. Native `sku.name` such as `Standard_GRS`, or classic `accountTier` plus `accountReplicationType`. The access tier is `accessTier`, `access_tier`, or `tier`, default Hot. `Premium` performance is `InvalidArgument`. Native `kind` or classic `accountKind` other than `StorageV2` (for example `Storage` or `BlobStorage`) is `InvalidArgument` |
+| App Service plan | classic `skuName`, native `sku.name`. Classic `osType` (any case) is Linux or Windows when `os` is empty. `WindowsContainer` is `InvalidArgument`. Monthly cost is multiplied by `workerCount`, or by `sku.capacity` when `workerCount` is absent. With neither, or an unknown value, one worker is priced and `billing_detail` says the count was not provided |
+| AKS | `Sku` (or tag `sku`) wins unless it is native `sku.name` `Base`. Then native `sku.tier`, classic `skuTier`, or tag `tier`. `Automatic` in `Sku` is `InvalidArgument` even with `sku.tier`. `Premium` bills `Standard Long Term Support`. `supportPlan=AKSLongTermSupport` needs `Premium` and is `InvalidArgument` on `Standard` or `Free`. With no node pool tags the note says node pools are not included |
+| SQL Database | classic `skuName` (`GP_Gen5_4`), native `sku.name` plus `sku.capacity` (`GP_Gen5` and 4 is `GP_Gen5_4`). Capacity is appended only to `GP_`, `BC_`, and `HS_` names. A vCore name with no count is a missing `sku.capacity` (`InvalidArgument`). A non-numeric or non-positive capacity is `InvalidArgument`. Pulumi `zoneRedundant` is read like `zone_redundant` |
 
 A native plan with no `kind` and no `reserved` is still priced as Linux, and
 AKS `defaultNodePool` and `agentPoolProfiles` are not priced (AZ-7.5, AZ-7.6).
@@ -363,7 +365,9 @@ Product coverage, Retail Prices API, 2026-10-03:
 locally with spaces removed, case-insensitive. Linux is the default, from a
 `productName` that contains Linux. Tag `os=Windows` selects a product whose
 name does not contain Linux. Any other non-empty `os` value, including the
-string Linux, is `InvalidArgument`. The meter is `meterName` equal to the
+string Linux, is `InvalidArgument`. That rule is for the plugin tag `os`.
+When `os` is empty, Pulumi `osType` `Linux` or `Windows` is accepted in any
+case (see Real Pulumi SKU properties). The meter is `meterName` equal to the
 SKU, or the SKU followed by a space and `App`, unit `1 Hour`. Stamp, SSL, Domain, and ASIP
 meters are skipped. Monthly cost is `retailPrice * 730`. The breakdown key
 is `compute`.
@@ -395,13 +399,16 @@ and `ProductName` stay empty.
 
 Standard control plane uses meter `Standard Uptime SLA`, unit `1 Hour`,
 and monthly `retailPrice * 730`. Tag `support=lts` uses
-`Standard Long Term Support` instead. The Free control plane is 0 and the
-AKS price page is not queried for it. A live query on 2026-10-02 returned an
-open `FreeTierInfrastructureCost Uptime SLA` row at 0.05 USD per hour,
-effective 2026-10-01. The published AKS pricing page and the Pricing Calculator still
-show no Free-tier charge, so that meter is not billed, and `billing_detail`
-says so. Node pools on a Free cluster are still priced. Tier
-`Automatic` is `InvalidArgument`.
+`Standard Long Term Support` instead. Tier `Premium` always uses
+`Standard Long Term Support`, because long term support needs Premium. A
+live query on 2026-10-03 returned that meter at 0.60 USD per hour. The Free
+control plane is 0 and the AKS price page is not queried for it. A live query
+on 2026-10-02 returned an open `FreeTierInfrastructureCost Uptime SLA` row at
+0.05 USD per hour, effective 2026-10-01. The published AKS pricing page and the
+Pricing Calculator still show no Free-tier charge, so that meter is not billed,
+and `billing_detail` says so. Node pools on a Free cluster are still priced.
+Tier `Automatic` is `InvalidArgument`, including a native `sku.name` of
+`Automatic` with `sku.tier` set.
 
 Node pools use tags `node_pool_1_sku` and `node_pool_1_count`, with optional
 `node_pool_1_name` (default `pool_1`), and the same pair for pool 2. Each
@@ -427,9 +434,10 @@ product `SQL Database Single/Elastic Pool General Purpose - Storage`.
 Monthly storage is `retailPrice * size_gb`.
 `General Purpose Data Stored - Free` is not the overage.
 
-Tag `zone_redundant=true` adds meter `Zone Redundancy vCore` to compute and
-bills storage on meter `General Purpose Zone Redundancy Data Stored` instead
-of `General Purpose Data Stored`. Zone storage replaces local storage; it is
+Tag `zone_redundant=true` (or Pulumi `zoneRedundant=true`) adds meter
+`Zone Redundancy vCore` to compute and bills storage on meter
+`General Purpose Zone Redundancy Data Stored` instead of
+`General Purpose Data Stored`. Zone storage replaces local storage; it is
 not added on top (issue #77). Components are `compute`, `storage`, and
 `zone_redundancy_compute` when zone redundancy was requested.
 

@@ -406,6 +406,10 @@ func (c *Calculator) quoteDisk(
 			info.ArmSkuName,
 		)
 	}
+	tierName, err = diskBillingTier(info, tierName, resource.GetTags())
+	if err != nil {
+		return monthlyQuote{}, err
+	}
 
 	result, err := c.fetchPrices(ctx, diskRetailQuery(
 		region,
@@ -733,7 +737,7 @@ func descriptorSKU(resource *finfocusv1.ResourceDescriptor) string {
 	if sku := strings.TrimSpace(resource.GetSku()); sku != "" {
 		return sku
 	}
-	return firstNonEmptyTag(resource.GetTags(), "sku", "vmSize", "armSkuName", "disk_type", "diskType")
+	return pulumiTag(resource.GetTags(), "sku", "vmSize", "armSkuName", "disk_type", "diskType")
 }
 
 func descriptorCurrency(resource *finfocusv1.ResourceDescriptor) string {

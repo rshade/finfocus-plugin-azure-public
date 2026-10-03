@@ -35,6 +35,7 @@ const (
 
 	aksTierFree     = "free"
 	aksTierStandard = "standard"
+	aksTierPremium  = "premium"
 	aksTierTag      = "tier"
 	aksSupportTag   = "support"
 	aksSupportLTS   = "lts"
@@ -42,6 +43,7 @@ const (
 	aksLabelFree     = "Free"
 	aksLabelStandard = "Standard"
 	aksLabelLTS      = "Standard Long Term Support"
+	aksLabelPremium  = "Premium"
 
 	aksComponentControlPlane = "control_plane"
 	aksNodePoolKeyPrefix     = "node_pool_"
@@ -180,20 +182,24 @@ func (c *Calculator) aksPoolCost(
 	return quote.monthly * float64(pool.count), quote.expiresAt, meter, nil
 }
 
-// aksControlPlane reads the tier from Pulumi sku.tier or skuTier, then SKU,
-// Tags["sku"], or Tags["tier"]. support=lts or supportPlan=AKSLongTermSupport
-// selects Standard Long Term Support. That support value with Free is
-// InvalidArgument. Any other tier, including Automatic and Base, is rejected.
-// Free returns its meter name for the note only; quoteAKS prices it at 0.
+// aksControlPlane reads the tier with aksTier. Premium always bills the
+// Standard Long Term Support meter, because long term support needs Premium.
+// Tag support=lts on Standard also selects it. Pulumi
+// supportPlan=AKSLongTermSupport on Standard is InvalidArgument, as Azure
+// refuses it, and either support value on Free is InvalidArgument. Any other
+// tier, including Automatic and Base, is rejected. Free returns its meter name
+// for the note only; quoteAKS prices it at 0.
 func aksControlPlane(resource *finfocusv1.ResourceDescriptor) (string, string, error) {
 	raw := aksTier(resource)
 	if raw == "" {
 		return "", "", missingFieldsError([]string{aksTierTag})
 	}
 
-	support := aksSupport(resource.GetTags())
+	support, fromSupportPlan := aksSupport(resource.GetTags())
 	lts := support != ""
 	switch strings.ToLower(raw) {
+	case aksTierPremium:
+		return aksMeterLTS, aksLabelPremium, nil
 	case aksTierFree:
 		if lts {
 			return "", "", status.Errorf(
@@ -205,6 +211,15 @@ func aksControlPlane(resource *finfocusv1.ResourceDescriptor) (string, string, e
 		}
 		return aksMeterFree, aksLabelFree, nil
 	case aksTierStandard:
+		if fromSupportPlan {
+			return "", "", status.Errorf(
+				codes.InvalidArgument,
+				"%s %q needs tier Premium, not %q",
+				aksSupportPlanTag,
+				support,
+				raw,
+			)
+		}
 		if lts {
 			return aksMeterLTS, aksLabelLTS, nil
 		}

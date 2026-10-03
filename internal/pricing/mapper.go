@@ -243,8 +243,11 @@ func mappedSKU(mapped mappedResource, desc *finfocusv1.ResourceDescriptor) (stri
 	case mapped.sqlDatabase:
 		return sqlDatabaseSKU(desc)
 	case mapped.aks:
-		return aksTier(desc), nil
+		return mappedAKSTier(desc)
 	case mapped.appServicePlan:
+		if err := validateAppServicePlanInput(desc); err != nil {
+			return "", err
+		}
 		return appServicePlanSKU(desc), nil
 	case mapped.disk:
 		return diskSKU(desc), nil
@@ -253,6 +256,19 @@ func mappedSKU(mapped mappedResource, desc *finfocusv1.ResourceDescriptor) (stri
 	default:
 		return resolveField(desc.GetSku(), "sku", desc.GetTags()), nil
 	}
+}
+
+// mappedAKSTier returns the tier when aksControlPlane accepts it, so a native
+// cluster whose Sku is Base or Automatic is not reported as configured.
+func mappedAKSTier(desc *finfocusv1.ResourceDescriptor) (string, error) {
+	tier := aksTier(desc)
+	if tier == "" {
+		return "", nil
+	}
+	if _, _, err := aksControlPlane(desc); err != nil {
+		return "", err
+	}
+	return tier, nil
 }
 
 func missingMappedSKU(mapped mappedResource, sku string, tags map[string]string) []string {
