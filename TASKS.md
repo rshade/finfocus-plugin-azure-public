@@ -1138,7 +1138,7 @@ write `superpowers-run-report.md` with the Not delivered register and the assump
 ### Open issues
 
 Closed on `main` by earlier commits: #42, #43, #45, #47, #50, #51, #52, #54, #55, #56, #57, #59, #60, #61.
-This change closes #48 and #49 with live integration tests in
+Issues #48 and #49 are closed by PR #70, which adds live integration tests in
 `examples/projected_cost_integration_test.go`.
 
 | # | Title | Why it stays open |
@@ -1205,10 +1205,11 @@ This change closes #48 and #49 with live integration tests in
 10. **Calculator values for #53 (AZ-3.8)**: the Azure Pricing Calculator is a web
     application. The owner needs to supply the expected monthly costs for the
     sample configurations. Until then AZ-3.8 stays BLOCKED-ON-INPUT.
-11. **Spec-first issues (#43, #44, #46)**: #45 and #47 are delivered on
-    `price_options` and `region_prices`. #43 still has no filter field on
-    `DryRunResponse`. #44 returns one pricing spec. #46 still has no
-    `charge_type` field.
+11. **Spec-first issues (#44, #46)**: #45 and #47 are delivered on
+    `price_options` and `region_prices`. #43 is resolved and closed:
+    `DryRunResponse` has no filter field by spec design, so the filter is
+    logged. #44 returns one pricing spec. #46 still has no `charge_type`
+    field.
 
 ---
 

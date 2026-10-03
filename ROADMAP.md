@@ -304,18 +304,19 @@ The following features violate architectural constraints defined in
 | Pre-release: Caching Layer | Complete | 4/4 (100%) |
 | v0.1.0 - Core Estimation | Active | 8/8 (100%) |
 | v0.2.0 - Quality & Testing | Active | 3/4 (75%) |
-| v0.3.0 - Extended Services | Active | 2/6 (33%) |
+| v0.3.0 - Extended Services | Active | 5/6 (83%) |
 
 <!-- markdownlint-enable MD013 -->
 
-**Completed Issues**: #1-#20, #42, #45, #47, #50-#52, #54-#57, #59-#61
+**Completed Issues**: #1-#20, #42, #43, #45, #47-#52, #54-#57, #59-#61
 
-**Checklist still open here**: 43, 44, 46, 48, 49, and 53.
-Item 43 has no filter field on `DryRunResponse`. Item 44 returns one
-pricing spec. Item 46 has no `charge_type` field, and
-`commitment_discount_type` stays empty. Item 48 rejects `EP1` and Flex.
-Item 49 prices AKS Free from the 0.05 USD per hour meter. Item 53 waits
-on owner values.
+**Checklist still open here**: 44, 46, and 53.
+Item 44 returns one pricing spec. Item 46 has no `charge_type` field, and
+`commitment_discount_type` stays empty. Item 53 waits on owner values.
+
+**Known limitations**: item 43 has no filter field on `DryRunResponse`.
+Item 48 rejects `EP1` and Flex. Item 49 prices AKS Free from the 0.05 USD
+per hour meter.
 
 The counts in the table follow the milestone checklists. The
 priced-now list is the working tree. GitHub milestones were not
