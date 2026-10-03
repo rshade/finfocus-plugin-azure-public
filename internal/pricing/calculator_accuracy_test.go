@@ -20,11 +20,10 @@ import (
 const calculatorAccuracyTolerance = 0.05
 
 // calculatorMinComparedRows is the number of rows the offline run compares today:
-// 23 filled rows, less the two known failures and the two live-only SQL rows, with
-// AKS Free and the 1000 GB SQL row in both groups. Set to the current count rather
+// 23 filled rows, less the two live-only SQL rows. Set to the current count rather
 // than a low floor, so a refresh that empties even one row fails the suite instead
 // of quietly turning it into a skip. Raise it when rows are added.
-const calculatorMinComparedRows = 20
+const calculatorMinComparedRows = 21
 
 // calculatorStaleAfter is when a calculator value is logged as due for a re-read.
 const calculatorStaleAfter = 90 * 24 * time.Hour
@@ -147,7 +146,7 @@ func TestParseCalculatorOwnerValues_ReadOn_ValidatesDate(t *testing.T) {
 	}
 }
 
-func TestCountComparedCalculatorRows_KnownFailuresAndLiveOnly_NotCounted(t *testing.T) {
+func TestCountComparedCalculatorRows_LiveOnlyAndEmpty_NotCountedOffline(t *testing.T) {
 	t.Parallel()
 
 	value := 1.0
@@ -159,11 +158,11 @@ func TestCountComparedCalculatorRows_KnownFailuresAndLiveOnly_NotCounted(t *test
 		{id: calculatorSQLZoneStorageRow, owner: &value, readOn: "2026-10-03"},
 		{id: "empty"},
 	}
-	if got := countComparedCalculatorRows(rows, false); got != 2 {
-		t.Fatalf("offline compared rows = %d, want 2 (known failures, live-only and empty rows excluded)", got)
+	if got := countComparedCalculatorRows(rows, false); got != 3 {
+		t.Fatalf("offline compared rows = %d, want 3 (live-only and empty rows excluded)", got)
 	}
-	if got := countComparedCalculatorRows(rows, true); got != 3 {
-		t.Fatalf("live compared rows = %d, want 3 (known failures and empty rows excluded)", got)
+	if got := countComparedCalculatorRows(rows, true); got != 5 {
+		t.Fatalf("live compared rows = %d, want 5 (empty rows excluded)", got)
 	}
 }
 
@@ -212,36 +211,30 @@ func TestCalculatorLiveOnlyReason_RowsWithoutOfflineRows_NameTheGap(t *testing.T
 func TestJudgeCalculatorRow_KnownFailureStates_SkipUntilGapCloses(t *testing.T) {
 	t.Parallel()
 
-	const outside = "outside plus or minus 5 percent"
+	const (
+		outside = "outside plus or minus 5 percent"
+		known   = "known failure: example plugin gap"
+		gapRow  = "example:known:gap"
+		plainID = "vm_ondemand_linux:Standard_D2s_v3:eastus"
+	)
 	tests := []struct {
 		name     string
 		id       string
+		known    string
 		mismatch string
 		wantSkip string
 		wantFail string
 	}{
-		{name: "known failure still failing", id: calculatorAKSFreeRow, mismatch: outside, wantSkip: "PR #70"},
-		{name: "known failure now passing", id: calculatorAKSFreeRow, wantFail: "gap closed"},
-		{
-			name:     "storage-heavy SQL row still failing",
-			id:       calculatorSQLZoneStorageRow,
-			mismatch: outside,
-			wantSkip: "zone storage",
-		},
-		{name: "storage-heavy SQL row now passing", id: calculatorSQLZoneStorageRow, wantFail: "gap closed"},
-		{
-			name:     "ordinary row failing",
-			id:       "vm_ondemand_linux:Standard_D2s_v3:eastus",
-			mismatch: outside,
-			wantFail: outside,
-		},
-		{name: "ordinary row passing", id: "vm_ondemand_linux:Standard_D2s_v3:eastus"},
+		{name: "known failure still failing", id: gapRow, known: known, mismatch: outside, wantSkip: known},
+		{name: "known failure now passing", id: gapRow, known: known, wantFail: "gap closed"},
+		{name: "ordinary row failing", id: plainID, mismatch: outside, wantFail: outside},
+		{name: "ordinary row passing", id: plainID},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			skip, fail := judgeCalculatorRow(tt.id, tt.mismatch)
+			skip, fail := judgeCalculatorRow(tt.id, tt.known, tt.mismatch)
 			if (skip != "") != (tt.wantSkip != "") || !strings.Contains(skip, tt.wantSkip) {
 				t.Fatalf("skip = %q, want it to contain %q", skip, tt.wantSkip)
 			}
@@ -249,6 +242,16 @@ func TestJudgeCalculatorRow_KnownFailureStates_SkipUntilGapCloses(t *testing.T) 
 				t.Fatalf("fail = %q, want it to contain %q", fail, tt.wantFail)
 			}
 		})
+	}
+}
+
+func TestCalculatorKnownFailure_GapsClosedByPR70AndPR78_HaveNoEntry(t *testing.T) {
+	t.Parallel()
+
+	for _, id := range []string{calculatorAKSFreeRow, calculatorSQLZoneStorageRow} {
+		if reason := calculatorKnownFailure(id); reason != "" {
+			t.Fatalf("%s is fixed on main and must be compared, not skipped: %q", id, reason)
+		}
 	}
 }
 
@@ -293,16 +296,9 @@ type calculatorOwnerRow struct {
 // calculatorKnownFailure names a row whose plugin quote is known to miss the
 // calculator. The row is still compared on every run: while it misses, it skips
 // with this reason; once it is inside the band, the test fails so the entry is
-// removed. Each entry is also listed in the oracle README's "Not delivered" register.
-func calculatorKnownFailure(id string) string {
-	switch id {
-	case calculatorAKSFreeRow:
-		return "known failure, pending PR #70 (AKS Free = $0): main still quotes the " +
-			"FreeTierInfrastructureCost meter at 0.05 USD/hour"
-	case calculatorSQLZoneStorageRow:
-		return "known failure: the plugin bills local storage plus zone storage, while the " +
-			"calculator bills zone storage in place of local storage"
-	}
+// removed. Each entry is also listed in the "Not delivered" register. There are no
+// known failures today; add a case here with the register line when one is found.
+func calculatorKnownFailure(_ string) string {
 	return ""
 }
 
@@ -342,9 +338,9 @@ func calculatorOracleCase(id string, byID map[string]oracleCase) (oracleCase, bo
 	return base, true
 }
 
-// judgeCalculatorRow turns a row's mismatch into a skip or a failure.
-func judgeCalculatorRow(id, mismatch string) (string, string) {
-	known := calculatorKnownFailure(id)
+// judgeCalculatorRow turns a row's mismatch into a skip or a failure. known is the
+// row's calculatorKnownFailure reason, empty for an ordinary row.
+func judgeCalculatorRow(id, known, mismatch string) (string, string) {
 	switch {
 	case known != "" && mismatch != "":
 		return known, ""
@@ -431,7 +427,11 @@ func compareCalculatorOwnerRow(
 		)
 	}
 	t.Logf("%s: plugin %.4f, calculator %.2f (read %s)", row.id, plugin, *row.owner, row.readOn)
-	skip, fail := judgeCalculatorRow(row.id, calculatorMonthlyMismatch(plugin, *row.owner))
+	skip, fail := judgeCalculatorRow(
+		row.id,
+		calculatorKnownFailure(row.id),
+		calculatorMonthlyMismatch(plugin, *row.owner),
+	)
 	if fail != "" {
 		t.Fatalf("%s %s", row.id, fail)
 	}
