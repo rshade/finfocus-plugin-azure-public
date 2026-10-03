@@ -267,9 +267,11 @@ func TestFocusServiceCategory(t *testing.T) {
 			if record.GetServiceCategory() != want {
 				t.Fatalf("category = %s, want %s", record.GetServiceCategory(), want)
 			}
-			if record.GetServiceCategory() == finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_OTHER &&
-				record.GetExtendedColumns()[focusExtServiceCategory] == "" {
-				t.Fatal("category OTHER must carry the FOCUS category in x_ServiceCategory")
+			if record.GetServiceCategory() == finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_OTHER {
+				columns := record.GetExtendedColumns()
+				if columns[focusExtServiceCategory] == "" || columns[focusExtServiceSubcategory] == "" {
+					t.Fatal("category OTHER must carry the FOCUS values in x_ServiceCategory and x_ServiceSubcategory")
+				}
 			}
 		})
 	}
@@ -786,6 +788,13 @@ func TestFocusServiceClass_EverySupportedType_MatchesMicrosoftMapping(t *testing
 			want:         functions,
 		},
 		{
+			name:         "native function app on a plan",
+			resourceType: "azure-native:web:WebApp",
+			tags:         map[string]string{"kind": "FunctionApp"},
+			sku:          "P1v3",
+			want:         appService,
+		},
+		{
 			resourceType: "containerservice/KubernetesCluster",
 			want:         focusService{name: "Azure Kubernetes Service", category: compute, subcategory: "Containers"},
 		},
@@ -826,6 +835,9 @@ func TestFocusServiceClass_EverySupportedType_MatchesMicrosoftMapping(t *testing
 			}
 			if parent, ok := focus13SubcategoryParents()[got.subcategory]; !ok || parent != got.category {
 				t.Fatalf("subcategory %q is not a FOCUS 1.3 child of %s", got.subcategory, got.category)
+			}
+			if got.rawCategory != "" && focus13RawSubcategoryParents()[got.rawSubcategory] != got.rawCategory {
+				t.Fatalf("raw subcategory %q is not a FOCUS 1.3 child of %q", got.rawSubcategory, got.rawCategory)
 			}
 		})
 	}
@@ -943,5 +955,14 @@ func focus13SubcategoryParents() map[string]finfocusv1.FocusServiceCategory {
 		"Relational Databases":   finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_DATABASE,
 		"NoSQL Databases":        finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_DATABASE,
 		"Application Networking": finfocusv1.FocusServiceCategory_FOCUS_SERVICE_CATEGORY_NETWORK,
+	}
+}
+
+// focus13RawSubcategoryParents lists the FOCUS 1.3 ServiceSubcategory values
+// this plugin writes to x_ServiceSubcategory, with their only parent
+// ServiceCategory, for categories the spec enum cannot express.
+func focus13RawSubcategoryParents() map[string]string {
+	return map[string]string{
+		"Application Platforms": "Web",
 	}
 }

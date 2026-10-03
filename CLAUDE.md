@@ -530,8 +530,10 @@ Function App on a plan SKU, are Web / Application Platforms in FOCUS 1.3, but
 raw value in extended columns), they are Azure App Service / Other /
 Other (Other), the only FOCUS 1.3 subcategory under Other, plus
 `x_ServiceCategory=Web` and `x_ServiceSubcategory=Application Platforms`.
-finfocus core does not read the category today. finfocus-spec#612 tracks
-adding the missing enum values. The SDK logs two one-time deprecation
+finfocus core does not read the category today. Until finfocus-spec#612 adds
+the missing enum values, the two `x_` columns are the authoritative FOCUS
+values. Once `Web` exists, the plugin sends it and keeps the `x_` columns for
+one release. Removing them after that is a visible output change. The SDK logs two one-time deprecation
 warnings for the provider and publisher columns. `docs/focus-mapping.md` lists
 each column.
 
