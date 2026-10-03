@@ -474,7 +474,7 @@ func (c *Calculator) quoteBlob(
 	result, err := c.fetchPrices(ctx, azureclient.PriceQuery{
 		ArmRegionName: region,
 		ServiceName:   storageServiceName,
-		ProductName:   "Blob Storage",
+		ProductName:   generalBlockBlobV2Product,
 		SkuName:       sku,
 		CurrencyCode:  descriptorCurrency(resource),
 	}, taskID)

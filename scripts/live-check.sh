@@ -187,7 +187,7 @@ else:
         print(row(found[0]))
         print(f"month: retail {found[0]['retailPrice']} (disk price is already monthly)")
 
-blob_filter = region_service("eastus", "Storage", product="Blob Storage", sku="Hot LRS")
+blob_filter = region_service("eastus", "Storage", product="General Block Blob v2", sku="Hot LRS")
 blob_items = section("Blob storage", blob_filter)
 if blob_items is None:
     ok = False

@@ -314,9 +314,12 @@ in. The first band is the list rate. It is not multiplied by 730. The query
 leaves `ArmSkuName` empty. A missing meter is `NotFound` and names the tier
 and redundancy.
 
-`storage/BlobStorage` uses the same marginal bands on meters whose name
-contains `Data Stored`. A size that stays inside the first band is
-`retailPrice * size_gb`.
+`storage/BlobStorage` queries the same `General Block Blob v2` product with
+skuName `{Tier} {Redundancy}` and uses the same marginal bands on meters
+whose name contains `Data Stored`. A size that stays inside the first band
+is `retailPrice * size_gb`. The legacy `Blob Storage` product is not used:
+it has the same LRS, GRS, and RA-GRS prices but no ZRS, GZRS, or RA-GZRS
+rows (Retail Prices API, eastus, 2026-10-03).
 
 ### App Service Plan Cost Estimation
 
