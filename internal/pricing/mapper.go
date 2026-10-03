@@ -110,16 +110,9 @@ func MapDescriptorToQuery(desc *finfocusv1.ResourceDescriptor) (*azureclient.Pri
 
 	// Resolve fields with tag fallback.
 	region := resolveField(desc.GetRegion(), "region", desc.GetTags())
-	sku := resolveField(desc.GetSku(), "sku", desc.GetTags())
-	if storageAccount {
-		resolved, err := storageAccountSKU(desc)
-		if err != nil {
-			return nil, err
-		}
-		sku = resolved
-	}
-	if mapped.aks && sku == "" {
-		sku = firstNonEmptyTag(desc.GetTags(), aksTierTag)
+	sku, err := mappedSKU(mapped, desc)
+	if err != nil {
+		return nil, err
 	}
 
 	// Validate required fields — report all missing in one error.
@@ -151,6 +144,8 @@ func MapDescriptorToQuery(desc *finfocusv1.ResourceDescriptor) (*azureclient.Pri
 
 type mappedResource struct {
 	serviceName    string
+	vm             bool
+	disk           bool
 	storageAccount bool
 	appServicePlan bool
 	functionApp    bool
@@ -212,10 +207,12 @@ func resolveMappedResource(normalizedType string, tags map[string]string) (mappe
 func matchDirectSegments(mapped mappedResource, ok bool, normalizedType string) (mappedResource, bool) {
 	if isPricedVMResourceType(normalizedType) {
 		mapped.serviceName = defaultServiceName
+		mapped.vm = true
 		ok = true
 	}
 	if isManagedDiskResourceType(normalizedType) {
 		mapped.serviceName = managedDisksService
+		mapped.disk = true
 		ok = true
 	}
 	if isBlobStorageResourceType(normalizedType) {
@@ -235,6 +232,27 @@ func markLoadBalancer(mapped mappedResource, ok bool, normalizedType string) (ma
 		ok = true
 	}
 	return mapped, ok
+}
+
+// mappedSKU reads the SKU from the real Pulumi property for the type, so
+// Supports and DryRun accept what GetProjectedCost prices.
+func mappedSKU(mapped mappedResource, desc *finfocusv1.ResourceDescriptor) (string, error) {
+	switch {
+	case mapped.storageAccount:
+		return storageAccountSKU(desc)
+	case mapped.sqlDatabase:
+		return sqlDatabaseSKU(desc)
+	case mapped.aks:
+		return aksTier(desc), nil
+	case mapped.appServicePlan:
+		return appServicePlanSKU(desc), nil
+	case mapped.disk:
+		return diskSKU(desc), nil
+	case mapped.vm:
+		return vmSKU(desc), nil
+	default:
+		return resolveField(desc.GetSku(), "sku", desc.GetTags()), nil
+	}
 }
 
 func missingMappedSKU(mapped mappedResource, sku string, tags map[string]string) []string {

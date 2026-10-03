@@ -372,7 +372,7 @@ func (c *Calculator) quoteDisk(
 	taskID string,
 ) (monthlyQuote, error) {
 	region := descriptorRegion(resource)
-	diskType := descriptorSKU(resource)
+	diskType := diskSKU(resource)
 	sizeGB, sizeSet, err := descriptorSizeGB(resource)
 	if err != nil {
 		return monthlyQuote{}, status.Error(codes.InvalidArgument, err.Error())
@@ -745,7 +745,7 @@ func descriptorCurrency(resource *finfocusv1.ResourceDescriptor) string {
 }
 
 func descriptorSizeGB(resource *finfocusv1.ResourceDescriptor) (float64, bool, error) {
-	raw := firstNonEmptyTag(resource.GetTags(), "size_gb", "sizeGb", "diskSizeGb", "capacity_gb")
+	raw := firstNonEmptyTag(resource.GetTags(), "size_gb", "sizeGb", "diskSizeGb", "diskSizeGB", "capacity_gb")
 	if raw == "" {
 		return 0, false, nil
 	}

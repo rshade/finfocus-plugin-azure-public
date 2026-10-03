@@ -79,11 +79,24 @@ var diskTierCapacities = []diskTierCapacity{
 	{Number: 80, Capacity: 32767},
 }
 
+// diskTypeAliases maps the real ARM disk type that Pulumi sends to the
+// supportedDiskTypes key.
+//
+//nolint:gochecknoglobals // Static lookup table; immutable after init.
+var diskTypeAliases = map[string]string{
+	"premium_lrs": "premium_ssd_lrs",
+}
+
 // normalizeDiskType validates and normalizes a user-facing disk type name
-// to its Azure API mapping. Input is case-insensitive.
+// to its Azure API mapping. Input is case-insensitive. The ARM name
+// Premium_LRS is accepted. Ultra and Premium v2 are unsupported.
 // Returns the diskTypeInfo or an error for unsupported types.
 func normalizeDiskType(diskType string) (diskTypeInfo, error) {
-	info, ok := supportedDiskTypes[strings.ToLower(diskType)]
+	key := strings.ToLower(diskType)
+	if alias, ok := diskTypeAliases[key]; ok {
+		key = alias
+	}
+	info, ok := supportedDiskTypes[key]
 	if !ok {
 		return diskTypeInfo{}, fmt.Errorf("unsupported disk type: %s", diskType)
 	}

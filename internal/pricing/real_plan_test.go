@@ -34,18 +34,27 @@ const (
 // after that input set matches plan-expected.json.
 func realPlanMustPass() map[string]bool {
 	ids := []string{
+		"azure-native/disk",
 		"azure-native/linuxVm",
 		"azure-native/vmNoLocation",
 		"azure-native/windowsVm",
+		"azure/disk",
 		"azure/legacyVm",
 		"azure/linuxVm",
 		"azure/linuxVmRegular",
+		"azure/plan",
 		"azure/vmss",
 		"azure/windowsVm",
+		"azure/winPlan",
 	}
-	out := make(map[string]bool, len(ids)*2)
+	// Today's core view drops sku.capacity, so only the dotted input has the worker count.
+	dottedOnly := []string{"azure-native/plan"}
+	out := make(map[string]bool, len(ids)*2+len(dottedOnly))
 	for _, id := range ids {
 		out[id+"/core"] = true
+		out[id+"/dotted"] = true
+	}
+	for _, id := range dottedOnly {
 		out[id+"/dotted"] = true
 	}
 	return out

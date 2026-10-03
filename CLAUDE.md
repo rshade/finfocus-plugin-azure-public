@@ -261,6 +261,25 @@ scale set with `virtualMachineProfile.priority=Spot` uses the Spot meter.
 `plan-expected.json` records the on-demand meter for `azure-native/vmss`,
 and that fixture has no Spot row, so the dotted quote is `NotFound`.
 
+### Real Pulumi SKU properties
+
+`GetProjectedCost`, `Supports`, and `DryRun` read the SKU from the real
+Pulumi property for each type. The descriptor `Sku` wins, then the property
+below, then the generic tags (`sku`, `vmSize`, `armSkuName`, `disk_type`).
+The Pulumi unknown placeholder `04da6b54-80e4-46f7-96ec-b56ff0331ba9` is
+skipped.
+
+| Type | SKU source |
+| --- | --- |
+| Managed disk | classic `storageAccountType`, native `sku.name` (`Premium_LRS` is accepted). Size also reads native `diskSizeGB` |
+| Storage account | native `sku.name` such as `Standard_GRS`, or classic `accountTier` plus `accountReplicationType`. The access tier is `accessTier`, default Hot. `Premium` performance is `InvalidArgument` |
+| App Service plan | classic `skuName`, native `sku.name`. Classic `osType` is Linux or Windows when `os` is empty. `WindowsContainer` is `InvalidArgument`. Monthly cost is multiplied by `workerCount`, then `sku.capacity` |
+| AKS | native `sku.tier`, classic `skuTier`, both before `Sku` (native `sku.name` is `Base`). `supportPlan=AKSLongTermSupport` is the same as `support=lts`. With no node pool tags the note says node pools are not included |
+| SQL Database | classic `skuName` (`GP_Gen5_4`), native `sku.name` plus `sku.capacity` (`GP_Gen5` and 4 is `GP_Gen5_4`). A non-numeric capacity is `InvalidArgument` |
+
+A native plan with no `kind` and no `reserved` is still priced as Linux, and
+AKS `defaultNodePool` and `agentPoolProfiles` are not priced (AZ-7.5, AZ-7.6).
+
 ### Managed Disk Cost Estimation
 
 Estimate monthly Managed Disk pricing. Disk prices are monthly (not hourly

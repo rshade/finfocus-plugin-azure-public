@@ -1024,6 +1024,10 @@ tier (256 GiB Premium is P15).
 **Acceptance Criteria**: the disk rows pass; the old invented names are no longer the only accepted
 ones.
 
+**Status:** DONE in #69. `azure/disk` and `azure-native/disk` pass both input sets and are in the
+ratchet. Break check: renaming `storageAccountType` made both `azure/disk` rows fail with missing
+`disk_type`.
+
 #### AZ-7.4 — Storage accounts
 
 **Description**: Classic `accountTier`, `accountReplicationType`, `accessTier` (default Hot); native
@@ -1039,6 +1043,11 @@ native `sku.name` (the core sends it as the SKU), `sku.capacity`, `kind`, `reser
 no `kind` and no `reserved` is Windows. Multiply by the worker count.
 
 **Acceptance Criteria**: the plan rows pass; no Windows plan is priced on a Linux meter.
+
+**Status:** Partly done in #69. Classic `skuName`, `osType`, and `workerCount`, and native
+`sku.capacity`, are read. `azure/plan`, `azure/winPlan`, and the dotted `azure-native/plan` pass.
+Open: native `kind` and `reserved` (a native plan with neither is still priced as Linux), and the
+core view of `azure-native/plan`, which has no capacity.
 
 #### AZ-7.6 — AKS
 

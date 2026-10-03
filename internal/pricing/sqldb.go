@@ -89,11 +89,15 @@ func sqlRequestFrom(resource *finfocusv1.ResourceDescriptor) (sqlRequest, error)
 	if err != nil {
 		return sqlRequest{}, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if missing := missingSQLQuoteFields(region, sizeSet, resource); len(missing) > 0 {
+	sku, err := sqlDatabaseSKU(resource)
+	if err != nil {
+		return sqlRequest{}, err
+	}
+	if missing := missingSQLQuoteFields(region, sizeSet, sku, resource.GetTags()); len(missing) > 0 {
 		return sqlRequest{}, missingFieldsError(missing)
 	}
 
-	spec, err := parseSQLModel(resource)
+	spec, err := parseSQLModel(sku, resource.GetTags())
 	if err != nil {
 		return sqlRequest{}, err
 	}
@@ -103,7 +107,7 @@ func sqlRequestFrom(resource *finfocusv1.ResourceDescriptor) (sqlRequest, error)
 	return spec, nil
 }
 
-func missingSQLQuoteFields(region string, sizeSet bool, resource *finfocusv1.ResourceDescriptor) []string {
+func missingSQLQuoteFields(region string, sizeSet bool, sku string, tags map[string]string) []string {
 	var missing []string
 	if region == "" {
 		missing = append(missing, "region")
@@ -111,8 +115,8 @@ func missingSQLQuoteFields(region string, sizeSet bool, resource *finfocusv1.Res
 	if !sizeSet {
 		missing = append(missing, "size_gb")
 	}
-	if descriptorSKU(resource) == "" {
-		missing = append(missing, sqlIdentityMissing(resource.GetTags())...)
+	if sku == "" {
+		missing = append(missing, sqlIdentityMissing(tags)...)
 	}
 	return missing
 }
@@ -131,11 +135,11 @@ func sqlIdentityMissing(tags map[string]string) []string {
 	return missing
 }
 
-func parseSQLModel(resource *finfocusv1.ResourceDescriptor) (sqlRequest, error) {
-	if sku := descriptorSKU(resource); sku != "" {
+func parseSQLModel(sku string, tags map[string]string) (sqlRequest, error) {
+	if sku != "" {
 		return parseSQLSKU(sku)
 	}
-	return parseSQLTags(resource.GetTags())
+	return parseSQLTags(tags)
 }
 
 func parseSQLSKU(raw string) (sqlRequest, error) {
