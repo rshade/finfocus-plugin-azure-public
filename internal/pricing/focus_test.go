@@ -417,8 +417,11 @@ func focusVMDescriptor(tags map[string]string) *finfocusv1.ResourceDescriptor {
 
 func focusTypedDescriptor(resourceType string) *finfocusv1.ResourceDescriptor {
 	sku := "Standard_B1s"
-	if resourceType == "storage/StorageAccount" {
+	switch resourceType {
+	case "storage/StorageAccount":
 		sku = "Hot LRS"
+	case canonicalKubernetesCluster:
+		sku = aksLabelStandard
 	}
 	return &finfocusv1.ResourceDescriptor{
 		Provider:     "azure",

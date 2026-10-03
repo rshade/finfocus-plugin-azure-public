@@ -35,6 +35,7 @@ const (
 	sqlTagHardware         = "hardware"
 	sqlTagVCores           = "vcores"
 	sqlTagZone             = "zone_redundant"
+	sqlTagZonePulumi       = "zoneRedundant"
 	sqlZoneTrue            = "true"
 	sqlTierGP              = "gp"
 	sqlTierBC              = "bc"
@@ -103,7 +104,7 @@ func sqlRequestFrom(resource *finfocusv1.ResourceDescriptor) (sqlRequest, error)
 	}
 	spec.region = region
 	spec.sizeGB = sizeGB
-	spec.zone = strings.EqualFold(strings.TrimSpace(resource.GetTags()[sqlTagZone]), sqlZoneTrue)
+	spec.zone = strings.EqualFold(pulumiTag(resource.GetTags(), sqlTagZone, sqlTagZonePulumi), sqlZoneTrue)
 	return spec, nil
 }
 

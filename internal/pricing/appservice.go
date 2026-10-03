@@ -86,7 +86,7 @@ func (c *Calculator) quoteAppServicePlan(
 	if err != nil {
 		return monthlyQuote{}, err
 	}
-	workers, err := appServicePlanWorkers(resource.GetTags())
+	workers, workerNote, err := appServicePlanWorkers(resource.GetTags())
 	if err != nil {
 		return monthlyQuote{}, err
 	}
@@ -104,7 +104,7 @@ func (c *Calculator) quoteAppServicePlan(
 		unitPrice:     item.RetailPrice,
 		monthly:       item.RetailPrice * pluginsdk.HoursPerMonth * float64(workers),
 		currency:      itemCurrency(item),
-		billingDetail: appServiceBillingDetail(resource, windows, sku, region, workers),
+		billingDetail: appServiceBillingDetail(resource, windows, sku, region, workers, workerNote),
 		breakdownKey:  breakdownCompute,
 		expiresAt:     result.ExpiresAt,
 		region:        region,
@@ -583,6 +583,7 @@ func appServiceBillingDetail(
 	windows bool,
 	sku, region string,
 	workers int,
+	workerNote string,
 ) string {
 	osName := "Linux"
 	if windows {
@@ -595,6 +596,9 @@ func appServiceBillingDetail(
 	detail := fmt.Sprintf("%s %s %s in %s, 730 hrs/month", kind, osName, sku, region)
 	if workers > 1 {
 		detail = fmt.Sprintf("%s, %d workers", detail, workers)
+	}
+	if workerNote != "" {
+		detail = fmt.Sprintf("%s, %s", detail, workerNote)
 	}
 	return detail
 }

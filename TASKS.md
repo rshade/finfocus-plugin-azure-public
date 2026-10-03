@@ -1026,7 +1026,8 @@ ones.
 
 **Status:** DONE in #69. `azure/disk` and `azure-native/disk` pass both input sets and are in the
 ratchet. Break check: renaming `storageAccountType` made both `azure/disk` rows fail with missing
-`disk_type`.
+`disk_type`. The Pulumi `tier` is read as the performance tier: a higher Premium SSD tier is billed
+instead of the size tier, so a 256 GB disk with `tier=P30` is priced as P30, not P15.
 
 #### AZ-7.4 — Storage accounts
 
@@ -1047,7 +1048,8 @@ no `kind` and no `reserved` is Windows. Multiply by the worker count.
 **Status:** Partly done in #69. Classic `skuName`, `osType`, and `workerCount`, and native
 `sku.capacity`, are read. `azure/plan`, `azure/winPlan`, and the dotted `azure-native/plan` pass.
 Open: native `kind` and `reserved` (a native plan with neither is still priced as Linux), and the
-core view of `azure-native/plan`, which has no capacity.
+core view of `azure-native/plan`, which has no capacity. That view now prices one worker and says in
+`billing_detail` that the worker count was not provided.
 
 #### AZ-7.6 — AKS
 
@@ -1071,6 +1073,11 @@ and zone storage replaces local storage. `licenseType: BasePrice` is ambiguous i
 a documented reading and record it.
 
 **Acceptance Criteria**: the SQL rows pass; the ambiguity is in the register with both readings.
+
+**Status:** Partly done in #69. Classic `skuName` and native `sku.name` plus `sku.capacity` are read,
+and Pulumi `zoneRedundant` is read like `zone_redundant`. A native `GP_Gen5` with no capacity is a
+missing `sku.capacity`, not a DTU refusal. Open: `maxSizeGb` and `maxSizeBytes` as the size,
+`licenseType`, and the `serverId` region join.
 
 #### AZ-7.8 — Cosmos DB
 

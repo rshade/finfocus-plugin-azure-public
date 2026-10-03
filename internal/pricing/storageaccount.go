@@ -25,6 +25,7 @@ const (
 
 	storagePerformanceStandard = "Standard"
 	storageDefaultAccessTier   = "Hot"
+	storageKindV2              = "StorageV2"
 
 	storageAccountResourceSegment = "storage/storageaccount"
 )
@@ -136,13 +137,17 @@ func isStorageAccountResourceType(lower string) bool {
 
 // storageAccountSKU resolves "{Tier} {Redundancy}". Sku and Tags["sku"] win.
 // An ARM SKU such as native sku.name Standard_GRS takes its access tier from
-// accessTier, default Hot. Next are the classic Pulumi accountTier,
-// accountReplicationType, and accessTier. Otherwise the SKU is built from
-// tier (or access_tier) and redundancy. Premium performance is not General
-// Block Blob v2 and is an error. An empty result means a missing sku.
+// accessTier, access_tier, or tier, default Hot. Next are the classic Pulumi
+// accountTier, accountReplicationType, and accessTier. Otherwise the SKU is
+// built from tier (or access_tier) and redundancy. Premium performance and
+// an account kind other than StorageV2 are not General Block Blob v2 and are
+// errors. An empty result means a missing sku.
 func storageAccountSKU(resource *finfocusv1.ResourceDescriptor) (string, error) {
 	tags := resource.GetTags()
-	if sku := strings.TrimSpace(resource.GetSku()); sku != "" {
+	if err := storageAccountKindError(tags); err != nil {
+		return "", err
+	}
+	if sku := pulumiSKU(resource); sku != "" {
 		return storageSKUFromValue(sku, tags)
 	}
 	if sku := firstNonEmptyTag(tags, "sku"); sku != "" {
@@ -172,7 +177,7 @@ func storageSKUFromARM(performance, replication string, tags map[string]string) 
 			generalBlockBlobV2Product,
 		)
 	}
-	access := pulumiTag(tags, "accessTier")
+	access := pulumiTag(tags, "accessTier", "access_tier", "tier")
 	if access == "" {
 		access = storageDefaultAccessTier
 	}
