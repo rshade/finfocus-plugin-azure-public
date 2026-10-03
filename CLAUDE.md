@@ -478,6 +478,22 @@ omitted. A Spot quote uses the Linux Spot row for those other regions.
 
 Carbon is findings only, in `docs/findings/carbon.md`. No estimator is wired.
 
+### Manifest files
+
+`manifest.json` and `manifest.yaml` are generated. Their
+`supported_resources["azure"]` lists `SupportedResourceTypes()` and the
+pricing-spec billing modes. `TestManifestFiles_PluginCatalog_MatchExpected`
+fails when a type is added without regenerating:
+
+```bash
+go test ./internal/pricing -run TestManifestFiles -update-manifest
+```
+
+Pass the flag to `./internal/pricing` only. `azure-native` stays a provider
+even though the spec schema rejects it (FinFocus spec #611). Core does not
+read `supported_resources` yet. Per-type input fields wait on #611, so #44
+stays open.
+
 ## Environment Variables
 
 <!-- markdownlint-disable MD013 -->

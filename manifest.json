@@ -1,26 +1,66 @@
 {
-  "metadata":  {
-    "name":  "azure-public",
-    "version":  "0.1.0",
-    "description":  "FinFocus plugin for azure-public",
-    "author":  "Richard Shade",
-    "license":  "Apache-2.0",
-    "keywords":  [
+  "metadata": {
+    "name": "azure-public",
+    "version": "0.1.0",
+    "description": "Estimates Azure resource costs from the public Azure Retail Prices API",
+    "author": "Richard Shade",
+    "repository": "https://github.com/rshade/finfocus-plugin-azure-public",
+    "license": "Apache-2.0",
+    "keywords": [
       "finfocus",
       "cost",
       "plugin",
       "azure"
     ]
   },
-  "specification":  {
-    "specVersion":  "1.0",
-    "supportedProviders":  [
+  "specification": {
+    "specVersion": "0.7.1",
+    "supportedProviders": [
       "azure",
       "azure-native"
     ],
-    "capabilities":  [
-      "projected_cost",
-      "actual_cost"
-    ]
+    "supportedResources": {
+      "azure": {
+        "resourceTypes": [
+          "compute/VirtualMachine",
+          "containerservice/KubernetesCluster",
+          "cosmosdb/Account",
+          "network/LoadBalancer",
+          "sql/Database",
+          "storage/BlobStorage",
+          "storage/ManagedDisk",
+          "storage/StorageAccount",
+          "web/AppServicePlan",
+          "web/FunctionApp"
+        ],
+        "billingModes": [
+          "per_gb_month",
+          "per_hour",
+          "per_month",
+          "per_ru",
+          "per_second"
+        ]
+      }
+    },
+    "capabilities": [
+      "cost_projection",
+      "cost_retrieval",
+      "pricing_specs",
+      "caching"
+    ],
+    "serviceDefinition": {
+      "serviceName": "CostSourceService",
+      "packageName": "finfocus.v1",
+      "methods": [
+        "Name",
+        "Supports",
+        "GetProjectedCost",
+        "GetActualCost",
+        "GetPricingSpec"
+      ]
+    }
+  },
+  "installation": {
+    "installationMethod": "INSTALLATION_METHOD_BINARY"
   }
 }
