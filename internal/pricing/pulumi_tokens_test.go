@@ -16,7 +16,8 @@ import (
 )
 
 // Real Pulumi tokens. Classic uses provider azure. Azure Native uses provider
-// azure-native, which core copies from the token prefix.
+// azure-native, which finfocus v0.4.0 and older copy from the token prefix;
+// newer releases send azure (see provider_test.go).
 func TestSupportsRealPulumiTokens(t *testing.T) {
 	t.Parallel()
 
@@ -371,26 +372,5 @@ func TestEstimateCostNativeFunctionWebApp(t *testing.T) {
 	}
 	if math.Abs(resp.GetCostMonthly()-want) > 1e-9 {
 		t.Fatalf("cost_monthly = %v, want %v", resp.GetCostMonthly(), want)
-	}
-}
-
-func TestGetPluginInfoListsAzureNative(t *testing.T) {
-	t.Parallel()
-
-	resp, err := NewCalculator(zerolog.Nop()).GetPluginInfo(
-		context.Background(),
-		&finfocusv1.GetPluginInfoRequest{},
-	)
-	if err != nil {
-		t.Fatalf("GetPluginInfo() failed: %v", err)
-	}
-	found := false
-	for _, provider := range resp.GetProviders() {
-		if provider == "azure-native" {
-			found = true
-		}
-	}
-	if !found {
-		t.Fatalf("providers = %v, want azure-native", resp.GetProviders())
 	}
 }

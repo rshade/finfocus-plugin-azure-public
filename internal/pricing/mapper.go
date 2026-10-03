@@ -53,7 +53,8 @@ var canonicalResourceTypes = map[string]string{
 // azureclient PriceQuery suitable for the Azure Retail Prices API.
 //
 // Validation is performed before mapping:
-//   - Provider must be "azure" or "azure-native" (case-insensitive)
+//   - Provider must be "azure", or "azure-native" from finfocus releases
+//     before rshade/finfocus#1645 (case-insensitive)
 //   - ResourceType must match a supported type (case-insensitive)
 //   - Region must be resolvable (primary field or Tags["region"])
 //   - SKU must be resolvable (primary field or Tags["sku"]), except a function

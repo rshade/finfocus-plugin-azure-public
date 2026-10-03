@@ -54,7 +54,7 @@ func expectedManifest() *finfocusv1.PluginManifest {
 		},
 		Specification: &finfocusv1.PluginSpecification{
 			SpecVersion:        strings.TrimPrefix(pluginsdk.SpecVersion, "v"),
-			SupportedProviders: []string{providerAzure, providerAzureNative},
+			SupportedProviders: []string{providerAzure},
 			SupportedResources: map[string]*finfocusv1.ProviderResources{
 				providerAzure: {
 					ResourceTypes: SupportedResourceTypes(),
@@ -194,9 +194,8 @@ func TestSpecRate_EveryBranch_ReturnsListedBillingMode(t *testing.T) {
 // The committed files use the SaveManifest format (protojson camelCase JSON,
 // lowercased-key YAML, the installation method as an enum), so
 // registry.ValidatePluginManifest rejects them at the first required key. This
-// test validates a converted in-memory view instead: snake_case keys, a
-// lowercase installation method, and azure-native left out, because the schema
-// rejects it (rshade/finfocus-spec#611).
+// test validates a converted in-memory view instead: snake_case keys and a
+// lowercase installation method (rshade/finfocus-spec#611).
 func TestExpectedManifest_RegistryView_PassesRegistryValidation(t *testing.T) {
 	view := registryManifestView(t, expectedManifest())
 	if err := registry.ValidatePluginManifest(view); err != nil {
@@ -214,18 +213,6 @@ func registryManifestView(t *testing.T, m *finfocusv1.PluginManifest) []byte {
 	if err = json.Unmarshal(raw, &doc); err != nil {
 		t.Fatalf("unmarshal manifest: %v", err)
 	}
-
-	spec, ok := doc["specification"].(map[string]any)
-	if !ok {
-		t.Fatal("manifest has no specification object")
-	}
-	var providers []any
-	for _, p := range m.GetSpecification().GetSupportedProviders() {
-		if p != providerAzureNative {
-			providers = append(providers, p)
-		}
-	}
-	spec["supported_providers"] = providers
 
 	install, ok := doc["installation"].(map[string]any)
 	if !ok {
