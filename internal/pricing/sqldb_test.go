@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -187,7 +188,7 @@ func TestGetProjectedCostSQLSKUBeatsTags(t *testing.T) {
 // Zone-redundant General Purpose storage is billed at the zone rate instead of
 // the local rate, while the zone vCore meter is a surcharge on top of the base
 // compute row (issue #77). The totals are the Pricing Calculator values read
-// on 2026-10-03 for eastus.
+// on 2026-10-02 for eastus.
 func TestGetProjectedCost_SQLZoneRedundant_StorageUsesZoneRate(t *testing.T) {
 	t.Parallel()
 
@@ -207,12 +208,11 @@ func TestGetProjectedCost_SQLZoneRedundant_StorageUsesZoneRate(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		sizeGB    string
 		gb        float64
 		wantTotal float64
 	}{
-		{name: "100 GB", sizeGB: "100", gb: 100, wantTotal: 378.58},
-		{name: "1000 GB", sizeGB: "1000", gb: 1000, wantTotal: 585.58},
+		{name: "100 GB", gb: 100, wantTotal: 378.58},
+		{name: "1000 GB", gb: 1000, wantTotal: 585.58},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -228,7 +228,7 @@ func TestGetProjectedCost_SQLZoneRedundant_StorageUsesZoneRate(t *testing.T) {
 				sqlTestCanonicalType,
 				"eastus",
 				"GP_Gen5_2",
-				map[string]string{"size_gb": tt.sizeGB, "zone_redundant": "true"},
+				map[string]string{"size_gb": strconv.FormatFloat(tt.gb, 'f', -1, 64), "zone_redundant": "true"},
 			))
 			if err != nil {
 				t.Fatalf("GetProjectedCost() failed: %v", err)
@@ -241,38 +241,83 @@ func TestGetProjectedCost_SQLZoneRedundant_StorageUsesZoneRate(t *testing.T) {
 	}
 }
 
-func TestGetProjectedCost_SQLZoneRedundantStorageRows_RequireOnlyZoneRow(t *testing.T) {
+func TestGetProjectedCost_SQLZoneRedundantWithoutLocalStorageRow_PricesZoneStorage(t *testing.T) {
 	t.Parallel()
 
 	compute, storage := loadSQLFixtures(t)
-	tests := []struct {
-		name     string
-		drop     string
-		wantCode codes.Code
-	}{
-		{name: "local storage row missing", drop: sqlTestMeterStored, wantCode: codes.OK},
-		{name: "zone storage row missing", drop: sqlTestMeterZoneStored, wantCode: codes.NotFound},
+	zoneStorage := requireSQLItem(
+		t, storage.Items, sqlTestStorageProduct, sqlTestZoneStorageSKU, sqlTestMeterZoneStored, sqlTestUnitGBMonth,
+	)
+	kept := withoutSQLMeter(storage.Items, sqlTestMeterStored)
+	if sqlMeterPresent(kept, sqlTestMeterStored) {
+		t.Fatalf("%s row remains", sqlTestMeterStored)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 
-			kept := withoutSQLMeter(storage.Items, tt.drop)
-			if sqlMeterPresent(kept, tt.drop) {
-				t.Fatalf("%s row remains", tt.drop)
-			}
-			calc := newSQLCalc(t, compute.Items, kept)
-			_, err := calc.GetProjectedCost(context.Background(), sqlProjectedRequest(
-				sqlTestCanonicalType,
-				"eastus",
-				"GP_Gen5_2",
-				map[string]string{"size_gb": "100", "zone_redundant": "true"},
-			))
-			if status.Code(err) != tt.wantCode {
-				t.Fatalf("code = %s, want %s (err=%v)", status.Code(err), tt.wantCode, err)
-			}
-		})
+	calc := newSQLCalc(t, compute.Items, kept)
+	resp, err := calc.GetProjectedCost(context.Background(), sqlZoneRequest("100"))
+	if err != nil {
+		t.Fatalf("GetProjectedCost() failed: %v", err)
 	}
+	if got, want := resp.GetCostBreakdown()["storage"], zoneStorage.RetailPrice*100; math.Abs(got-want) > 1e-9 {
+		t.Fatalf("storage = %v, want zone rate x 100 GB = %v", got, want)
+	}
+	if math.Abs(resp.GetCostPerMonth()-378.58) > 0.005 {
+		t.Fatalf("cost_per_month = %v, want calculator 378.58", resp.GetCostPerMonth())
+	}
+}
+
+func TestGetProjectedCost_SQLZoneRedundantWithoutZoneStorageRow_ReturnsNotFound(t *testing.T) {
+	t.Parallel()
+
+	compute, storage := loadSQLFixtures(t)
+	kept := withoutSQLMeter(storage.Items, sqlTestMeterZoneStored)
+	if sqlMeterPresent(kept, sqlTestMeterZoneStored) {
+		t.Fatalf("%s row remains", sqlTestMeterZoneStored)
+	}
+	if !sqlMeterPresent(kept, sqlTestMeterStored) {
+		t.Fatalf("%s row is missing", sqlTestMeterStored)
+	}
+
+	calc := newSQLCalc(t, compute.Items, kept)
+	_, err := calc.GetProjectedCost(context.Background(), sqlZoneRequest("100"))
+	if status.Code(err) != codes.NotFound {
+		t.Fatalf("code = %s, want NotFound (err=%v)", status.Code(err), err)
+	}
+}
+
+func TestGetPricingSpec_SQLZoneRedundant_ListsOneStorageMeter(t *testing.T) {
+	t.Parallel()
+
+	compute, storage := loadSQLFixtures(t)
+	computeItem := requireSQLItem(
+		t, compute.Items, sqlTestComputeProduct, "2 vCore", sqlTestMeterVCore, sqlTestUnitHour,
+	)
+	calc := newSQLCalc(t, compute.Items, storage.Items)
+	resp, err := calc.GetPricingSpec(context.Background(), &finfocusv1.GetPricingSpecRequest{
+		Resource: sqlZoneRequest("100").GetResource(),
+	})
+	if err != nil {
+		t.Fatalf("GetPricingSpec() failed: %v", err)
+	}
+	spec := resp.GetSpec()
+	assertMetricHints(t, spec.GetMetricHints(), map[string]string{
+		"compute":                 sqlTestUnitHour,
+		"storage":                 sqlTestUnitGBMonth,
+		"zone_redundancy_compute": sqlTestUnitHour,
+	})
+	if spec.GetBillingMode() != specBillingPerHour || spec.GetRatePerUnit() != computeItem.RetailPrice {
+		t.Fatalf("billing_mode/rate = %s/%v, want %s/%v",
+			spec.GetBillingMode(), spec.GetRatePerUnit(), specBillingPerHour, computeItem.RetailPrice)
+	}
+}
+
+func sqlZoneRequest(sizeGB string) *finfocusv1.GetProjectedCostRequest {
+	return sqlProjectedRequest(
+		sqlTestCanonicalType,
+		"eastus",
+		"GP_Gen5_2",
+		map[string]string{"size_gb": sizeGB, "zone_redundant": "true"},
+	)
 }
 
 func TestGetProjectedCostSQLMissingVCoreRowIsNotFound(t *testing.T) {

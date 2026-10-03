@@ -25,8 +25,9 @@ General Purpose Gen5 provisioned vCore only. The SKU is `GP_Gen5_{n}`, or tags
 `tier` (`GeneralPurpose` or `GP`), `hardware` `Gen5`, and `vcores` `{n}`.
 `size_gb` is required. Monthly cost is compute plus storage.
 
-`zone_redundant=true` adds zone-redundancy compute and zone-redundancy
-storage. Any other value omits those components.
+`zone_redundant=true` adds the zone-redundancy compute surcharge and bills
+storage at the zone rate instead of the local rate. Any other value uses local
+storage and no zone compute.
 
 ### Models this task refuses
 
@@ -113,7 +114,7 @@ Zone capacity is meter `General Purpose Zone Redundancy Data Stored`, unit
 `1 GB/Month`. When `zone_redundant=true` it replaces `General Purpose Data
 Stored`; it is not added on top. The Pricing Calculator picks one storage
 offer, local or zone, and the zone IO rate row repeats the local IO price, so
-the zone row is a full rate (issue #77, read 2026-10-03). IO rate meters are
+the zone row is a full rate (issue #77, read 2026-10-02). IO rate meters are
 not capacity and are not selected.
 
 | skuName | meterName | unitOfMeasure |
