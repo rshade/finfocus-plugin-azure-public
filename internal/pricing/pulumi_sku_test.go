@@ -714,8 +714,14 @@ func TestGetProjectedCost_ClassicDiskWithPerformanceTier_PricesThatTier(t *testi
 	t.Parallel()
 
 	calc := newPricingCalc(t, []azureclient.PriceItem{
-		{MeterName: "P15 LRS Disk", RetailPrice: 38.01, CurrencyCode: "USD", UnitOfMeasure: "1/Month"},
-		{MeterName: "P30 LRS Disk", RetailPrice: 135.17, CurrencyCode: "USD", UnitOfMeasure: "1/Month"},
+		{
+			ProductName: "Premium SSD Managed Disks", SkuName: "P15 LRS", MeterName: "P15 LRS Disk",
+			RetailPrice: 38.01, CurrencyCode: "USD", UnitOfMeasure: "1/Month",
+		},
+		{
+			ProductName: "Premium SSD Managed Disks", SkuName: "P30 LRS", MeterName: "P30 LRS Disk",
+			RetailPrice: 135.17, CurrencyCode: "USD", UnitOfMeasure: "1/Month",
+		},
 	})
 	resp, err := calc.GetProjectedCost(context.Background(), &finfocusv1.GetProjectedCostRequest{
 		Resource: &finfocusv1.ResourceDescriptor{
