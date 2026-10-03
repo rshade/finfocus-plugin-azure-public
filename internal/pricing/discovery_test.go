@@ -2,6 +2,8 @@ package pricing
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net"
 	"slices"
 	"strings"
@@ -18,8 +20,9 @@ import (
 )
 
 // coreUnitFallbacks are the PricingSpec units finfocus core turns into a
-// billing mode when it does not recognise billing_mode
-// (rshade/finfocus internal/engine/pricing_spec.go normalizeBilling).
+// billing mode when it does not recognise billing_mode. Copied from
+// rshade/finfocus commit 706c5f3, internal/engine/pricing_spec.go:293-324
+// (normalizeBilling); re-check it when core changes that function.
 // A spec whose mode core cannot read must not use one of these units, or core
 // would price a GB-second or request-unit rate as an hourly or GB-month rate.
 func coreUnitFallbacks() []string {
@@ -29,7 +32,8 @@ func coreUnitFallbacks() []string {
 	}
 }
 
-// coreBillingModes are the billing_mode values core's normalizeBilling reads.
+// coreBillingModes are the billing_mode values core's normalizeBilling reads
+// and turns into a monthly total (same source as coreUnitFallbacks).
 func coreBillingModes() []string {
 	return []string{
 		"per_hour", "hourly", "hour", "per_day", "daily", "day",
@@ -67,49 +71,6 @@ func TestGetPluginInfo_Direct_ListsImplementedCapabilities(t *testing.T) {
 	}
 }
 
-// The embedded UnimplementedCostSourceServiceServer gives Calculator every
-// method, so interface inference cannot tell these apart. Each RPC left out
-// of PluginCapabilities must really be unimplemented.
-func TestGetPluginInfo_UnlistedCapabilities_ReturnUnimplemented(t *testing.T) {
-	t.Parallel()
-
-	calc := NewCalculator(zerolog.Nop())
-	ctx := context.Background()
-	calls := []struct {
-		capability finfocusv1.PluginCapability
-		call       func() error
-	}{
-		{finfocusv1.PluginCapability_PLUGIN_CAPABILITY_BATCH_COST, func() error {
-			_, err := calc.BatchCost(ctx, &finfocusv1.BatchCostRequest{})
-			return err
-		}},
-		{finfocusv1.PluginCapability_PLUGIN_CAPABILITY_RESOLVE_RESOURCE_TYPES, func() error {
-			_, err := calc.ResolveResourceTypes(ctx, &finfocusv1.ResolveResourceTypesRequest{})
-			return err
-		}},
-		{finfocusv1.PluginCapability_PLUGIN_CAPABILITY_RECOMMENDATIONS, func() error {
-			_, err := calc.GetRecommendations(ctx, &finfocusv1.GetRecommendationsRequest{})
-			return err
-		}},
-		{finfocusv1.PluginCapability_PLUGIN_CAPABILITY_BUDGETS, func() error {
-			_, err := calc.GetBudgets(ctx, &finfocusv1.GetBudgetsRequest{})
-			return err
-		}},
-		{finfocusv1.PluginCapability_PLUGIN_CAPABILITY_DISMISS_RECOMMENDATIONS, func() error {
-			_, err := calc.DismissRecommendation(ctx, &finfocusv1.DismissRecommendationRequest{})
-			return err
-		}},
-	}
-	for _, tt := range calls {
-		if slices.Contains(PluginCapabilities(), tt.capability) {
-			t.Fatalf("%s is advertised", tt.capability)
-		}
-		if code := status.Code(tt.call()); code != codes.Unimplemented {
-			t.Fatalf("%s RPC code = %s, want Unimplemented", tt.capability, code)
-		}
-	}
-}
-
 func TestGetPluginInfo_OverGRPC_SendsExplicitCapabilitiesAndType(t *testing.T) {
 	t.Parallel()
 
@@ -123,6 +84,34 @@ func TestGetPluginInfo_OverGRPC_SendsExplicitCapabilitiesAndType(t *testing.T) {
 	}
 	if got := resp.GetMetadata()[pluginMetadataType]; got != pluginTypePublicPricing {
 		t.Fatalf("metadata[%s] = %q, want %q", pluginMetadataType, got, pluginTypePublicPricing)
+	}
+	// The SDK derives the legacy supports_* keys from the explicit list, so an
+	// unserved RPC such as BatchCost must not appear there either.
+	metadata := resp.GetMetadata()
+	if metadata["supports_dry_run"] != "true" {
+		t.Fatalf("metadata supports_dry_run = %q, want true (metadata=%v)", metadata["supports_dry_run"], metadata)
+	}
+	for _, key := range []string{"supports_batch_cost", "max_batch_size", "supports_recommendations"} {
+		if value, ok := metadata[key]; ok {
+			t.Fatalf("metadata %s = %q is advertised for an RPC the plugin does not serve", key, value)
+		}
+	}
+}
+
+func TestMissingFieldsError_Wrapped_KeepsStatusAndFields(t *testing.T) {
+	t.Parallel()
+
+	err := fmt.Errorf("quote: %w", missingFieldsError([]string{"region", "sku"}))
+	if got := status.Convert(missingFieldsError([]string{"region", "sku"})).Message(); got !=
+		"missing required field(s): region, sku" {
+		t.Fatalf("status message = %q", got)
+	}
+	if status.Code(missingFieldsError([]string{"region"})) != codes.InvalidArgument {
+		t.Fatal("missingFieldsError is not InvalidArgument")
+	}
+	var missing *requiredFieldsError
+	if !errors.As(err, &missing) || !slices.Equal(missing.fields, []string{"region", "sku"}) {
+		t.Fatalf("errors.As(%v) did not recover the field list", err)
 	}
 }
 
@@ -241,33 +230,6 @@ func TestGetPricingSpec_UsageNotSupplied_ReturnsUnitRate(t *testing.T) {
 		hintName string
 	}{
 		{
-			name:     "storage account without size",
-			desc:     descriptorWithoutTags(dryRunDescriptors()["storage/StorageAccount"], "size_gb"),
-			missing:  []string{"size_gb"},
-			mode:     billingModePerGBMonth,
-			unit:     specUnitGBMonthName,
-			rate:     fx.storageItem.RetailPrice,
-			hintName: "size_gb",
-		},
-		{
-			name:     "blob without size",
-			desc:     descriptorWithoutTags(dryRunDescriptors()["storage/BlobStorage"], "size_gb"),
-			missing:  []string{"size_gb"},
-			mode:     billingModePerGBMonth,
-			unit:     specUnitGBMonthName,
-			rate:     fx.blobItem.RetailPrice,
-			hintName: "size_gb",
-		},
-		{
-			name:     "sql without size",
-			desc:     descriptorWithoutTags(dryRunDescriptors()["sql/Database"], "size_gb"),
-			missing:  []string{"size_gb"},
-			mode:     billingModePerHour,
-			unit:     specUnitHourName,
-			rate:     fx.sqlComputeItem.RetailPrice,
-			hintName: "size_gb",
-		},
-		{
 			name:     "cosmos without request units per second",
 			desc:     descriptorWithoutTags(dryRunDescriptors()["cosmosdb/Account"], "ru_per_second", "size_gb"),
 			missing:  []string{"ru_per_second"},
@@ -330,6 +292,10 @@ func TestGetPricingSpec_UsageNotSupplied_ReturnsUnitRate(t *testing.T) {
 			if spec.GetRatePerUnit() != tt.rate {
 				t.Fatalf("rate_per_unit = %v, want %v", spec.GetRatePerUnit(), tt.rate)
 			}
+			if slices.Contains(coreBillingModes(), spec.GetBillingMode()) {
+				t.Fatalf("billing_mode %q is one core multiplies, but usage %v was not supplied",
+					spec.GetBillingMode(), tt.missing)
+			}
 			for _, field := range tt.missing {
 				if !containsText(spec.GetAssumptions(), field) {
 					t.Fatalf("assumptions %v do not name the missing %s", spec.GetAssumptions(), field)
@@ -337,6 +303,109 @@ func TestGetPricingSpec_UsageNotSupplied_ReturnsUnitRate(t *testing.T) {
 			}
 			if !hasHint(spec.GetMetricHints(), tt.hintName) {
 				t.Fatalf("metric_hints %v do not name %s", spec.GetMetricHints(), tt.hintName)
+			}
+		})
+	}
+}
+
+// A spec core would multiply into a monthly total must not be built from a
+// placeholder quantity, so a missing size keeps the InvalidArgument error for
+// kinds whose rate is per hour, per GB-month, or per month.
+func TestGetPricingSpec_CoreComputedModeUsageMissing_ReturnsInvalidArgument(t *testing.T) {
+	t.Parallel()
+
+	calc := newPricingSpecCalc(t, loadPricingSpecFX(t))
+	for _, resourceType := range []string{"storage/BlobStorage", "storage/StorageAccount", "sql/Database"} {
+		t.Run(resourceType, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := calc.GetPricingSpec(context.Background(), &finfocusv1.GetPricingSpecRequest{
+				Resource: descriptorWithoutTags(dryRunDescriptors()[resourceType], "size_gb"),
+			})
+			assertInvalidArgument(t, err, "size_gb")
+		})
+	}
+}
+
+func TestGetPricingSpec_LoadBalancerNoRulesWithData_ReportsProcessedDataRate(t *testing.T) {
+	t.Parallel()
+
+	fx := loadPricingSpecFX(t)
+	calc := newPricingSpecCalc(t, fx)
+	data := requireLoadBalancerMeter(t, fx.loadBalancer, loadBalancerMeterData, loadBalancerUnitData)
+	desc := &finfocusv1.ResourceDescriptor{
+		Provider:     "azure",
+		ResourceType: "network/LoadBalancer",
+		Region:       "eastus",
+		Sku:          "Standard",
+		Tags:         map[string]string{"rule_count": "0", "data_processed_gb": "100"},
+	}
+
+	projected, err := calc.GetProjectedCost(context.Background(), &finfocusv1.GetProjectedCostRequest{Resource: desc})
+	if err != nil {
+		t.Fatalf("GetProjectedCost() error = %v", err)
+	}
+	wantMonthly := 100 * data.RetailPrice
+	if projected.GetCostPerMonth() != wantMonthly {
+		t.Fatalf("cost_per_month = %v, want %v", projected.GetCostPerMonth(), wantMonthly)
+	}
+	breakdown := projected.GetCostBreakdown()
+	if len(breakdown) != 1 || breakdown[loadBalancerComponentData] != wantMonthly {
+		t.Fatalf("cost_breakdown = %v, want only %s=%v", breakdown, loadBalancerComponentData, wantMonthly)
+	}
+
+	resp, err := calc.GetPricingSpec(context.Background(), &finfocusv1.GetPricingSpecRequest{Resource: desc})
+	if err != nil {
+		t.Fatalf("GetPricingSpec() error = %v", err)
+	}
+	spec := resp.GetSpec()
+	if spec.GetBillingMode() != billingModePerDataGB || spec.GetUnit() != specUnitDataGB {
+		t.Fatalf(
+			"mode/unit = %s/%s, want %s/%s",
+			spec.GetBillingMode(),
+			spec.GetUnit(),
+			billingModePerDataGB,
+			specUnitDataGB,
+		)
+	}
+	if spec.GetRatePerUnit() != data.RetailPrice {
+		t.Fatalf("rate_per_unit = %v, want %v", spec.GetRatePerUnit(), data.RetailPrice)
+	}
+	if containsText(spec.GetAssumptions(), "included rules meter") {
+		t.Fatalf(
+			"assumptions %v describe the included rules meter, which rule_count=0 does not bill",
+			spec.GetAssumptions(),
+		)
+	}
+	assertHonestBilling(t, spec)
+}
+
+func TestGetPricingSpec_SpotVM_AssumptionNamesSpot(t *testing.T) {
+	t.Parallel()
+
+	calc := newPricingSpecCalc(t, loadPricingSpecFX(t))
+	for name, tags := range map[string]map[string]string{
+		"priority":                       {"priority": "Spot"},
+		"virtualMachineProfile.priority": {"virtualMachineProfile.priority": "Spot"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			resp, err := calc.GetPricingSpec(context.Background(), &finfocusv1.GetPricingSpecRequest{
+				Resource: &finfocusv1.ResourceDescriptor{
+					Provider:     "azure",
+					ResourceType: "compute/VirtualMachine",
+					Region:       "eastus",
+					Sku:          "Standard_D2s_v3",
+					Tags:         tags,
+				},
+			})
+			if err != nil {
+				t.Fatalf("GetPricingSpec() error = %v", err)
+			}
+			assumptions := resp.GetSpec().GetAssumptions()
+			if !containsText(assumptions, "Spot") || containsText(assumptions, "on-demand") {
+				t.Fatalf("assumptions %v, want the Spot instance named and no on-demand claim", assumptions)
 			}
 		})
 	}

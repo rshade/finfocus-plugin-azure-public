@@ -231,7 +231,7 @@ Behavior notes:
 - Cache hits are served from `CachedClient` with no outbound API request
 - VM `EstimateCost` reads attribute `priority`. `Spot` uses the Linux Spot row and pricing category Dynamic. An empty priority or `Regular` stays the on-demand row and Standard. Any other value is InvalidArgument. When priority is empty, `pricing_model=spot` selects Spot and `pricing_model=consumption` stays on demand.
 - `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.1`). A value without the `v` prefix is rejected by the SDK
-- `GetPluginInfo` sends the explicit `PluginCapabilities()` list: projected costs, actual costs, pricing spec, estimate cost, and dry run. It also sends metadata `type=public-pricing-fallback`, and the SDK adds the legacy `supports_*` keys. The list is explicit because `Calculator` embeds `UnimplementedCostSourceServiceServer`. Without the list, interface inference in the SDK also advertised batch cost, resolve resource types, recommendations, budgets, and dismiss, and core routed calls to them. `cmd/` passes the same list in `ServeConfig.PluginInfo`
+- `GetPluginInfo` sends the explicit `PluginCapabilities()` list: projected costs, actual costs, pricing spec, estimate cost, and dry run. It also sends metadata `type=public-pricing-fallback`, and the SDK adds the legacy `supports_*` keys. The list is explicit because `Calculator` embeds `UnimplementedCostSourceServiceServer`. Without the list, interface inference in the SDK also advertised batch cost, resolve resource types, recommendations, budgets, and dismiss, and core routed calls to them. `pricing.PluginInfo()` is the one source: `GetPluginInfo` serves it and `cmd/` passes it as `ServeConfig.PluginInfo`, so the name (`azure-public`), version, and capabilities agree
 
 ### Real Pulumi virtual machines
 
@@ -501,16 +501,19 @@ bare canonical type such as `compute/VirtualMachine` is azure. Another cloud's
 token stays unsupported. `finfocus plugin inspect <plugin> <type>` sends only
 the type, so it now gets the field mappings and `configuration_errors` naming
 the required fields (for example `missing required fields: region, sku`).
-`Supports` and the cost calls still require the provider, which core always
-sends there.
+DryRun reports identity fields only (region, SKU, tier). It does not name
+usage inputs such as `size_gb` or `ru_per_second`; `GetPricingSpec`
+`metric_hints` list those. `Supports` and the cost calls still require the
+provider, which core always sends there.
 
 `GetPricingSpec` calls the same quote as `GetProjectedCost` and returns one
 `PricingSpec` for that resource. It is not a catalog list. FinFocus core shows
 it in the `cost estimate` view and uses it for `--pricing-spec-fallback`.
-Core reads billing modes `per_hour` (rate times 730), `per_gb_month` (rate
-times GB), and `per_month` (flat). These modes have no core equivalent, so
-each uses a precise SDK mode and a unit core does not read, and core skips the
-spec rather than price it wrongly:
+Core's `--pricing-spec-fallback` turns billing modes `per_hour` (rate times
+730), `per_gb_month` (rate times GB), and `per_month` (flat) into a monthly
+total. The rates below have no core equivalent, so each uses a precise SDK
+mode and a unit core does not read. The fallback skips such a spec rather than
+price it wrongly; the `cost estimate` view still shows its rate and mode:
 
 | Rate | Mode | Unit |
 | --- | --- | --- |
@@ -518,22 +521,26 @@ spec rather than price it wrongly:
 | Cosmos serverless | `per_ru` | `1M RU` |
 | Functions Consumption | `per_second` | `GB-second` |
 | Functions Premium | `per_vcpu_hour` | `vCPU-hour` |
-| Load Balancer processed data only | `per_data_transfer_gb` | `GB processed` |
+| Load Balancer with `rule_count=0` and data processed | `per_data_transfer_gb` | `GB processed` |
 | Any other meter | `not_implemented` | the meter unit |
 
-`assumptions` say what the rate covers (730 hours, one instance or worker, the
-first storage band, the Functions free grant). `metric_hints` list the
-selected meters, then the usage inputs the quote reads: `size_gb`,
-`ru_per_second`, `request_units`, `executions`, `gb_seconds`, `vcpu_count`,
-`memory_gib`, `workerCount`, `instances`, `rule_count`, `data_processed_gb`,
-and `node_pool_N_sku` / `node_pool_N_count`.
+`assumptions` say what the rate covers (730 hours, one on-demand or Spot
+instance or worker, the first storage band, the Functions free grant, and for a
+Load Balancer with `rule_count=0` that there is no hourly rules charge).
+`metric_hints` list the selected meters, then the usage inputs the quote reads:
+`size_gb`, `ru_per_second`, `request_units`, `executions`, `gb_seconds`,
+`vcpu_count`, `memory_gib`, `workerCount`, `instances`, `rule_count`,
+`data_processed_gb`, and `node_pool_N_count`.
 
 When the only missing fields are usage inputs that do not change the rate,
 `GetPricingSpec` quotes with a neutral value and returns the unit rate with an
-assumption naming them. This applies to storage, blob, and SQL `size_gb`, to
-Cosmos `ru_per_second` and `request_units`, and to the Functions usage tags. A
-missing region, SKU, or tier is still `InvalidArgument`, and so is a managed
-disk's `size_gb`, which picks the tier. `GetProjectedCost` is unchanged.
+assumption naming them. This applies only where the resulting mode is one core
+does not multiply: Cosmos `ru_per_second` and `request_units`, and the
+Functions usage tags. Storage, blob, and SQL rates are `per_gb_month` or
+`per_hour`, which the fallback would turn into a monthly total, so a missing
+`size_gb` stays `InvalidArgument` for them. A missing region, SKU, or tier is
+still `InvalidArgument`, and so is a managed disk's `size_gb`, which picks the
+tier. `GetProjectedCost` is unchanged.
 
 Issue #44 asked for a type catalog, field requirements, auto-complete, and
 marketplace data. FinFocus core reads none of those, so no spec change is
@@ -617,7 +624,8 @@ Known gaps against the spec schema, filed as FinFocus spec #611:
 - The `methods` list in the schema allows five names, so `EstimateCost`,
   `DryRun`, and `GetPluginInfo` are served but not listed.
 - Per-type input fields have no manifest field, and core reads none. DryRun
-  `configuration_errors` and `GetPricingSpec` `metric_hints` carry them instead.
+  `configuration_errors` name the identity fields, and `GetPricingSpec`
+  `metric_hints` name the usage inputs.
 
 `cost_retrieval` matches the `ACTUAL_COSTS` capability that `GetPluginInfo`
 advertises. `GetActualCost` is a list-price projection times `hours / 730`, not

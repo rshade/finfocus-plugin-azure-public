@@ -188,11 +188,6 @@ func priceLoadBalancer(items []azureclient.PriceItem, usage loadBalancerUsage) (
 		unitPrice:  included.RetailPrice,
 		currency:   itemCurrency(included),
 		components: map[string]float64{},
-		meters: []quoteMeter{{
-			key:   loadBalancerComponentRules,
-			price: included.RetailPrice,
-			unit:  included.UnitOfMeasure,
-		}},
 	}
 	if rulesErr := addLoadBalancerRules(&priced, items, included, usage); rulesErr != nil {
 		return loadBalancerPriced{}, rulesErr
@@ -219,6 +214,11 @@ func addLoadBalancerRules(
 		return nil
 	}
 	priced.components[loadBalancerComponentRules] = included.RetailPrice * pluginsdk.HoursPerMonth
+	priced.meters = append(priced.meters, quoteMeter{
+		key:   loadBalancerComponentRules,
+		price: included.RetailPrice,
+		unit:  included.UnitOfMeasure,
+	})
 	rules := loadBalancerIncludedRules
 	if usage.rulesSet {
 		rules = usage.rules

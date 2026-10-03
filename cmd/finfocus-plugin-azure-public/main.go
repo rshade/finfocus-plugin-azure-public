@@ -118,29 +118,23 @@ func run() error {
 		cancel()
 	}()
 
-	// Serve using pluginsdk
-	config := pluginsdk.ServeConfig{
-		Plugin: azurePlugin,
-		Port:   port,
-		PluginInfo: &pluginsdk.PluginInfo{
-			Name:        "finfocus-plugin-azure-public",
-			Version:     version,
-			SpecVersion: pluginsdk.SpecVersion,
-			Providers:   []string{"azure", "azure-native"},
-			Metadata: map[string]string{
-				"type": "public-pricing-fallback",
-			},
-			Capabilities: pricing.PluginCapabilities(),
-		},
-	}
-
-	err = pluginsdk.Serve(ctx, config)
+	err = pluginsdk.Serve(ctx, serveConfig(azurePlugin, port))
 	if err != nil {
 		logger.Error().Err(err).Msg("server error")
 		return err
 	}
 
 	return nil
+}
+
+// serveConfig is the SDK server configuration. Its PluginInfo is the same
+// value GetPluginInfo returns, so the name, version, and capabilities agree.
+func serveConfig(plugin *pricing.Calculator, port int) pluginsdk.ServeConfig {
+	return pluginsdk.ServeConfig{
+		Plugin:     plugin,
+		Port:       port,
+		PluginInfo: pricing.PluginInfo(),
+	}
 }
 
 // parseCacheTTL reads the FINFOCUS_CACHE_TTL environment variable and returns
