@@ -16,7 +16,7 @@ import (
 	"github.com/rshade/finfocus-plugin-azure-public/internal/pricing"
 )
 
-// Reference prices last verified: 2026-10-03 against live Azure API, eastus, USD.
+// Reference prices last verified: 2026-10-02 against live Azure API, eastus, USD.
 // Update these when Azure adjusts pricing and tests fail.
 const (
 	refAppServiceB1LinuxHourly   = 0.017    // Basic Plan - Linux, meter B1
@@ -35,8 +35,9 @@ const (
 
 // --- #48: App Service Plan and Function App ---
 
-func TestGetProjectedCost_AppServicePlan_LinuxSKUs(t *testing.T) {
+func TestGetProjectedCost_AppServicePlanLinuxSKUs_MatchesReference(t *testing.T) {
 	skipIfDisabled(t)
+	t.Cleanup(rateLimitDelay)
 	calc, _ := newTestCalculator(t)
 
 	tests := []struct {
@@ -61,12 +62,11 @@ func TestGetProjectedCost_AppServicePlan_LinuxSKUs(t *testing.T) {
 			t.Logf("App Service %s Linux eastus: $%.4f/month", tt.sku, resp.GetCostPerMonth())
 		})
 	}
-
-	rateLimitDelay()
 }
 
-func TestGetProjectedCost_FunctionApp_ConsumptionAboveGrant(t *testing.T) {
+func TestGetProjectedCost_FunctionAppConsumptionAboveGrant_BillsOverage(t *testing.T) {
 	skipIfDisabled(t)
+	t.Cleanup(rateLimitDelay)
 	calc, _ := newTestCalculator(t)
 
 	const (
@@ -90,12 +90,11 @@ func TestGetProjectedCost_FunctionApp_ConsumptionAboveGrant(t *testing.T) {
 	assertInRange(t, breakdown["gb_seconds"], billableGBSeconds*refFunctionsPerGBSecond)
 	t.Logf("Functions Consumption eastus: $%.4f/month (executions=%.4f gb_seconds=%.4f)",
 		resp.GetCostPerMonth(), breakdown["executions"], breakdown["gb_seconds"])
-
-	rateLimitDelay()
 }
 
-func TestGetProjectedCost_FunctionApp_Premium(t *testing.T) {
+func TestGetProjectedCost_FunctionAppPremium_MatchesReference(t *testing.T) {
 	skipIfDisabled(t)
+	t.Cleanup(rateLimitDelay)
 	calc, _ := newTestCalculator(t)
 
 	const (
@@ -119,14 +118,13 @@ func TestGetProjectedCost_FunctionApp_Premium(t *testing.T) {
 	assertInRange(t, breakdown["memory"], memoryGiB*refFunctionsPremiumGiBHour*pluginsdk.HoursPerMonth)
 	t.Logf("Functions Premium eastus (%.0f vCPU, %.1f GiB): $%.4f/month",
 		vcpuCount, memoryGiB, resp.GetCostPerMonth())
-
-	rateLimitDelay()
 }
 
 // --- #49: AKS cluster ---
 
-func TestGetProjectedCost_AKS_StandardOneNodePool(t *testing.T) {
+func TestGetProjectedCost_AKSStandardOneNodePool_SumsControlPlaneAndNodes(t *testing.T) {
 	skipIfDisabled(t)
+	t.Cleanup(rateLimitDelay)
 	calc, _ := newTestCalculator(t)
 
 	const nodeCount = 2
@@ -148,12 +146,11 @@ func TestGetProjectedCost_AKS_StandardOneNodePool(t *testing.T) {
 	assertInRange(t, breakdown["node_pool_system"], nodeCount*refAKSNodeD2sv3Hourly*pluginsdk.HoursPerMonth)
 	t.Logf("AKS Standard eastus, 2x Standard_D2s_v3: $%.4f/month (control_plane=%.4f nodes=%.4f)",
 		resp.GetCostPerMonth(), breakdown["control_plane"], breakdown["node_pool_system"])
-
-	rateLimitDelay()
 }
 
-func TestGetProjectedCost_AKS_FreeTierOpenMeter(t *testing.T) {
+func TestGetProjectedCost_AKSFreeTier_QuotesOpenMeter(t *testing.T) {
 	skipIfDisabled(t)
+	t.Cleanup(rateLimitDelay)
 	calc, _ := newTestCalculator(t)
 
 	resp := projectedCost(t, calc, &finfocusv1.ResourceDescriptor{
@@ -165,8 +162,6 @@ func TestGetProjectedCost_AKS_FreeTierOpenMeter(t *testing.T) {
 	assertBreakdownKeys(t, resp, "control_plane")
 	assertInRange(t, resp.GetCostPerMonth(), refAKSFreeHourly*pluginsdk.HoursPerMonth)
 	t.Logf("AKS Free eastus control plane: $%.4f/month", resp.GetCostPerMonth())
-
-	rateLimitDelay()
 }
 
 // projectedCost calls GetProjectedCost against the live API and checks the
@@ -210,6 +205,7 @@ func assertBreakdownKeys(t *testing.T, resp *finfocusv1.GetProjectedCostResponse
 		got = append(got, k)
 	}
 	sort.Strings(got)
+	want = append([]string(nil), want...)
 	sort.Strings(want)
 	if len(got) != len(want) {
 		t.Fatalf("breakdown keys = %v, want %v", got, want)
