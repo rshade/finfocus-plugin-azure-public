@@ -13,7 +13,7 @@
 - **Tests**: `go test -count=1 -v ./...` passed after AZ-6.10. The only skips are nine accuracy cases. Each names `owner_monthly_usd`.
 - **Linting**: the 2026-09-30 note of two findings is obsolete. Re-run `make lint` for a fresh result.
 - **Go version**: 1.27.1, committed
-- **Spec version**: `github.com/rshade/finfocus-spec` `v0.7.4`. `pluginsdk.SpecVersion` is `v0.7.4`.
+- **Spec version**: `github.com/rshade/finfocus-spec` `v0.7.5`. `pluginsdk.SpecVersion` is `v0.7.5`.
 
 ### RPC Implementation Status
 

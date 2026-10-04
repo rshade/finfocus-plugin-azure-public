@@ -94,6 +94,16 @@ fires `release: created`. Use that when the token cannot dispatch workflows
 release needs only contents write. GoReleaser uploads to the existing
 release and keeps its notes.
 
+A squash merge makes the pull request description the commit body, and Release
+Please parses every commit body as a conventional commit. A body it cannot parse
+drops the whole commit from the release notes and the version bump. #98's
+description had a shell runbook with a wrapped `run_id=$(...` line, and the
+log said `Error: unexpected token ... valid tokens [)]`. Keep shell blocks out
+of PR descriptions, or end the description with a
+`BEGIN_COMMIT_OVERRIDE` / `END_COMMIT_OVERRIDE` block holding the commit
+message. Release Please reads that block from the merged PR, so it also repairs
+a merged PR: #98 got one on 2026-10-04.
+
 CI markdownlint (`.github/workflows/lint-prose.yml`) does not lint
 `CHANGELOG.md`. Release Please writes it with `*` bullets and double blank
 lines, so a release pull request would fail MD004 and MD012 on text no one
@@ -262,8 +272,10 @@ Behavior notes:
 - Missing `location/region` or `vmSize/sku` returns `codes.InvalidArgument`
 - Cache hits are served from `CachedClient` with no outbound API request
 - VM `EstimateCost` reads attribute `priority`. `Spot` uses the Linux Spot row and pricing category Dynamic. An empty priority or `Regular` stays the on-demand row and Standard. Any other value is InvalidArgument. When priority is empty, `pricing_model=spot` selects Spot and `pricing_model=consumption` stays on demand.
-- `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.4`). A value without the `v` prefix is rejected by the SDK
+- `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.5`). A value without the `v` prefix is rejected by the SDK
 - `GetPluginInfo` sends the explicit `PluginCapabilities()` list: projected costs, actual costs, pricing spec, estimate cost, and dry run. It also sends metadata `type=public-pricing-fallback`, and the SDK adds the legacy `supports_*` keys. The list is explicit because `Calculator` embeds `UnimplementedCostSourceServiceServer`. Without the list, interface inference in the SDK also advertised batch cost, resolve resource types, recommendations, budgets, and dismiss, and core routed calls to them. `pricing.PluginInfo()` is the one source: `GetPluginInfo` serves it and `cmd/` passes it as `ServeConfig.PluginInfo`, so the name (`azure-public`), version, and capabilities agree
+- Served through the SDK (finfocus-spec v0.7.5 and later), `GetBudgets` and `DismissRecommendation` return `Unimplemented`. Before v0.7.5 the SDK rewrapped every handler error as `Internal` (finfocus-spec#626)
+- `TestSDKConformance_AzureSample_PassesEveryLevel` runs the SDK conformance suite at Basic, Standard, and Advanced with an Azure `Standard_B1s` eastus sample resource (`sdktesting.WithSampleResource`, v0.7.5) and a fixture price server. Any failed check fails `make test`. The suite's default AWS sample cannot pass for this plugin
 
 ### Real Pulumi virtual machines
 
@@ -375,7 +387,8 @@ builds those from the resource's cloud tags (`tagsAll`, then `tags`) and adds
 flattened inputs, so inputs beyond SKU and region (`size_gb`, `instances`,
 `sku.capacity`, `workerCount`, `ru_per_second`) are missing on that path. A
 native scale set with `sku.capacity` 3 projects three instances but prices
-one. Core does not send `resource` yet (finfocus-spec#620 lists that work).
+one. Core v0.4.2 and later send `resource` (finfocus#1680); an older core
+uses the tag path.
 
 `TestRealPulumiPlan_ActualWithResource_MatchesProjected` checks that parity
 for every real-plan case and input form, with cloud tags that name pricing
