@@ -36,7 +36,8 @@
           "hidden": true
         }
       ],
-      "package-name": "finfocus-plugin-azure-public"
+      "package-name": "finfocus-plugin-azure-public",
+      "include-component-in-tag": false
     }
   }
 }
