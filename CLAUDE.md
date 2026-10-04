@@ -59,6 +59,9 @@ Release Please finds the previous release by its tag. With
 `include-component-in-tag` false, it reads only tags with no component, so
 it needs `v0.1.0`. It ignores the prefixed tag, and without a `v0.1.0` tag
 the next release pull request would rebuild the whole history.
+Push `v0.1.0` before merging the configuration change: the merge is a push to
+`main`, so Release Please runs at once with the new setting and opens a
+0.2.0 pull request carrying all history if the tag is not there yet.
 
 CI markdownlint (`.github/workflows/lint-prose.yml`) does not lint
 `CHANGELOG.md`. Release Please writes it with `*` bullets and double blank
