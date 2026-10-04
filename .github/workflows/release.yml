@@ -16,18 +16,32 @@ permissions:
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
     steps:
+      # GoReleaser only accepts a semver tag. A component-prefixed tag such as
+      # finfocus-plugin-azure-public-v0.1.0 fails late with a parse error, so
+      # reject it here with the reason.
+      - name: Check tag is vX.Y.Z
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '$RELEASE_TAG' is not vX.Y.Z. GoReleaser cannot release it."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          ref: ${{ inputs.tag || github.event.release.tag_name }}
+          ref: refs/tags/${{ env.RELEASE_TAG }}
 
       - name: Install Mise
         uses: jdx/mise-action@v2
         with:
           install_args: go goreleaser
 
+      # The v0.1.0 commit carries two tags. Without GORELEASER_CURRENT_TAG,
+      # GoReleaser picks the first tag on HEAD by sort order.
       - name: Build and release
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -35,3 +49,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_CURRENT_TAG: ${{ env.RELEASE_TAG }}

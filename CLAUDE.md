@@ -37,13 +37,31 @@
 
 ## Release Please
 
-`.release-please-manifest.json` stays `{ ".": "0.0.0" }` until the first
-release pull request merges. `release-please-config.json` sets
-`initial-version` to `0.1.0`. A `0.0.0` manifest with no `initial-version`
-makes the action open `1.0.0`. Writing `0.1.0` into the manifest before
-that release records 0.1.0 as already shipped, so the next feature becomes
-0.2.0. Do not edit `CHANGELOG.md`. Release Please owns it. Do not tag the
-release from the task list. AZ-5.1 stays skipped.
+The manifest is `{ ".": "0.1.0" }`: the 0.1.0 release pull request (#68)
+merged on 2026-10-04 and wrote it. Do not edit the manifest by hand.
+Do not edit `CHANGELOG.md`. Release Please owns it. Do not tag a release
+from the task list. AZ-5.1 stays skipped.
+
+Release tags must be `vX.Y.Z`. `release-please-config.json` sets
+`include-component-in-tag` to `false`. Without it, `package-name` makes
+the tag `finfocus-plugin-azure-public-vX.Y.Z`, GoReleaser rejects that as
+not a semantic version, and the release gets no assets. That happened to 0.1.0 (#95).
+FinFocus core's registry also expects plain tags, as aws-public uses.
+
+`.github/workflows/release.yml` runs on `release: created` and on
+`workflow_dispatch` with a `tag` input. It fails early when the tag is not
+`vX.Y.Z`, and it passes the tag to GoReleaser as `GORELEASER_CURRENT_TAG`,
+because the 0.1.0 commit carries both tags. A `release` event runs the
+workflow file from the tagged commit, not from `main`, so re-running an old
+release goes through `workflow_dispatch`.
+
+Release Please finds the previous release by its tag. With
+`include-component-in-tag` false, it reads only tags with no component, so
+it needs `v0.1.0`. It ignores the prefixed tag, and without a `v0.1.0` tag
+the next release pull request would rebuild the whole history.
+Push `v0.1.0` before merging the configuration change: the merge is a push to
+`main`, so Release Please runs at once with the new setting and opens a
+0.2.0 pull request carrying all history if the tag is not there yet.
 
 CI markdownlint (`.github/workflows/lint-prose.yml`) does not lint
 `CHANGELOG.md`. Release Please writes it with `*` bullets and double blank
