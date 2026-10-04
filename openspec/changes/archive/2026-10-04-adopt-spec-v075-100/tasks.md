@@ -12,5 +12,5 @@
 
 ## 3. Docs and gates
 
-- [x] 3.1 Update the spec version and the conformance and status-code notes in CLAUDE.md, CONTEXT.md, README.md, TASKS.md, and ROADMAP.md. Verify: `git grep -n 'v0\.7\.4' -- CLAUDE.md CONTEXT.md README.md TASKS.md` lists only lines that name the version that added a field.
+- [x] 3.1 Update the spec version and the conformance and status-code notes in CLAUDE.md, CONTEXT.md, TASKS.md, and ROADMAP.md (README.md needs none). Verify: `git grep -n 'v0\.7\.4' -- CLAUDE.md CONTEXT.md README.md TASKS.md` lists only lines that name the version that added a field.
 - [x] 3.2 Run the gates. Verify: `make build`, `make test`, `make lint`, `make spec-check` all pass.
