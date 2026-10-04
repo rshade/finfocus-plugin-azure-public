@@ -103,9 +103,13 @@ description had a shell runbook with a wrapped `run_id=$(...` line, and the
 log said `Error: unexpected token ... valid tokens [)]`. Keep shell blocks out
 of PR descriptions, or end the description with a
 `BEGIN_COMMIT_OVERRIDE` / `END_COMMIT_OVERRIDE` block holding the commit
-message. Release Please documents reading that block from the merged PR, so
-editing a merged PR should repair it. #98 got one on 2026-10-04; confirm the
-next release PR lists its `fix(release)` before relying on this.
+message. Release Please reads that block from the merged PR, so editing a
+merged PR repairs it: #98 got one on 2026-10-04, and the next run listed its
+`fix(release)`. Write the marker words only in the block itself. Release Please
+takes everything from the first `BEGIN_COMMIT_OVERRIDE` to the next
+`END_COMMIT_OVERRIDE`, so naming the marker in prose earlier in the description
+turns that prose into the commit message. #101 failed that way
+(`unexpected token ' ' at 1:2`) until its description was fixed.
 
 A release bumps the version the plugin reports. `extra-files` in
 `release-please-config.json` updates `pluginVersion` in
