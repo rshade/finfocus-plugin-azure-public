@@ -11,262 +11,126 @@ See [CONTEXT.md](./CONTEXT.md) for architectural boundaries.
 
 ---
 
-## Immediate Focus (v0.1.0 - Core Estimation)
+## Immediate Focus (v0.1.0 - Publish the Release)
 
-**Goal:** First release. Quote the ten mapped types from the public Retail
-Prices API. `GetProjectedCost` is the monthly quote. `GetActualCost` is
-that quote times hours over 730, a running-cost estimate, not billed spend.
+**Goal:** v0.1.0 was cut on 2026-10-04, but its GitHub release has no
+binaries. Release Please tagged it `finfocus-plugin-azure-public-v0.1.0`,
+and GoReleaser rejects that tag as non-semver. Until a `v0.1.0` release
+carries the platform archives, nobody can install the plugin and the
+FinFocus registry cannot list it.
 
-### Priced in the working tree
+- [ ] [#95](https://github.com/rshade/finfocus-plugin-azure-public/issues/95)
+  Tag releases as `vX.Y.Z` so GoReleaser publishes the v0.1.0 assets [S]
 
-Virtual machines, including Spot, managed disks, blob storage, storage
-accounts, App Service plans, Function Apps, AKS, SQL Database
-`GP_Gen5`, Cosmos DB accounts, and Standard Load Balancer rules.
+The FinFocus registry entry, rshade/finfocus#1685, merges after this.
 
-Still open on this milestone: live integration as a CI gate, and estimates
-within 5% of the Pricing Calculator. Owner values for that check are empty.
-
-Not quoted: NAT Gateway, Cache for Redis, database servers for PostgreSQL
-and MySQL, Gateway meters, and cross-region load balancer meters. Virtual
-machine scale sets are quoted from the VM meter times `instances` or
-`sku.capacity`.
-
-A virtual machine quote returns `price_options` and `region_prices`.
-Both lists are advisory. The monthly cost stays the selected row.
-`GetActualCost` uses the request `billing_account_id` when the caller
-sends one. A dry run ignores that field. An empty request id falls
-back to `FINFOCUS_BILLING_ACCOUNT_ID`. An empty id leaves the FOCUS
-record unset. This file does not close GitHub issues.
-
-**Milestone:**
-[v0.1.0 - Core Estimation](https://github.com/rshade/finfocus-plugin-azure-public/milestone/4)
-
-- [x] [#17](https://github.com/rshade/finfocus-plugin-azure-public/issues/17)
-  Implement VM cost estimation (EstimateCost RPC) [L]
-- [x] [#18](https://github.com/rshade/finfocus-plugin-azure-public/issues/18)
-  Implement Managed Disk cost estimation [M]
-- [x] [#20](https://github.com/rshade/finfocus-plugin-azure-public/issues/20)
-  Create integration tests with live Azure Retail Prices API [L]
-- [x] [#59](https://github.com/rshade/finfocus-plugin-azure-public/issues/59)
-  Implement GetProjectedCost RPC for Azure pricing projection [M]
-- [x] [#60](https://github.com/rshade/finfocus-plugin-azure-public/issues/60)
-  Implement GetActualCost RPC for Azure historical cost lookup [M]
-- [x] [#61](https://github.com/rshade/finfocus-plugin-azure-public/issues/61)
-  Remove boundary-violating RPC stubs [S]
-
-**Verification:**
-
-- ~~EstimateCost returns accurate costs for Standard_B1s VM~~ (done)
-- ~~Managed Disk estimates scale with size~~ (done)
-- Estimates within 5% of Azure Pricing Calculator
-- Integration tests exist behind the integration build tag and are not a CI gate
-- ~~GetProjectedCost returns the monthly retail quote~~ (done)
-- ~~GetActualCost returns that quote times hours over 730~~ (done)
-- ~~Recommendations, dismiss, and budgets stay on the embedded unimplemented server~~ (done)
+**What v0.1.0 prices:** virtual machines (including Spot and scale sets),
+managed disks, blob storage, storage accounts, App Service plans, Function
+Apps, AKS, SQL Database `GP_Gen5`, Cosmos DB accounts, and Standard Load
+Balancer rules, from the public Retail Prices API. Inputs come from the
+descriptor `attributes` first, then tags. `GetActualCost` is the projected
+quote times hours over 730, priced from the request descriptor when the host
+sends one. It is a running-cost estimate, not billed spend. Verified end to
+end against FinFocus core v0.4.2.
 
 ---
 
-## Near-Term Vision (v0.2.0 - Quality & Testing)
+## Near-Term Vision (v0.2.0)
 
-**Goal:** Establish production-ready quality standards with comprehensive
-testing, validation, and documentation.
+**Goal:** Move the change process to OpenSpec once v0.1.0 is published, and
+pick up finfocus-spec fixes in patch releases.
 
-**Milestone:**
-[v0.2.0 - Quality & Testing](https://github.com/rshade/finfocus-plugin-azure-public/milestone/5)
+- [ ] [#92](https://github.com/rshade/finfocus-plugin-azure-public/issues/92)
+  Adopt OpenSpec after v0.1.0 and freeze Spec Kit history [L]
 
-**Testing & Validation:**
+Its gate is a published `v0.1.0` release, so it follows [#95](https://github.com/rshade/finfocus-plugin-azure-public/issues/95).
 
-- [x] [#52](https://github.com/rshade/finfocus-plugin-azure-public/issues/52)
-  Implement regression test suite with golden pricing data [M]
-- [ ] [#53](https://github.com/rshade/finfocus-plugin-azure-public/issues/53)
-  Implement pricing accuracy validation against Azure Pricing Calculator [S]
-- [x] [#54](https://github.com/rshade/finfocus-plugin-azure-public/issues/54)
-  Implement performance benchmarking and load testing [S]
-- [x] [#55](https://github.com/rshade/finfocus-plugin-azure-public/issues/55)
-  Implement chaos testing for Azure API failure scenarios [S]
+**Upstream follow-ups** (tracked elsewhere; adopt in a patch release such
+as v0.1.1, never a blocker):
 
-**Documentation:**
-
-- Complete README with installation and usage instructions
-- Supported resources list with pricing details
-- Configuration guide (regions, cache settings, options)
-- Troubleshooting guide
-- Contributing guide
-- Changelog maintenance
-
-**Operational Readiness:**
-
-- Enhanced CI/CD workflows for scheduled E2E testing
-- Test account setup documentation
+- rshade/finfocus-spec#625: let plugins run conformance with their own
+  sample resource
+- rshade/finfocus-spec#626: keep handler gRPC status codes instead of
+  rewrapping them as `Internal`
+- rshade/finfocus#1670, #1682, #1683, #1684: core error reporting, version
+  display, `plugin inspect` lookup, and the actual-cost `sku` tag
 
 ---
 
 ## Future Vision (Long-Term)
 
-Checkboxes below are the original milestone list. The priced-now section
-says what this tree does. A commit on `main` closes an issue. This file
-does not.
+**Database services beyond `GP_Gen5`:** DTU, serverless, Business
+Critical, Hyperscale, and elastic pools return `Unimplemented` today
+(AZ-2.7). Cosmos DB covers manual, autoscale, and serverless RU pricing.
 
-### v0.3.0 - Extended Services
+**More resource types:** NAT Gateway, Cache for Redis, and PostgreSQL and
+MySQL servers are not priced. AKS `defaultNodePool` and `agentPoolProfiles`
+are not priced (AZ-7.5, AZ-7.6).
 
-**Milestone:**
-[v0.3.0 - Extended Services](https://github.com/rshade/finfocus-plugin-azure-public/milestone/6)
-
-**Spot VM Pricing:**
-
-- [x] [#42](https://github.com/rshade/finfocus-plugin-azure-public/issues/42)
-  Add Spot VM pricing support [S]
-- Up to 90% savings for fault-tolerant workloads
-- Reuses VM estimation logic, adds `Tags["pricing_model"] = "spot"`
-
-**Plugin Discovery & Validation:**
-
-- [x] [#43](https://github.com/rshade/finfocus-plugin-azure-public/issues/43)
-  Implement DryRun validation RPC [S]
-- [x] [#44](https://github.com/rshade/finfocus-plugin-azure-public/issues/44)
-  Implement GetPricingSpec RPC for plugin discovery [M]
-- DryRun: Validate descriptors without API calls, preview OData filter
-- PricingSpec: per-resource rate, assumptions, and usage hints; capabilities and `plugin inspect` for discovery
-
-**App Service & Functions:**
-
-- [x] [#48](https://github.com/rshade/finfocus-plugin-azure-public/issues/48)
-  Implement App Service & Azure Functions cost estimation [M]
-- App Service Plans: clear SKU mapping (B1, S1, P1v2, etc.)
-- Functions: consumption pricing based on executions and GB-s
-
-**Azure Kubernetes Service (AKS):**
-
-- [x] [#49](https://github.com/rshade/finfocus-plugin-azure-public/issues/49)
-  Implement AKS cluster cost estimation [M]
-- Reuses VM estimation for node pools (#17)
-- Adds cluster management fee lookup (free vs paid tier)
-
-**Storage Accounts:**
-
-- [x] [#50](https://github.com/rshade/finfocus-plugin-azure-public/issues/50)
-  Implement Storage Accounts capacity-based cost estimation [M]
-- Tiers: Hot, Cool, Archive (different per-GB rates)
-- Redundancy: LRS, GRS, RA-GRS affect pricing
-- Scoped to capacity only (transactions are usage-based)
-
-### v0.4.0 - Advanced Pricing & Intelligence
-
-**Multi-Pricing Comparison:**
-
-- [x] [#45](https://github.com/rshade/finfocus-plugin-azure-public/issues/45)
-  Multi-pricing model comparison (Consumption vs Reserved vs
-  Savings Plans) [L]
-- Return Consumption, 1-Year RI, and 3-Year RI side-by-side
-- Calculate savings percentages (25-72% typical)
-
-**Regional Intelligence:**
-
-- [x] [#47](https://github.com/rshade/finfocus-plugin-azure-public/issues/47)
-  Regional price heatmap — cross-region cost comparison for SKUs [L]
-- Query all regions for a given SKU, sorted by price
-- Identify cheapest/most expensive regions (30-40% variation typical)
-
-**FinOps Standards Alignment:**
-
-- [ ] [#46](https://github.com/rshade/finfocus-plugin-azure-public/issues/46)
-  Align response fields with FOCUS 1.3 specification [L]
-- Map to FOCUS columns: `ListCost`, `EffectiveCost`, `BilledCost`,
-  `PricingUnit`, `ServiceCategory`, `ChargeType`
-
-### v0.5.0+ - Database Services & Sustainability
-
-**Database Services** (requires research spike #51):
-
-- Azure SQL Database: DTU-based vs vCore-based pricing models,
-  multiple tiers (Basic, Standard, Premium, Hyperscale)
-- Cosmos DB: RU/s-based pricing, multi-region and consistency
-  levels affect cost
-- Elastic pools add complexity (shared resources)
-
-**Carbon Footprint Estimation** (requires research spike #56):
-
-- Aligned with AWS plugin's carbon feature
-- Azure does NOT publish carbon data via Retail Prices API
-- Viable approaches (boundary-safe):
-  - Cloud Carbon Footprint open-source methodology
-  - Static carbon intensity data by Azure region (kgCO2/kWh)
-- Not viable: Azure Carbon Optimization API (requires auth)
-
-### Research Spikes (Unversioned)
-
-- [x] [#51](https://github.com/rshade/finfocus-plugin-azure-public/issues/51)
-  Research spike: Azure SQL Database & Cosmos DB pricing mapping [M]
-- [x] [#56](https://github.com/rshade/finfocus-plugin-azure-public/issues/56)
-  Research spike: Carbon footprint estimation data sources [M]
-- [x] [#57](https://github.com/rshade/finfocus-plugin-azure-public/issues/57)
-  Research spike: Savings Plans pricing in Azure Retail Prices API [S]
+**Carbon footprint:** findings only, in `docs/findings/carbon.md`. Azure
+publishes no carbon data through the Retail Prices API, and its Carbon
+Optimization API needs authentication. A boundary-safe estimator would use
+the Cloud Carbon Footprint methodology or static regional intensity data.
 
 ---
 
 ## Completed Milestones
 
+### 2026-Q4
+
+- [x] [#93](https://github.com/rshade/finfocus-plugin-azure-public/issues/93) `pricing`: Price GetActualCost from the v0.7.4 request descriptor. Closed 2026-10-04. [S]
+- [x] [#90](https://github.com/rshade/finfocus-plugin-azure-public/issues/90) `pricing`: Read Pulumi inputs from v0.7.3 descriptor attributes. Closed 2026-10-04. [M]
+- [x] [#87](https://github.com/rshade/finfocus-plugin-azure-public/issues/87) `build`: Adopt finfocus-spec v0.7.2 manifest writer and validator. Closed 2026-10-03. [S]
+- [x] [#84](https://github.com/rshade/finfocus-plugin-azure-public/issues/84) `transport`: Advertise only the azure provider. Closed 2026-10-03. [S]
+- [x] [#79](https://github.com/rshade/finfocus-plugin-azure-public/issues/79) `pricing`: Quote blob storage from General Block Blob v2. Closed 2026-10-03. [S]
+- [x] [#77](https://github.com/rshade/finfocus-plugin-azure-public/issues/77) `pricing`: Bill zone-redundant SQL storage at the zone rate. Closed 2026-10-03. [S]
+- [x] [#75](https://github.com/rshade/finfocus-plugin-azure-public/issues/75) `cache`: Cache empty price pages; live VM integration references. Closed 2026-10-03. [S]
+- [x] [#69](https://github.com/rshade/finfocus-plugin-azure-public/issues/69) `pricing`: Derive SKU from per-type Pulumi properties and dotted tags. Closed 2026-10-03. [M]
+- [x] [#53](https://github.com/rshade/finfocus-plugin-azure-public/issues/53) `testing`: Pricing accuracy check against the Pricing Calculator. Closed 2026-10-03. [S]
+- [x] [#46](https://github.com/rshade/finfocus-plugin-azure-public/issues/46) `pricing`: FOCUS 1.3 actual-cost record. Closed 2026-10-03. [L]
+- [x] [#44](https://github.com/rshade/finfocus-plugin-azure-public/issues/44) `pricing`: GetPricingSpec per resource for plugin discovery. Closed 2026-10-03. [M]
+- [x] [#43](https://github.com/rshade/finfocus-plugin-azure-public/issues/43) `pricing`: DryRun descriptor validation. Closed 2026-10-03. [S]
+- [x] [#48](https://github.com/rshade/finfocus-plugin-azure-public/issues/48) `pricing`: App Service plan and Function App estimation. Closed 2026-10-03. [M]
+- [x] [#49](https://github.com/rshade/finfocus-plugin-azure-public/issues/49) `pricing`: AKS control plane and node pool estimation. Closed 2026-10-03. [M]
+- [x] [#60](https://github.com/rshade/finfocus-plugin-azure-public/issues/60) `pricing`: GetActualCost as the monthly quote times hours over 730. Closed 2026-10-02. [M]
+- [x] [#59](https://github.com/rshade/finfocus-plugin-azure-public/issues/59) `pricing`: GetProjectedCost monthly retail quote. Closed 2026-10-02. [M]
+- [x] [#57](https://github.com/rshade/finfocus-plugin-azure-public/issues/57) `research`: Savings Plans pricing in the Retail Prices API. Closed 2026-10-02. [S]
+- [x] [#56](https://github.com/rshade/finfocus-plugin-azure-public/issues/56) `research`: Carbon footprint data sources (findings only). Closed 2026-10-02. [M]
+- [x] [#55](https://github.com/rshade/finfocus-plugin-azure-public/issues/55) `testing`: Chaos tests for Azure API failures. Closed 2026-10-02. [S]
+- [x] [#54](https://github.com/rshade/finfocus-plugin-azure-public/issues/54) `testing`: Performance benchmarks and load tests. Closed 2026-10-02. [S]
+- [x] [#52](https://github.com/rshade/finfocus-plugin-azure-public/issues/52) `testing`: Regression suite with golden pricing data. Closed 2026-10-02. [M]
+- [x] [#51](https://github.com/rshade/finfocus-plugin-azure-public/issues/51) `research`: SQL Database and Cosmos DB pricing mapping. Closed 2026-10-02. [M]
+- [x] [#50](https://github.com/rshade/finfocus-plugin-azure-public/issues/50) `pricing`: Storage account capacity estimation. Closed 2026-10-02. [M]
+- [x] [#47](https://github.com/rshade/finfocus-plugin-azure-public/issues/47) `pricing`: Cross-region price comparison for VM SKUs. Closed 2026-10-02. [L]
+- [x] [#45](https://github.com/rshade/finfocus-plugin-azure-public/issues/45) `pricing`: Consumption, Spot, Savings Plan, and Reservation options. Closed 2026-10-02. [L]
+- [x] [#42](https://github.com/rshade/finfocus-plugin-azure-public/issues/42) `pricing`: Spot VM pricing. Closed 2026-10-02. [S]
+
 ### 2026-Q2
 
-#### v0.1.0 - Core Estimation (continued)
-
-- [x] [#20](https://github.com/rshade/finfocus-plugin-azure-public/issues/20)
-  Create integration tests with live Azure Retail Prices API.
-  Closed 2026-04-04. [L]
+- [x] [#20](https://github.com/rshade/finfocus-plugin-azure-public/issues/20) `testing`: Integration tests against the live Retail Prices API. Closed 2026-04-04. [L]
 
 ### 2026-Q1
 
-#### v0.1.0 - Core Estimation (partial)
-
-- [x] [#61](https://github.com/rshade/finfocus-plugin-azure-public/issues/61)
-  Remove boundary-violating RPC stubs. Closed 2026-03-13. [S]
-- [x] [#16](https://github.com/rshade/finfocus-plugin-azure-public/issues/16)
-  Implement ResourceDescriptor to Azure filter mapping [L]
-- [x] [#17](https://github.com/rshade/finfocus-plugin-azure-public/issues/17)
-  Implement VM cost estimation (EstimateCost RPC) [L]
-- [x] [#18](https://github.com/rshade/finfocus-plugin-azure-public/issues/18)
-  Implement Managed Disk cost estimation [M]
-- [x] [#19](https://github.com/rshade/finfocus-plugin-azure-public/issues/19)
-  Create cost calculation utilities (hourly to monthly conversion) [S]
-
-#### Pre-release: Caching Layer
-
-- [x] [#12](https://github.com/rshade/finfocus-plugin-azure-public/issues/12)
-  Implement thread-safe in-memory cache [M]
-- [x] [#13](https://github.com/rshade/finfocus-plugin-azure-public/issues/13)
-  Implement TTL-based cache eviction logic [S]
-- [x] [#14](https://github.com/rshade/finfocus-plugin-azure-public/issues/14)
-  Implement cache key normalization [S]
-- [x] [#15](https://github.com/rshade/finfocus-plugin-azure-public/issues/15)
-  Add cache observability (hit/miss metrics and logging) [S]
-
-#### Pre-release: Azure Client
-
-- [x] [#7](https://github.com/rshade/finfocus-plugin-azure-public/issues/7)
-  Implement HTTP client with retry logic [M]
-- [x] [#8](https://github.com/rshade/finfocus-plugin-azure-public/issues/8)
-  Define Azure Retail Prices API data models [S]
-- [x] [#9](https://github.com/rshade/finfocus-plugin-azure-public/issues/9)
-  Implement OData filter query builder [M]
-- [x] [#10](https://github.com/rshade/finfocus-plugin-azure-public/issues/10)
-  Implement pagination handler for Azure API responses [M]
-- [x] [#11](https://github.com/rshade/finfocus-plugin-azure-public/issues/11)
-  Implement comprehensive error handling for Azure API failures [S]
-
-#### Pre-release: Scaffold & Transport
-
-- [x] [#1](https://github.com/rshade/finfocus-plugin-azure-public/issues/1)
-  Initialize Go module and project dependencies [S]
-- [x] [#2](https://github.com/rshade/finfocus-plugin-azure-public/issues/2)
-  Setup Makefile with build, test, lint targets [S]
-- [x] [#3](https://github.com/rshade/finfocus-plugin-azure-public/issues/3)
-  Configure CI pipeline (GitHub Actions) [L]
-- [x] [#4](https://github.com/rshade/finfocus-plugin-azure-public/issues/4)
-  Implement gRPC server with port discovery [M]
-- [x] [#5](https://github.com/rshade/finfocus-plugin-azure-public/issues/5)
-  Implement CostSourceService method stubs [M]
-- [x] [#6](https://github.com/rshade/finfocus-plugin-azure-public/issues/6)
-  Implement zerolog structured logging [S]
+- [x] [#61](https://github.com/rshade/finfocus-plugin-azure-public/issues/61) `transport`: Remove boundary-violating RPC stubs. Closed 2026-03-13. [S]
+- [x] [#18](https://github.com/rshade/finfocus-plugin-azure-public/issues/18) `pricing`: Managed disk cost estimation. Closed 2026-03-13. [M]
+- [x] [#17](https://github.com/rshade/finfocus-plugin-azure-public/issues/17) `pricing`: VM cost estimation (EstimateCost). Closed 2026-03-06. [L]
+- [x] [#16](https://github.com/rshade/finfocus-plugin-azure-public/issues/16) `pricing`: ResourceDescriptor to Azure filter mapping. Closed 2026-03-04. [L]
+- [x] [#19](https://github.com/rshade/finfocus-plugin-azure-public/issues/19) `estimation`: Hourly to monthly cost utilities. Closed 2026-03-04. [S]
+- [x] [#13](https://github.com/rshade/finfocus-plugin-azure-public/issues/13) `cache`: TTL-based cache eviction. Closed 2026-03-04. [S]
+- [x] [#15](https://github.com/rshade/finfocus-plugin-azure-public/issues/15) `cache`: Cache hit and miss observability. Closed 2026-03-04. [S]
+- [x] [#12](https://github.com/rshade/finfocus-plugin-azure-public/issues/12) `cache`: Thread-safe in-memory cache. Closed 2026-03-03. [M]
+- [x] [#14](https://github.com/rshade/finfocus-plugin-azure-public/issues/14) `cache`: Cache key normalization. Closed 2026-03-03. [S]
+- [x] [#10](https://github.com/rshade/finfocus-plugin-azure-public/issues/10) `azureclient`: Pagination handler for API responses. Closed 2026-03-03. [M]
+- [x] [#9](https://github.com/rshade/finfocus-plugin-azure-public/issues/9) `azureclient`: OData filter query builder. Closed 2026-03-01. [M]
+- [x] [#11](https://github.com/rshade/finfocus-plugin-azure-public/issues/11) `azureclient`: Error handling for Azure API failures. Closed 2026-02-28. [S]
+- [x] [#7](https://github.com/rshade/finfocus-plugin-azure-public/issues/7) `azureclient`: HTTP client with retry. Closed 2026-02-04. [M]
+- [x] [#8](https://github.com/rshade/finfocus-plugin-azure-public/issues/8) `azureclient`: Retail Prices API data models. Closed 2026-02-04. [S]
+- [x] [#3](https://github.com/rshade/finfocus-plugin-azure-public/issues/3) `build`: CI pipeline on GitHub Actions. Closed 2026-02-03. [L]
+- [x] [#5](https://github.com/rshade/finfocus-plugin-azure-public/issues/5) `transport`: CostSourceService method stubs. Closed 2026-02-03. [M]
+- [x] [#6](https://github.com/rshade/finfocus-plugin-azure-public/issues/6) `logging`: zerolog structured logging. Closed 2026-02-03. [S]
+- [x] [#4](https://github.com/rshade/finfocus-plugin-azure-public/issues/4) `transport`: gRPC server with port discovery. Closed 2026-02-02. [M]
+- [x] [#2](https://github.com/rshade/finfocus-plugin-azure-public/issues/2) `build`: Makefile with build, test, and lint targets. Closed 2026-01-23. [S]
+- [x] [#1](https://github.com/rshade/finfocus-plugin-azure-public/issues/1) `build`: Go module and dependencies. Closed 2026-01-22. [S]
 
 ---
 
@@ -302,25 +166,18 @@ The following features violate architectural constraints defined in
 | Pre-release: Scaffold & Transport | Complete | 6/6 (100%) |
 | Pre-release: Azure Client | Complete | 5/5 (100%) |
 | Pre-release: Caching Layer | Complete | 4/4 (100%) |
-| v0.1.0 - Core Estimation | Active | 8/8 (100%) |
-| v0.2.0 - Quality & Testing | Active | 3/4 (75%) |
+| v0.1.0 - Core Estimation | Released, assets pending (#95) | 8/8 (100%) |
+| v0.2.0 - Quality & Testing | Complete | 4/4 (100%) |
 | v0.3.0 - Extended Services | Complete | 6/6 (100%) |
 
 <!-- markdownlint-enable MD013 -->
 
-**Completed Issues**: #1-#20, #42-#45, #47-#52, #54-#57, #59-#61
+The v0.1.0, v0.2.0, and v0.3.0 GitHub milestones have no open issues but
+are not closed.
 
-**Checklist still open here**: 46 and 53.
-Item 46 has no `charge_type` field, and
-`commitment_discount_type` stays empty. Item 53 waits on owner values.
+**Known limitations**: `DryRunResponse` has no filter field (#43). Function
+Apps reject `EP1` and Flex (#48). The AKS Free control plane is 0, and the
+0.05 USD per hour retail meter is not billed (#49).
 
-**Known limitations**: item 43 has no filter field on `DryRunResponse`.
-Item 48 rejects `EP1` and Flex. Item 49 prices the AKS Free control plane
-at 0 and notes that the 0.05 USD per hour retail meter is not billed.
-
-The counts in the table follow the milestone checklists. The
-priced-now list is the working tree. GitHub milestones were not
-closed.
-
-LOE Key: [S] = Small (1-2 days), [M] = Medium (3-5 days),
-[L] = Large (5+ days)
+LOE Key: [S] = Small (1-2 hours), [M] = Medium (half day to 1 day),
+[L] = Large (multi-day)
