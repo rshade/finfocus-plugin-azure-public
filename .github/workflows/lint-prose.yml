@@ -19,7 +19,7 @@ jobs:
           install_args: node npm:markdownlint-cli2
 
       - name: Run markdownlint
-        run: markdownlint-cli2 "README.md" "TASKS.md" "CONTEXT.md" "ROADMAP.md" "IMPLEMENTATION_SUMMARY.md" "docs/**/*.md"
+        run: markdownlint-cli2 "README.md" "TASKS.md" "CONTEXT.md" "ROADMAP.md" "IMPLEMENTATION_SUMMARY.md" "docs/**/*.md" "openspec/specs/**/*.md" "specs/README.md"
 
   vale:
     name: Vale (Google style)
@@ -39,7 +39,9 @@ jobs:
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          vale . --output=line 2>/dev/null | reviewdog \
+          # openspec init generates the skill and command files under these
+          # paths; they are not project prose.
+          vale --glob='!{.claude/skills/**,.claude/commands/opsx/**,.gemini/**,.opencode/**}' . --output=line 2>/dev/null | reviewdog \
             -efm="%f:%l:%c:%m" \
             -name="vale" \
             -reporter=github-pr-review \

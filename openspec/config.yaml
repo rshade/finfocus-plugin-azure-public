@@ -1,0 +1,33 @@
+schema: spec-driven
+
+context: |
+  Plugin: finfocus-plugin-azure-public, a FinFocus cost source named azure-public.
+  Module: github.com/rshade/finfocus-plugin-azure-public. Spec: finfocus-spec (pluginsdk).
+  Prices come only from the unauthenticated Azure Retail Prices API. No Azure auth,
+  no persistent storage, no embedded price catalog (CONTEXT.md "Hard No's").
+  Providers are azure and azure-native. The live Retail Prices API is the source of
+  truth for meter, product and unit names; record the query date for any price.
+  A unit test that asserts a literal OData filter does not prove Azure accepts it.
+  Rules: .specify/memory/constitution.md (TDD, table-driven tests named
+  Test<Function>_<Scenario>_<ExpectedOutcome>, zerolog to stderr, PORT= only on stdout).
+  Protocol and SDK changes belong in finfocus-spec, not here.
+  Release Please owns CHANGELOG.md and the release manifest. Conventional commits.
+  Specs under specs/001-* to specs/023-* are frozen Spec Kit history. Do not edit them.
+
+rules:
+  specs:
+    - Every requirement names the Go tests that prove it as backticked `TestName` references
+    - A named test must pass in the default build; scripts/check-spec-tests.sh checks this
+    - Write requirements only for behavior that exists and is tested, never for stubs or skipped cases
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

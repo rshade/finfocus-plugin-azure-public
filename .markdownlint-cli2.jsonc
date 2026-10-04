@@ -1,0 +1,13 @@
+{
+  // `openspec init` writes these skill and command files, and `openspec update`
+  // overwrites hand edits. Release Please writes CHANGELOG.md. None of them is
+  // project prose. Rules stay in .markdownlint.json.
+  "ignores": [
+    ".claude/skills/**",
+    ".claude/commands/opsx/**",
+    ".gemini/**",
+    ".opencode/**",
+    "CHANGELOG.md",
+    "node_modules/**"
+  ]
+}

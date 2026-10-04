@@ -40,6 +40,25 @@ jobs:
       - name: Run golangci-lint
         run: golangci-lint run --timeout=10m ./...
 
+  openspec:
+    name: OpenSpec
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Mise
+        uses: jdx/mise-action@v2
+        with:
+          install_args: go node npm:@fission-ai/openspec
+
+      - name: Validate specs
+        run: openspec validate --all --strict --no-interactive
+
+      - name: Check every requirement names a passing test
+        run: bash scripts/check-spec-tests.sh
+
   lint:
     name: Lint
     runs-on: ubuntu-latest

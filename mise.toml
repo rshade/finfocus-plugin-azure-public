@@ -35,7 +35,7 @@ vale = "3.20.0"
 # Review comments on GitHub pull requests.
 "aqua:reviewdog/reviewdog" = "0.21.0"
 
-# ---------------------------------------------------------------- spec kit
+# ---------------------------------------------------------------- openspec
 
-# Specification and planning tool.
-"pipx:specify-cli" = "1.0.11"
+# Spec-driven change process. The tool id is not `openspec`.
+"npm:@fission-ai/openspec" = "1.14.0"

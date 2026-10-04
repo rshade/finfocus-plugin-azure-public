@@ -31,9 +31,34 @@
 - Output: `PORT=XXXX` to stdout ONLY
 
 ## Workflows
-- **New Feature**: Run `.specify/scripts/bash/create-new-feature.sh`
-- **Update Plan**: Run `.specify/scripts/bash/setup-plan.sh`
 - **Check Status**: Check `ROADMAP.md`
+- **Work a Roadmap Issue**: `/pick-issue [N]` (`.claude/commands/pick-issue.md`;
+  Codex wrapper in `.agents/skills/pick-issue/`). Claims via the
+  `processing:roadmap` label, commits, opens the PR, then releases the claim
+
+## OpenSpec
+
+OpenSpec is the change process (issue #92). The CLI is pinned in `mise.toml`
+as `npm:@fission-ai/openspec`; run it as `mise exec -- openspec ...`.
+
+- `openspec/specs/<capability>/spec.md` is current behavior only. Each
+  requirement has a `Tests:` line naming the Go tests that prove it.
+- `scripts/check-spec-tests.sh` fails when a requirement names no test, or
+  when a named test is missing, fails, skips (a skipped subtest counts), or
+  runs only under the `integration` tag. `make spec-check` runs it after
+  `openspec validate --all --strict`; CI runs both in the `OpenSpec` job.
+- A behavior change goes through propose, apply, verify, and archive
+  (`/opsx:propose` and the `openspec-*` skills). Archive lands in the same
+  commit as the code. A contained fix that changes no requirement skips
+  OpenSpec. `/pick-issue` routes between the two.
+- `openspec/config.yaml` holds the project context and spec rules every
+  artifact reads. The constitution is `.specify/memory/constitution.md`.
+- `specs/001-*` to `specs/023-*` are frozen Spec Kit history
+  (`specs/README.md`). Do not edit them or add numbered directories.
+- `openspec init` generated `.claude/skills/openspec-*`,
+  `.claude/commands/opsx/`, `.gemini/`, and `.opencode/`. Refresh them with
+  `openspec update`, not by hand. markdownlint (`.markdownlint-cli2.jsonc`)
+  and Vale (`--glob`) skip those paths.
 
 ## Release Please
 
@@ -63,43 +88,16 @@ Push `v0.1.0` before merging the configuration change: the merge is a push to
 `main`, so Release Please runs at once with the new setting and opens a
 0.2.0 pull request carrying all history if the tag is not there yet.
 
+The v0.1.0 assets came from `gh release create v0.1.0 --verify-tag`, which
+fires `release: created`. Use that when the token cannot dispatch workflows
+(`HTTP 403: Resource not accessible by personal access token`); creating a
+release needs only contents write. GoReleaser uploads to the existing
+release and keeps its notes.
+
 CI markdownlint (`.github/workflows/lint-prose.yml`) does not lint
 `CHANGELOG.md`. Release Please writes it with `*` bullets and double blank
 lines, so a release pull request would fail MD004 and MD012 on text no one
 may edit.
-
-## Active Technologies
-- **Language**: Go 1.25.5 (002-grpc-server-port)
-- **Storage**: N/A - stateless plugin (002-grpc-server-port)
-- Go 1.25.7 + zerolog v1.34.0, finfocus-spec v0.5.7 (pluginsdk) (003-zerolog-logging)
-- Go 1.25.7 + finfocus-spec v0.5.7 (pluginsdk), zerolog v1.34.0, google.golang.org/grpc (004-costsource-stubs)
-- Go 1.25.5 (from go.mod) + golangci-lint (linting), actions/checkout@v6, actions/setup-go@v6 (005-ci-pipeline)
-- N/A (CI workflow - no persistent storage) (005-ci-pipeline)
-- Go 1.25.5 + `github.com/hashicorp/go-retryablehttp` (HTTP client with retry), `github.com/rs/zerolog` (structured logging) (006-http-client-retry)
-- N/A - stateless plugin (in-memory only) (006-http-client-retry)
-- Go 1.25.5 + `encoding/json` (stdlib), `github.com/rs/zerolog` (logging) (007-azure-price-models)
-- Go 1.25.5 + `github.com/hashicorp/go-retryablehttp` (HTTP retry), (008-azure-error-handling)
-- Go 1.25.5 + None new — pure Go stdlib (`fmt`, `strings`, `sort`) (009-odata-filter-builder)
-- N/A — pure data transformation (string builder), no I/O (009-odata-filter-builder)
-- N/A — stateless, in-memory only (010-pagination-handler)
-- In-memory only (stateless constraint) (012-memory-cache)
-- Go 1.25.7 + `github.com/hashicorp/golang-lru/v2/expirable`, (015-cache-completion)
-- N/A — in-memory only (stateless constraint) (015-cache-completion)
-- Go 1.25.5 + finfocus-spec v0.5.4 (`finfocusv1.ResourceDescriptor`), internal `azureclient` (PriceQuery, FilterBuilder) (016-descriptor-filter-mapping)
-- N/A — pure data transformation, no I/O (016-descriptor-filter-mapping)
-- Go 1.25.5 + None (Go stdlib `math` only) (019-cost-utilities)
-- N/A — pure stateless functions (019-cost-utilities)
-- N/A — in-memory LRU+TTL cache only (stateless constraint) (020-vm-cost-estimation)
-- Go 1.25.7 + finfocus-spec v0.5.7 (pluginsdk), zerolog v1.34.0, google.golang.org/grpc, golang-lru/v2 (cache) (021-disk-cost-estimation)
-- N/A — stateless plugin (in-memory LRU+TTL cache only) (021-disk-cost-estimation)
-- Go 1.25.7 (from `go.mod`) + `azureclient` (HTTP client with retry), (022-integration-tests)
-- N/A — stateless, in-memory LRU+TTL cache only (022-integration-tests)
-
-## Recent Changes
-- 002-grpc-server-port: Added Go 1.25.5
-- 006-http-client-retry: Added Azure Retail Prices API client with retry logic
-- 016-descriptor-filter-mapping: Added ResourceDescriptor to PriceQuery mapper
-- 019-cost-utilities: Added cost conversion utilities in `internal/estimation`
 
 ## Cost Estimation (`internal/estimation`)
 
@@ -572,8 +570,9 @@ A live query on 2026-10-01 returned that meter only. The quote
 note says that product publishes no storage meter.
 `pricing_model=autoscale` matches a meter that ends with `100 RUs` on
 product `Azure Cosmos DB autoscale`, then applies the same `/ 100 * 730`
-rule. When `size_gb` is set, storage stays the provisioned `Data Stored`
-row. sku `Free`, `Free Tier`, and `RUm` are not selected. Components are
+rule. When `size_gb` is set, storage uses the `Data Stored` row on product
+`Azure Cosmos DB autoscale` when one exists, otherwise the provisioned
+`Data Stored` row. sku `Free`, `Free Tier`, and `RUm` are not selected. Components are
 `ru` and, when storage was requested, `storage`.
 
 ### Load Balancer Cost Estimation

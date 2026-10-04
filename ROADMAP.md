@@ -6,7 +6,7 @@ To provide accurate, real-time Azure cost estimates for FinFocus by
 querying the Azure Retail Prices API, ensuring resilience and performance
 through intelligent caching and robust transport logic.
 
-This project follows the **Spec-Driven Development (Speckit)** workflow.
+This project follows the **OpenSpec** change process (`openspec/specs/`).
 See [CONTEXT.md](./CONTEXT.md) for architectural boundaries.
 
 ---
