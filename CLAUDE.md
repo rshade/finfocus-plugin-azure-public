@@ -289,30 +289,6 @@ the table says. The Pulumi unknown placeholder
 `04da6b54-80e4-46f7-96ec-b56ff0331ba9` is skipped everywhere, including in
 `Sku`. `Supports` and `DryRun` refuse the inputs the quote refuses below.
 
-### Descriptor attributes
-
-`finfocus-spec` v0.7.3 adds `ResourceDescriptor.attributes`, the resource's
-declared inputs as a `google.protobuf.Struct`. `GetProjectedCost` (and the
-SDK `BatchCost` fallback that calls it), `GetPricingSpec`, `Supports`, and
-`DryRun` merge it into the tags once, in `withAttributeTags`
-(`internal/pricing/attributes.go`), so every tag name in this file also
-reads from `attributes`. The merge uses core's `ConvertToProto` format
-(`internal/engine/flatten.go`): each top-level key keeps its collapsed
-value (an object collapses to its `value`, `id`, or `name`, or its only
-field; a list joins with commas), and nested scalars add dotted keys such as
-`sku.capacity` or `zones.0`. Whole numbers print without a fraction, and
-`true` and `false` print as written. Core's 6-segment, 50-tag, and length caps
-do not apply. `__` and credential-like segments, and the user tag maps
-`tags`, `tagsAll`, `labels`, and `annotations`, are not expanded, and a
-dotted leaf equal to the Pulumi unknown placeholder is skipped, so the tag of
-the same name still applies. An attribute value replaces a tag with the same
-key; tag-only keys stay. With no attributes the descriptor is used as sent.
-Attributes over `pluginsdk.MaxAttributesBytes` (64 KiB) are
-`InvalidArgument` (DryRun reports it as a configuration error, and Supports
-as unsupported). `attributes` is never logged. `EstimateCost` keeps reading
-its own `attributes` field. The real-plan ratchet runs every case three
-ways: core tags, dotted tags, and core tags plus `attributes`.
-
 | Type | SKU source |
 | --- | --- |
 | Managed disk | classic `storageAccountType`, native `sku.name` (`Premium_LRS` is accepted). Size also reads native `diskSizeGB`. Pulumi `tier` is the performance tier: a higher Premium SSD tier (`P30` on a 256 GB disk) is billed instead of the size tier, a lower one is ignored, and a value that is not a P tier is `InvalidArgument` |
@@ -323,6 +299,51 @@ ways: core tags, dotted tags, and core tags plus `attributes`.
 
 A native plan with no `kind` and no `reserved` is still priced as Linux, and
 AKS `defaultNodePool` and `agentPoolProfiles` are not priced (AZ-7.5, AZ-7.6).
+
+### Descriptor attributes
+
+`finfocus-spec` v0.7.3 adds `ResourceDescriptor.attributes`, the resource's
+declared inputs as a `google.protobuf.Struct`. `GetProjectedCost` (and the
+SDK `BatchCost` fallback that calls it), `GetPricingSpec`, `Supports`, and
+`DryRun` merge it into the tags once, in `withAttributeTags`
+(`internal/pricing/attributes.go`), so the tag names in the preceding sections
+also read from `attributes` on those four calls. With no attributes the
+descriptor is used as sent.
+
+The merge uses core's `ConvertToProto` format (`internal/engine/flatten.go`):
+
+- Each top-level key keeps its collapsed value: an object collapses to its
+  `value`, `id`, or `name`, or its only field, and a list joins with commas.
+- Nested scalars add dotted keys such as `sku.capacity` or `zones.0`.
+- Whole numbers print without a fraction, and `true` and `false` print as
+  written.
+- `__` and credential-like segments, and the user tag maps `tags`,
+  `tagsAll`, `labels`, and `annotations`, are not expanded.
+- As in core's `PrepareProjectedDescriptor`, any value whose text contains
+  the Pulumi unknown placeholder is dropped, at the top level or nested, so
+  the tag of the same name still applies. `zones: ["1", <unknown>]` gives
+  `zones.0=1` and no `zones` or `zones.1`.
+- Core's 6-segment and 50-tag caps do not apply. Dotted keys stop at 32
+  segments or 256 bytes, and the merge adds at most 4,096 tags, shallowest
+  first.
+
+An attribute value replaces a tag with the same key, and tag-only keys stay.
+Attributes over `pluginsdk.MaxAttributesBytes` (64 KiB) are
+`InvalidArgument`: Supports reports the resource unsupported, and DryRun
+reports a configuration error for a type this plugin prices and an unsupported type
+otherwise. `attributes` is never logged. `EstimateCost` keeps reading its own
+`attributes` field.
+
+`GetActualCostRequest` has no descriptor in v0.7.3, so `GetActualCost` and its
+FOCUS record read only the request tags. When core drops a dotted key past its
+50-tag cap but sends it in `attributes`, projected and actual cost disagree.
+For example, a native scale set with `sku.capacity` 3 projects three instances
+but its actual cost prices one.
+
+The real-plan ratchet runs every case three ways: core tags, dotted tags,
+and core tags plus `attributes`. The test builds `attributes` with the host
+redaction from FinFocus spec 621 (FR-004 and FR-005): `__` and credential-like
+keys at any depth, `ref` and `ref.*` keys, and Pulumi secret-wrapped values.
 
 ### Managed Disk Cost Estimation
 

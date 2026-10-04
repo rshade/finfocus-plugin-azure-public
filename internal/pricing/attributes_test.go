@@ -145,11 +145,11 @@ func TestGetProjectedCost_NativeScaleSetCapacityInAttributes_PricesInstances(t *
 func TestGetProjectedCost_NativeScaleSetUnknownCapacity_FallsBackToTag(t *testing.T) {
 	t.Parallel()
 
-	calc := newPricingCalc(t, []azureclient.PriceItem{
+	calc, filters := newCapturingPricingCalc(t, []azureclient.PriceItem{
 		vmRow("Standard_D2s_v5", "Virtual Machines Dsv5 Series", "D2s v5", 0.115),
 	})
-	req := vmRequest("azure-native:compute:VirtualMachineScaleSet", "Standard_D2s_v5",
-		map[string]string{"sku.capacity": "2"})
+	req := vmRequest("azure-native:compute:VirtualMachineScaleSet", "",
+		map[string]string{"sku": "Standard_D2s_v5", "sku.capacity": "2"})
 	req.Resource.Attributes = mustAttributes(t, map[string]any{
 		"sku": map[string]any{"capacity": pulumiUnknownValue},
 	})
@@ -159,6 +159,11 @@ func TestGetProjectedCost_NativeScaleSetUnknownCapacity_FallsBackToTag(t *testin
 	}
 	if want := 0.115 * 730 * 2; math.Abs(resp.GetCostPerMonth()-want) > 1e-9 {
 		t.Fatalf("cost = %v, want %v", resp.GetCostPerMonth(), want)
+	}
+	for _, filter := range filters() {
+		if strings.Contains(filter, pulumiUnknownValue) || !strings.Contains(filter, "Standard_D2s_v5") {
+			t.Fatalf("filter %q, want the sku tag Standard_D2s_v5", filter)
+		}
 	}
 }
 
@@ -240,7 +245,7 @@ func TestGetPricingSpec_NativeSQLSkuInAttributes_ReturnsSpec(t *testing.T) {
 	compute := loadRetailFixture(t, "testdata/retail/sqldb/gp_gen5_compute_eastus.json")
 	storage := loadRetailFixture(t, "testdata/retail/sqldb/gp_storage_eastus.json")
 	calc := newPricingCalc(t, append(append([]azureclient.PriceItem{}, compute.Items...), storage.Items...))
-	_, err := calc.GetPricingSpec(context.Background(), &finfocusv1.GetPricingSpecRequest{
+	resp, err := calc.GetPricingSpec(context.Background(), &finfocusv1.GetPricingSpecRequest{
 		Resource: &finfocusv1.ResourceDescriptor{
 			Provider:     "azure",
 			ResourceType: "azure-native:sql:Database",
@@ -253,5 +258,189 @@ func TestGetPricingSpec_NativeSQLSkuInAttributes_ReturnsSpec(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("GetPricingSpec() error = %v", err)
+	}
+	if !strings.Contains(resp.GetSpec().GetDescription(), "GP_Gen5_4") {
+		t.Fatalf("spec description = %q, want the 4 vCore SKU", resp.GetSpec().GetDescription())
+	}
+}
+
+func TestAttributeTags_UnknownPlaceholder_SkipsEveryValueContainingIt(t *testing.T) {
+	t.Parallel()
+
+	got := attributeTags(mustAttributes(t, map[string]any{
+		"location":        pulumiUnknownValue,
+		"hardwareProfile": map[string]any{"vmSize": pulumiUnknownValue},
+		"zones":           []any{"1", pulumiUnknownValue},
+		"note":            "prefix-" + pulumiUnknownValue,
+	}))
+	for _, key := range []string{"location", "hardwareProfile", "hardwareProfile.vmSize", "zones", "zones.1", "note"} {
+		if value, ok := got[key]; ok {
+			t.Errorf("tag %q = %q, want it skipped", key, value)
+		}
+	}
+	if got["zones.0"] != "1" {
+		t.Errorf("tag zones.0 = %q, want 1", got["zones.0"])
+	}
+}
+
+func TestAttributeTags_ValueShapes_MatchCoreConvertValueToString(t *testing.T) {
+	t.Parallel()
+
+	got := attributeTags(mustAttributes(t, map[string]any{
+		"null":    nil,
+		"empty":   map[string]any{},
+		"none":    []any{},
+		"single":  []any{"a"},
+		"objects": []any{map[string]any{"name": "a"}, map[string]any{"name": "b"}},
+		"big":     1e21,
+	}))
+	want := map[string]string{
+		"null":           "",
+		"empty":          "map[]",
+		"none":           "",
+		"single":         "a",
+		"single.0":       "a",
+		"objects":        "a,b",
+		"objects.0.name": "a",
+		"objects.1.name": "b",
+		"big":            "1000000000000000000000",
+	}
+	for key, value := range want {
+		if got[key] != value {
+			t.Errorf("tag %q = %q, want %q", key, got[key], value)
+		}
+	}
+}
+
+func TestAttributeTags_DeepAndWide_StaysBounded(t *testing.T) {
+	t.Parallel()
+
+	deep := map[string]any{"leaf": "x"}
+	for range 200 {
+		deep = map[string]any{"n": deep}
+	}
+	wide := make([]any, 5000)
+	for i := range wide {
+		wide[i] = "v"
+	}
+	got := attributeTags(mustAttributes(t, map[string]any{
+		"deep": deep,
+		"sku":  map[string]any{"capacity": 3},
+		"wide": wide,
+	}))
+	if len(got) > maxAttributeTags {
+		t.Fatalf("got %d tags, want at most %d", len(got), maxAttributeTags)
+	}
+	for key := range got {
+		if segments := strings.Count(key, ".") + 1; segments > maxAttributeDepth {
+			t.Fatalf("key with %d segments, want at most %d", segments, maxAttributeDepth)
+		}
+	}
+	if got["sku.capacity"] != "3" {
+		t.Fatalf("sku.capacity = %q, want the shallow key kept", got["sku.capacity"])
+	}
+}
+
+func TestGetProjectedCost_UnknownAttributes_MatchTagOnlyResults(t *testing.T) {
+	t.Parallel()
+
+	t.Run("location", func(t *testing.T) {
+		t.Parallel()
+		calc, filters := newCapturingPricingCalc(t, nil)
+		_, err := calc.GetProjectedCost(context.Background(), &finfocusv1.GetProjectedCostRequest{
+			Resource: &finfocusv1.ResourceDescriptor{
+				Provider:     "azure",
+				ResourceType: "azure-native:compute:VirtualMachine",
+				Attributes: mustAttributes(t, map[string]any{
+					"location":        pulumiUnknownValue,
+					"hardwareProfile": map[string]any{"vmSize": "Standard_B2s"},
+				}),
+			},
+		})
+		if status.Code(err) != codes.InvalidArgument || !strings.Contains(err.Error(), "region") {
+			t.Fatalf("err = %v, want InvalidArgument naming region", err)
+		}
+		if got := filters(); len(got) != 0 {
+			t.Fatalf("Azure was called %d times, want none", len(got))
+		}
+	})
+	t.Run("vmSize", func(t *testing.T) {
+		t.Parallel()
+		calc := newPricingCalc(t, nil)
+		_, err := calc.GetProjectedCost(context.Background(), &finfocusv1.GetProjectedCostRequest{
+			Resource: &finfocusv1.ResourceDescriptor{
+				Provider:     "azure",
+				ResourceType: "azure-native:compute:VirtualMachine",
+				Attributes: mustAttributes(t, map[string]any{
+					"location":        "westeurope",
+					"hardwareProfile": map[string]any{"vmSize": pulumiUnknownValue},
+				}),
+			},
+		})
+		if status.Code(err) != codes.InvalidArgument || !strings.Contains(err.Error(), "sku") {
+			t.Fatalf("err = %v, want InvalidArgument naming sku", err)
+		}
+	})
+	t.Run("instances", func(t *testing.T) {
+		t.Parallel()
+		calc := newPricingCalc(t, []azureclient.PriceItem{
+			vmRow("Standard_D2s_v5", "Virtual Machines Dsv5 Series", "D2s v5", 0.115),
+		})
+		req := vmRequest(
+			"azure:compute/linuxVirtualMachineScaleSet:LinuxVirtualMachineScaleSet", "Standard_D2s_v5", nil,
+		)
+		req.Resource.Attributes = mustAttributes(t, map[string]any{"instances": pulumiUnknownValue})
+		resp, err := calc.GetProjectedCost(context.Background(), req)
+		if err != nil {
+			t.Fatalf("GetProjectedCost() error = %v", err)
+		}
+		if want := 0.115 * 730; math.Abs(resp.GetCostPerMonth()-want) > 1e-9 {
+			t.Fatalf("cost = %v, want one instance %v", resp.GetCostPerMonth(), want)
+		}
+	})
+}
+
+func oversizeAttributes(t *testing.T) *structpb.Struct {
+	t.Helper()
+	return mustAttributes(t, map[string]any{"blob": strings.Repeat("x", pluginsdk.MaxAttributesBytes)})
+}
+
+func TestOversizeAttributes_EachRPC_RejectsOrReportsUnsupported(t *testing.T) {
+	t.Parallel()
+
+	azure := func() *finfocusv1.ResourceDescriptor {
+		return &finfocusv1.ResourceDescriptor{
+			Provider:     "azure",
+			ResourceType: "azure-native:sql:Database",
+			Region:       "eastus",
+			Sku:          "GP_Gen5_4",
+			Attributes:   oversizeAttributes(t),
+		}
+	}
+	calc := newPricingCalc(t, nil)
+
+	supports, err := calc.Supports(context.Background(), &finfocusv1.SupportsRequest{Resource: azure()})
+	if err != nil || supports.GetSupported() || !strings.Contains(supports.GetReason(), "byte limit") {
+		t.Fatalf("Supports() = %v, %v; want unsupported naming the byte limit", supports, err)
+	}
+
+	dry, err := calc.DryRun(context.Background(), &finfocusv1.DryRunRequest{Resource: azure()})
+	if err != nil || !dry.GetResourceTypeSupported() || dry.GetConfigurationValid() {
+		t.Fatalf("DryRun() = %v, %v; want supported type with an invalid configuration", dry, err)
+	}
+
+	foreign := &finfocusv1.ResourceDescriptor{
+		Provider:     "aws",
+		ResourceType: "aws:ec2/instance:Instance",
+		Attributes:   oversizeAttributes(t),
+	}
+	dry, err = calc.DryRun(context.Background(), &finfocusv1.DryRunRequest{Resource: foreign})
+	if err != nil || dry.GetResourceTypeSupported() {
+		t.Fatalf("DryRun(non-Azure) = %v, %v; want the type unsupported", dry, err)
+	}
+
+	_, err = calc.GetPricingSpec(context.Background(), &finfocusv1.GetPricingSpecRequest{Resource: azure()})
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("GetPricingSpec() code = %s, want InvalidArgument (%v)", status.Code(err), err)
 	}
 }

@@ -44,50 +44,89 @@ func withAttributeTags(desc *finfocusv1.ResourceDescriptor) (*finfocusv1.Resourc
 	return merged, nil
 }
 
+// Bounds on the tags built from attributes. Core caps dotted keys at 6
+// segments and 50 tags; attributes carry the whole structure, so these are
+// far higher but finite. The deepest key the plugin reads has 4 segments.
+const (
+	maxAttributeDepth  = 32
+	maxAttributeTags   = 4096
+	maxAttributeKeyLen = 256
+)
+
+type attributeNode struct {
+	path  string
+	depth int
+	value any
+}
+
 // attributeTags flattens attributes the way finfocus core's ConvertToProto
 // flattens Pulumi inputs into tags (internal/engine/flatten.go): every
 // top-level key keeps its collapsed value, and nested scalars add dotted keys
-// such as sku.capacity or zones.0. Core's depth, count, and length caps are not
-// applied, because attributes carry the whole structure.
+// such as sku.capacity or zones.0. Like core's PrepareProjectedDescriptor, a
+// value whose text contains the Pulumi unknown placeholder is dropped, so the
+// tag of the same name still applies. Dotted keys are added shallowest first
+// until maxAttributeTags, and stop at maxAttributeDepth segments or
+// maxAttributeKeyLen bytes.
 func attributeTags(attrs *structpb.Struct) map[string]string {
 	properties := attrs.AsMap()
-	tags := make(map[string]string, len(properties))
-	for key, value := range properties {
-		tags[key] = collapsedTagValue(value)
+	keys := sortedKeys(properties)
+	tags := make(map[string]string, len(keys))
+	queue := make([]attributeNode, 0, len(keys))
+	for _, key := range keys {
+		if len(tags) < maxAttributeTags {
+			addAttributeTag(tags, key, properties[key])
+		}
+		queue = append(queue, attributeNode{path: key, depth: 1, value: properties[key]})
 	}
-	for _, key := range sortedKeys(properties) {
-		addDottedAttribute(tags, properties[key], key)
+	for len(queue) > 0 && len(tags) < maxAttributeTags {
+		node := queue[0]
+		queue = expandAttributeNode(tags, queue[1:], node)
 	}
 	return tags
 }
 
-func addDottedAttribute(tags map[string]string, value any, path string) {
-	segment := path[strings.LastIndex(path, ".")+1:]
+// expandAttributeNode adds node's tag when it is a nested scalar, or queues its
+// children when it is an object or list that is neither redacted nor a user tag
+// map.
+func expandAttributeNode(tags map[string]string, queue []attributeNode, node attributeNode) []attributeNode {
+	segment := node.path[strings.LastIndex(node.path, ".")+1:]
 	if skipAttributeSegment(segment) {
-		return
+		return queue
 	}
-	switch typed := value.(type) {
+	switch typed := node.value.(type) {
 	case map[string]any:
 		if skipAttributeContainer(segment) {
-			return
+			return queue
 		}
 		for _, key := range sortedKeys(typed) {
-			addDottedAttribute(tags, typed[key], path+"."+key)
+			queue = appendAttributeChild(queue, node, key, typed[key])
 		}
 	case []any:
 		if skipAttributeContainer(segment) {
-			return
+			return queue
 		}
 		for i, elem := range typed {
-			addDottedAttribute(tags, elem, path+"."+strconv.Itoa(i))
+			queue = appendAttributeChild(queue, node, strconv.Itoa(i), elem)
 		}
 	default:
-		if value == nil || !strings.Contains(path, ".") {
-			return
+		if node.depth > 1 && node.value != nil {
+			addAttributeTag(tags, node.path, node.value)
 		}
-		if text := collapsedTagValue(value); text != pulumiUnknownValue {
-			tags[path] = text
-		}
+	}
+	return queue
+}
+
+func appendAttributeChild(queue []attributeNode, parent attributeNode, segment string, value any) []attributeNode {
+	path := parent.path + "." + segment
+	if parent.depth+1 > maxAttributeDepth || len(path) > maxAttributeKeyLen {
+		return queue
+	}
+	return append(queue, attributeNode{path: path, depth: parent.depth + 1, value: value})
+}
+
+func addAttributeTag(tags map[string]string, key string, value any) {
+	if text := collapsedTagValue(value); !strings.Contains(text, pulumiUnknownValue) {
+		tags[key] = text
 	}
 }
 

@@ -193,7 +193,9 @@ no rows is read again at price region `Global`. Omitted `rule_count` uses
 that meter once. Gateway and cross-region meters are not quoted. NAT
 Gateway, Cache for Redis, and database servers for PostgreSQL and MySQL are
 not priced. Virtual machine scale sets use the VM meter times `instances`
-or `sku.capacity`. `priority=Regular` is on-demand. A Windows VM with
+or `sku.capacity`. Projected cost and pricing specs read each input from
+the descriptor `attributes` first, when the host sends them, then from tags.
+`priority=Regular` is on-demand. A Windows VM with
 `licenseType` `Windows_Server` or `Windows_Client` uses the base rate and
 says so. Any other Windows VM uses the Windows meter.
 

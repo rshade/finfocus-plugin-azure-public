@@ -545,6 +545,10 @@ func (c *Calculator) HandleDryRun(
 
 	resource, err := withAttributeTags(req.GetResource())
 	if err != nil {
+		_, mapErr := MapDescriptorToQuery(dryRunDescriptor(req.GetResource()))
+		if errors.Is(mapErr, ErrUnsupportedResourceType) {
+			return unsupportedDryRunResponse(), nil
+		}
 		return invalidDryRunResponse(err.Error()), nil
 	}
 	query, err := MapDescriptorToQuery(dryRunDescriptor(resource))
