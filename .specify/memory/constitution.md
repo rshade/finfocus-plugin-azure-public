@@ -1,18 +1,13 @@
 <!--
 Sync Impact Report:
-Version: 1.0.0 → 1.1.0 (MINOR - added measurable docstring coverage threshold)
-Modified Principles:
-  - I. Code Quality Standards: Added docstring coverage ≥80% enforcement requirement
-  - IV. Documentation Standards: Added measurable docstring coverage threshold (≥80%)
-    with enforcement via quality gates
-Added Sections:
-  - Docstring Coverage Enforcement subsection under IV. Documentation Standards
-  - Quality gate #6: Docstring coverage check
+Version: 1.1.0 → 1.1.1 (PATCH - process references moved from Spec Kit to OpenSpec)
+Modified Principles: None
+Added Sections: None
 Removed Sections: None
-Templates Status:
-  ✅ plan-template.md - Updated Constitution Check to include docstring coverage
-  ✅ spec-template.md - Updated Documentation compliance checklist
-  ✅ tasks-template.md - Updated Constitution Compliance Tasks with docstring coverage
+Changed References:
+  - Spec Kit templates under .specify/templates/ are removed (issue #92)
+  - Rules that propagated to those templates now propagate to
+    openspec/config.yaml (context) and the OpenSpec artifacts it governs
 Follow-up TODOs: None
 -->
 
@@ -212,14 +207,14 @@ Before merging to main:
   - **MAJOR**: Backward-incompatible principle removals or redefinitions
   - **MINOR**: New principle/section added or materially expanded guidance
   - **PATCH**: Clarifications, wording, typo fixes
-- All dependent templates (plan, spec, tasks) MUST be updated for consistency
+- `openspec/config.yaml` (`context`) MUST be updated for consistency
 - Amendments MUST be committed with message: `docs: amend constitution to vX.Y.Z (description)`
 
 ### Compliance Verification
 
 - All PRs MUST be verified against constitution principles
 - Violations MUST be justified in PR description or rejected
-- Complexity increases MUST be explicitly justified (see plan-template.md "Complexity Tracking")
+- Complexity increases MUST be explicitly justified (in the OpenSpec change `design.md`, or the PR description for a direct change)
 - Constitution supersedes all other practices and documentation
 
 ### Living Document
@@ -229,9 +224,7 @@ Before merging to main:
   - Project scope or architectural constraints change
   - Repeated compliance issues indicate missing/unclear guidance
 - Updates MUST propagate to:
-  - `.specify/templates/plan-template.md` (Constitution Check section)
-  - `.specify/templates/spec-template.md` (Requirements alignment)
-  - `.specify/templates/tasks-template.md` (Task categorization)
+  - `openspec/config.yaml` (`context` read by every OpenSpec artifact)
   - `CLAUDE.md` (development guidance)
 
-**Version**: 1.1.0 | **Ratified**: 2026-01-21 | **Last Amended**: 2026-02-05
+**Version**: 1.1.1 | **Ratified**: 2026-01-21 | **Last Amended**: 2026-10-04
