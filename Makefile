@@ -31,6 +31,12 @@ test:
 	@echo "Running tests..."
 	go test -v -race ./...
 
+.PHONY: spec-check
+spec-check:
+	@echo "Checking OpenSpec specs..."
+	openspec validate --all --strict --no-interactive
+	bash scripts/check-spec-tests.sh
+
 .PHONY: vet
 vet:
 	@echo "Running go vet..."
@@ -47,8 +53,10 @@ lint: vet
 	golangci-lint run --timeout=10m ./...
 	@echo "Running markdownlint..."
 	markdownlint '*.md' 2>/dev/null || true
+	@echo "Running openspec validate..."
+	openspec validate --all --strict --no-interactive
 	@echo "Running vale..."
-	vale --config=.vale.ini . 2>/dev/null || true
+	vale --config=.vale.ini --glob='!{.claude/skills/**,.claude/commands/opsx/**,.gemini/**,.opencode/**}' . 2>/dev/null || true
 	@echo "Running actionlint..."
 	actionlint .github/workflows/ 2>/dev/null || true
 
@@ -79,7 +87,8 @@ help:
 	@echo "  test               - Run unit tests with race detection"
 	@echo "  vet                - Run go vet"
 	@echo "  vulncheck          - Run govulncheck for security vulnerabilities"
-	@echo "  lint               - Run all linters (vet, golangci-lint, markdownlint, vale, actionlint)"
+	@echo "  lint               - Run all linters (vet, golangci-lint, markdownlint, openspec, vale, actionlint)"
+	@echo "  spec-check         - Validate OpenSpec specs and run the tests each requirement names"
 	@echo "  fmt                - Format code with gofmt"
 	@echo "  goreleaser-check   - Verify goreleaser configuration"
 	@echo "  clean              - Remove build artifacts"

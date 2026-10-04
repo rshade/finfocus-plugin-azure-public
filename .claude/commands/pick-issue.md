@@ -147,37 +147,57 @@ cd "$WORKTREE"
 
 If the branch or path exists, inspect it and resume only when it belongs to
 this issue; otherwise choose a unique path and branch. Never overwrite it.
-Record the starting commit for review before Spec Kit changes the branch name.
+Record the starting commit for review.
 
 | Issue scope | Route |
 | --- | --- |
-| `spec-first`, or a feature requiring design and acceptance criteria | Spec Kit, then implementation |
-| Focused `bug`, `enhancement` to an existing estimator, `component/testing`, `component/build`, or documentation work | Direct implementation with tests written first |
+| Changes plugin behavior: a requirement in `openspec/specs/` is added, changed, or removed (an RPC, a resource type, a meter or unit, the cost arithmetic, an error code, a cache key dimension) | OpenSpec change, then implementation, verify, archive |
+| Contained fix that changes no requirement: a `bug` where the code breaks an existing requirement, `component/testing`, `component/build`, or documentation work | Direct implementation with tests written first |
 | Umbrella issue or unresolved `finfocus-spec` prerequisite | Report the blocker; offer a bounded child issue |
 
 Read the body rather than routing solely by label. If a purported small fix
 requires a new resource type, RPC behavior, or cache key dimension, reassess
-its scope and whether an existing specification covers it.
+its scope and whether an existing requirement in `openspec/specs/` covers it.
+A `spec-first` issue waits on finfocus-spec. Once that release ships, route it
+by the table: usually OpenSpec, because adopting a new spec field changes a
+requirement.
+Do not send a one-file fix through OpenSpec: propose, apply, verify, and
+archive for a one-line change is ceremony without protection.
 
-### Spec Kit route
+### OpenSpec route
 
-Look for an existing feature under `specs/` and resume its branch and artifacts
-where appropriate. For a new feature, run specification creation **inside the
-worktree**. The command creates a numbered feature branch; use the branch and
-paths it returns for all later work, including the PR.
+The CLI is pinned in `mise.toml`; run it as `mise exec -- openspec ...`
+inside the worktree. Check `mise exec -- openspec list --json` for an open
+change that already covers the issue and resume it rather than starting a
+second one. Use the skills `openspec init` generated under `.claude/skills/`:
 
-1. [speckit.specify](speckit.specify.md): create `spec.md`.
-2. [speckit.clarify](speckit.clarify.md): resolve material ambiguity if needed.
-3. [speckit.plan](speckit.plan.md): create `plan.md` and supporting design.
-4. [speckit.tasks](speckit.tasks.md): create `tasks.md`.
-5. [speckit.analyze](speckit.analyze.md): reconcile requirements, design, and
-   tasks; address valid findings before implementation and rerun after changes.
-6. [speckit.implement](speckit.implement.md): implement and update task status.
+1. `openspec-propose` (`/opsx:propose`): write `proposal.md`, `design.md`
+   when the change needs one, the delta specs under
+   `specs/<capability>/spec.md`, and `tasks.md`. Name the change with a
+   kebab-case slug that includes the issue number, such as
+   `add-redis-pricing-42`.
+2. `openspec-apply-change` (`/opsx:apply`): work the tasks in order and tick
+   `tasks.md` as each passes.
+3. `openspec-verify-change` (`/opsx:verify`): compare the code with the
+   artifacts and fix every real finding.
+4. `openspec-archive-change` (`/opsx:archive`): fold the delta specs into
+   `openspec/specs/` and move the change to `openspec/changes/archive/`.
+   Archive lands in the same commit as the code, after verify passes.
 
-Let `.specify/scripts/bash/create-new-feature.sh` discover the next number;
-do not pass `--number`. Check active feature branches and claims for numbering
-collisions. Coordinate concurrent specification creation instead of committing
-a specification on `main` to reserve a number.
+Every task in `tasks.md` carries a `Verify:` command that proves it (a
+`go test -run` pattern, `make spec-check`, or a live query with its date) and
+a break check: what you changed to watch the verify fail before it passed.
+
+Every added or modified requirement keeps the baseline rule from
+`openspec/config.yaml`: a `Tests:` line naming the Go tests that prove it.
+Write those tests first. Check the change as you go:
+
+```bash
+mise exec -- openspec status --change "<slug>" --json
+mise exec -- openspec validate "<slug>" --strict --no-interactive
+```
+
+Never edit `specs/001-*` to `specs/023-*`; they are frozen Spec Kit history.
 
 ### Implementation rules (both routes)
 
@@ -199,7 +219,13 @@ Run the repository's gates from the implementation worktree:
 make build
 make test
 make lint
+make spec-check
 ```
+
+`make spec-check` runs `openspec validate --all --strict` and
+`scripts/check-spec-tests.sh`, which fails when a requirement names no test or
+a named test is missing, fails, or skips. Run it on both routes: a direct fix
+can still break a test a requirement names.
 
 `make test` already runs `go test -race ./...`. When the change touches
 `internal/azureclient`, a resource quote, or a `testdata/` fixture, also run
@@ -234,9 +260,9 @@ Report actual failures and unavailable tools.
 
 Invoking this workflow is the explicit instruction to commit, push, and open
 the PR for the chosen issue. Stage only the files you changed, by name, and
-commit with a Conventional Commit message. Include `Closes #N` and the spec
-directory when relevant; use a breaking-change marker when warranted. Validate
-the message with commitlint before committing:
+commit with a Conventional Commit message. Include `Closes #N` and the
+archived OpenSpec change when there is one; use a breaking-change marker when
+warranted. Validate the message with commitlint before committing:
 
 ```bash
 printf '%s\n' "$COMMIT_MSG" | npx commitlint
@@ -288,7 +314,7 @@ from the original checkout and never force it.
 
 ## Phase 6 — Report and stop
 
-Report the issue and selection reason, route and spec directory if any,
+Report the issue and selection reason, route and OpenSpec change if any,
 validation and review results, branch and worktree, PR URL, and whether the
 claim is released or retained. Mention selection outside `roadmap/current`
 explicitly. Do not pick another issue.

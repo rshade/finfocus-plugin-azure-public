@@ -36,3 +36,8 @@ This document defines the technical guardrails and architectural scope of the `f
 *   **Transport**: `github.com/hashicorp/go-retryablehttp`
 *   **Protocol**: `google.golang.org/grpc`
 *   **Spec**: `github.com/rshade/finfocus-spec` (v0.7.4)
+
+## Change Process
+*   **OpenSpec**: Behavior changes go through an OpenSpec change (propose, apply, verify, archive). `openspec/specs/` holds current behavior only, and every requirement names the tests that prove it.
+*   **Direct fixes**: A contained fix that changes no requirement skips OpenSpec.
+*   **History**: `specs/001-*` to `specs/023-*` are frozen Spec Kit features from before v0.1.0.

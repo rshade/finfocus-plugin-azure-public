@@ -11,9 +11,10 @@ links from `.claude/commands/` and run its shell commands from the repository
 root unless a step changes directories.
 
 Treat any issue number or other arguments in the user's invocation as inputs
-to the command. This repository's Spec Kit commands use dotted names such as
-`/speckit.specify`. Read the linked command files when no corresponding Codex
-skill is available. Map `/code-review` and `/scout` to the corresponding
+to the command. This repository's OpenSpec workflow lives in the skills under
+`.claude/skills/openspec-*` (Claude Code names them `/opsx:propose` and so on);
+read those `SKILL.md` files when no corresponding Codex skill is available, and
+run the CLI as `mise exec -- openspec ...`. Map `/code-review` and `/scout` to the corresponding
 available skills; report unavailable capabilities without claiming to run them.
 
 Apply the current session's instructions and authorization when interpreting
