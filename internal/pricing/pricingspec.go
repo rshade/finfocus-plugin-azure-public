@@ -54,7 +54,11 @@ func (c *Calculator) GetPricingSpec(
 	log := logging.RequestLogger(ctx, c.logger)
 	log.Info().Msg("handling GetPricingSpec request")
 
-	resource := req.GetResource()
+	resource, err := withAttributeTags(req.GetResource())
+	if err != nil {
+		log.Warn().Str("result_status", "error").Err(err).Msg("GetPricingSpec validation failed")
+		return nil, err
+	}
 	kind, _ := classifyResource(resource)
 	quote, err := c.quoteResource(ctx, resource, pricingSpecTask)
 	var unsupplied []string

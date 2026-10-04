@@ -588,7 +588,7 @@ func projectedResource(req *finfocusv1.GetProjectedCostRequest) (*finfocusv1.Res
 	if req == nil || req.GetResource() == nil {
 		return nil, missingFieldsError([]string{"resource"})
 	}
-	return req.GetResource(), nil
+	return withAttributeTags(req.GetResource())
 }
 
 func resourceFromActual(req *finfocusv1.GetActualCostRequest) *finfocusv1.ResourceDescriptor {

@@ -131,7 +131,10 @@ func (c *Calculator) Supports(
 	log := logging.RequestLogger(ctx, c.logger)
 	log.Info().Msg("handling Supports request")
 
-	_, err := MapDescriptorToQuery(req.GetResource())
+	resource, err := withAttributeTags(req.GetResource())
+	if err == nil {
+		_, err = MapDescriptorToQuery(resource)
+	}
 	if err != nil {
 		log.Debug().Err(err).Msg("resource not supported")
 		return &finfocusv1.SupportsResponse{
@@ -540,7 +543,11 @@ func (c *Calculator) HandleDryRun(
 		return nil, status.Error(codes.InvalidArgument, "resource descriptor is required")
 	}
 
-	query, err := MapDescriptorToQuery(dryRunDescriptor(req.GetResource()))
+	resource, err := withAttributeTags(req.GetResource())
+	if err != nil {
+		return invalidDryRunResponse(err.Error()), nil
+	}
+	query, err := MapDescriptorToQuery(dryRunDescriptor(resource))
 	if errors.Is(err, ErrUnsupportedResourceType) {
 		return unsupportedDryRunResponse(), nil
 	}
