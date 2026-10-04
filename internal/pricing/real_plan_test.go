@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -305,8 +306,7 @@ func dottedRequest(
 }
 
 // attributesRequest is today's core view plus ResourceDescriptor.attributes
-// built from the preview inputs, with the host redaction the field contract
-// requires: no "__" keys and no credential-like keys.
+// built from the preview inputs after redactPreviewInputs.
 func attributesRequest(
 	view coreViewEntry,
 	previews map[string]map[string]map[string]any,
@@ -316,13 +316,7 @@ func attributesRequest(
 	if inputs == nil {
 		return nil, errors.New("no preview inputs")
 	}
-	redacted := make(map[string]any, len(inputs))
-	for key, value := range inputs {
-		if !skipAttributeSegment(key) {
-			redacted[key] = value
-		}
-	}
-	attrs, err := structpb.NewStruct(redacted)
+	attrs, err := structpb.NewStruct(redactPreviewInputs(inputs))
 	if err != nil {
 		return nil, err
 	}
@@ -478,4 +472,123 @@ func writeRealPlanResults(t *testing.T, verdicts []realPlanVerdict) {
 	if err := os.WriteFile(path, []byte(b.String()), 0o644); err != nil {
 		t.Fatalf("write results: %v", err)
 	}
+}
+
+func TestRedactPreviewInputs_SpecRules_DropSecretsAndReferences(t *testing.T) {
+	got := redactPreviewInputs(map[string]any{
+		"__createBeforeDelete": true,
+		"ref":                  "x",
+		"ref.vnet.urn":         "urn",
+		"location":             "westeurope",
+		"osProfile": map[string]any{
+			"adminPassword": "pw",
+			"adminUsername": "azureuser",
+			"nested":        []any{map[string]any{"__meta": 1, "apiKey": "k", "keep": "v"}},
+		},
+		"wrapped": map[string]any{
+			pulumiSecretSignature: "1b47061264138c4ac30d75fd1eb44270",
+			"value":               "hidden",
+		},
+		"tags": map[string]any{"env": "dev"},
+	})
+	want := map[string]any{
+		"location": "westeurope",
+		"osProfile": map[string]any{
+			"adminUsername": "azureuser",
+			"nested":        []any{map[string]any{"keep": "v"}},
+		},
+		"tags": map[string]any{"env": "dev"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("redactPreviewInputs() = %#v\nwant %#v", got, want)
+	}
+}
+
+func TestAttributesRequest_NativeWindowsVM_OmitsAdminPassword(t *testing.T) {
+	plan := loadRealPlan(t)
+	views := loadCoreViews(t)
+	previews := loadPreviewInputs(t)
+	for _, tc := range plan.Cases {
+		if tc.ID != "azure-native/windowsVm" {
+			continue
+		}
+		req, err := attributesRequest(views[tc.ID], previews, tc)
+		if err != nil {
+			t.Fatalf("attributesRequest() error = %v", err)
+		}
+		if _, ok := pluginsdk.AttributeValue(req.GetResource().GetAttributes(), "osProfile.adminUsername"); !ok {
+			t.Fatal("osProfile.adminUsername missing; the fixture changed")
+		}
+		if _, ok := pluginsdk.AttributeValue(req.GetResource().GetAttributes(), "osProfile.adminPassword"); ok {
+			t.Fatal("osProfile.adminPassword is in the attributes")
+		}
+		return
+	}
+	t.Fatal("no azure-native/windowsVm case")
+}
+
+// pulumiSecretSignature marks a Pulumi secret-wrapped value.
+const pulumiSecretSignature = "4dabf18193072939515e22adb298388d"
+
+// redactPreviewInputs applies the host redaction rshade/finfocus spec 621
+// requires before inputs become attributes (FR-004, FR-005): "__" and
+// credential-like keys at any depth, the top-level ref key and ref.* keys,
+// and any object wrapped as a Pulumi secret. The tags, tagsAll, labels, and
+// annotations containers are kept. It is independent of the plugin's own
+// skipAttributeSegment so the ratchet does not test the plugin against itself.
+func redactPreviewInputs(inputs map[string]any) map[string]any {
+	out := make(map[string]any, len(inputs))
+	for key, value := range inputs {
+		if key == "ref" || strings.HasPrefix(key, "ref.") {
+			continue
+		}
+		if redacted, keep := redactPreviewValue(key, value); keep {
+			out[key] = redacted
+		}
+	}
+	return out
+}
+
+func redactPreviewValue(key string, value any) (any, bool) {
+	if strings.HasPrefix(key, "__") || credentialLikeKey(key) {
+		return nil, false
+	}
+	switch typed := value.(type) {
+	case map[string]any:
+		if _, secret := typed[pulumiSecretSignature]; secret {
+			return nil, false
+		}
+		out := make(map[string]any, len(typed))
+		for k, v := range typed {
+			if redacted, keep := redactPreviewValue(k, v); keep {
+				out[k] = redacted
+			}
+		}
+		return out, true
+	case []any:
+		out := make([]any, 0, len(typed))
+		for _, v := range typed {
+			if redacted, keep := redactPreviewValue("", v); keep {
+				out = append(out, redacted)
+			}
+		}
+		return out, true
+	default:
+		return value, true
+	}
+}
+
+// credentialLikeKey is the segment list of rshade/finfocus spec 619
+// (internal/engine/flatten.go skipDottedSegment).
+func credentialLikeKey(key string) bool {
+	lower := strings.ToLower(key)
+	for _, fragment := range []string{
+		"password", "secret", "token", "credential", "ciphertext", "privatekey",
+		"apikey", "api_key", "accesskey", "access_key", "connectionstring", "connection_string",
+	} {
+		if strings.Contains(lower, fragment) {
+			return true
+		}
+	}
+	return false
 }
