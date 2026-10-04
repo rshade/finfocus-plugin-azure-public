@@ -1,13 +1,15 @@
 {
   // `openspec init` writes these skill and command files, and `openspec update`
-  // overwrites hand edits. Release Please writes CHANGELOG.md. None of them is
-  // project prose. Rules stay in .markdownlint.json.
+  // overwrites hand edits. Release Please writes CHANGELOG.md. OpenSpec delta
+  // specs start with `## ADDED Requirements` by format, and archived changes
+  // are history. None of them is project prose. Rules stay in .markdownlint.json.
   "ignores": [
     ".claude/skills/**",
     ".claude/commands/opsx/**",
     ".gemini/**",
     ".opencode/**",
     "CHANGELOG.md",
+    "openspec/changes/archive/**",
     "node_modules/**"
   ]
 }

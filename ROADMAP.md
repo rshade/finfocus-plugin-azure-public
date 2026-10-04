@@ -48,10 +48,6 @@ Its gate is a published `v0.1.0` release, so it follows [#95](https://github.com
 **Upstream follow-ups** (tracked elsewhere; adopt in a patch release such
 as v0.1.1, never a blocker):
 
-- rshade/finfocus-spec#625: let plugins run conformance with their own
-  sample resource
-- rshade/finfocus-spec#626: keep handler gRPC status codes instead of
-  rewrapping them as `Internal`
 - rshade/finfocus#1670, #1682, #1683, #1684: core error reporting, version
   display, `plugin inspect` lookup, and the actual-cost `sku` tag
 
