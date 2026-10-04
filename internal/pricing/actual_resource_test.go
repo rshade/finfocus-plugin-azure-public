@@ -2,6 +2,7 @@ package pricing
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"strings"
 	"testing"
@@ -152,14 +153,15 @@ func TestGetActualCost_ResourceUnknownOrOversize_MatchesProjected(t *testing.T) 
 		"blob": structpb.NewStringValue(strings.Repeat("x", 70_000)),
 	}}
 	tests := []struct {
-		name  string
-		attrs *structpb.Struct
+		name    string
+		attrs   *structpb.Struct
+		message string
 	}{
 		{name: "unknown location", attrs: mustAttributes(t, map[string]any{
 			"location":        pulumiUnknownValue,
 			"hardwareProfile": map[string]any{"vmSize": "Standard_D2s_v5"},
-		})},
-		{name: "oversize", attrs: oversize},
+		}), message: "missing required field(s): region"},
+		{name: "oversize", attrs: oversize, message: "over the 65536 byte limit"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -177,6 +179,10 @@ func TestGetActualCost_ResourceUnknownOrOversize_MatchesProjected(t *testing.T) 
 			if status.Code(actErr) != codes.InvalidArgument || status.Code(actErr) != status.Code(projErr) {
 				t.Fatalf("actual error %v, projected error %v, want both InvalidArgument", actErr, projErr)
 			}
+			actMsg, projMsg := status.Convert(actErr).Message(), status.Convert(projErr).Message()
+			if actMsg != projMsg || !strings.Contains(actMsg, tt.message) {
+				t.Fatalf("actual message %q, projected %q, want both to contain %q", actMsg, projMsg, tt.message)
+			}
 			if got := filters(); len(got) != 0 {
 				t.Fatalf("Azure was queried: %v", got)
 			}
@@ -184,18 +190,80 @@ func TestGetActualCost_ResourceUnknownOrOversize_MatchesProjected(t *testing.T) 
 	}
 }
 
-func TestGetActualCost_ResourceSet_RequestUnmodified(t *testing.T) {
+func descriptorWithTags(tags map[string]string) *finfocusv1.ResourceDescriptor {
+	return vmRequest("azure:compute/linuxVirtualMachine:LinuxVirtualMachine", "Standard_D2s_v5", tags).GetResource()
+}
+
+func manyTags(count, valueLen int) map[string]string {
+	tags := make(map[string]string, count)
+	for i := range count {
+		tags[fmt.Sprintf("label%03d", i)] = strings.Repeat("v", valueLen)
+	}
+	return tags
+}
+
+// The SDK descriptor limits (pluginsdk.ValidateResourceDescriptor) apply on
+// every RPC that reads a descriptor, the actual path included.
+func TestDescriptorLimits_EachRPC_RejectOverLimitTags(t *testing.T) {
 	t.Parallel()
 
-	resource := vmRequest("azure-native:compute:VirtualMachineScaleSet", "Standard_D2s_v5", nil).GetResource()
-	resource.Attributes = mustAttributes(t, map[string]any{"sku": map[string]any{"capacity": 3}})
-	req := actualWithResource(resource, map[string]string{"team": "a"}, 24)
-	calc := newPricingCalc(t, d2sv5Rows())
+	tests := []struct {
+		name    string
+		tags    map[string]string
+		message string
+	}{
+		{name: "300 tags", tags: manyTags(300, 1), message: "tag count 300 exceeds maximum 256"},
+		{name: "3000-byte value", tags: manyTags(1, 3000), message: "length 3000 exceeds maximum 2048"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	if _, err := calc.GetActualCost(context.Background(), req); err != nil {
+			calc, filters := newCapturingPricingCalc(t, d2sv5Rows())
+			ctx := context.Background()
+			_, projErr := calc.GetProjectedCost(ctx,
+				&finfocusv1.GetProjectedCostRequest{Resource: descriptorWithTags(tt.tags)})
+			_, actErr := calc.GetActualCost(ctx, actualWithResource(descriptorWithTags(tt.tags), nil, 24))
+			_, specErr := calc.GetPricingSpec(ctx,
+				&finfocusv1.GetPricingSpecRequest{Resource: descriptorWithTags(tt.tags)})
+			for name, err := range map[string]error{"projected": projErr, "actual": actErr, "spec": specErr} {
+				if status.Code(err) != codes.InvalidArgument || !strings.Contains(err.Error(), tt.message) {
+					t.Errorf("%s error = %v, want InvalidArgument containing %q", name, err, tt.message)
+				}
+			}
+			supports, err := calc.Supports(ctx, &finfocusv1.SupportsRequest{Resource: descriptorWithTags(tt.tags)})
+			if err != nil || supports.GetSupported() || !strings.Contains(supports.GetReason(), tt.message) {
+				t.Errorf("Supports() = %v, %v; want unsupported naming %q", supports, err, tt.message)
+			}
+			dry, err := calc.DryRun(ctx, &finfocusv1.DryRunRequest{Resource: descriptorWithTags(tt.tags)})
+			if err != nil || !dry.GetResourceTypeSupported() || dry.GetConfigurationValid() {
+				t.Errorf("DryRun() supported=%v valid=%v err=%v; want supported type with an invalid configuration",
+					dry.GetResourceTypeSupported(), dry.GetConfigurationValid(), err)
+			}
+			if got := filters(); len(got) != 0 {
+				t.Errorf("Azure was queried: %v", got)
+			}
+		})
+	}
+}
+
+// Core sends at most 50 tags with values up to 2048 bytes. That shape prices.
+func TestDescriptorLimits_CoreShapedTags_Price(t *testing.T) {
+	t.Parallel()
+
+	tags := manyTags(49, 2048)
+	calc := newPricingCalc(t, d2sv5Rows())
+	projected, err := calc.GetProjectedCost(context.Background(),
+		&finfocusv1.GetProjectedCostRequest{Resource: descriptorWithTags(tags)})
+	if err != nil {
+		t.Fatalf("GetProjectedCost() error = %v", err)
+	}
+	actual, err := calc.GetActualCost(context.Background(),
+		actualWithResource(descriptorWithTags(tags), nil, 730))
+	if err != nil {
 		t.Fatalf("GetActualCost() error = %v", err)
 	}
-	if req.GetResource().GetTags() != nil || req.GetResource().GetAttributes() == nil || len(req.GetTags()) != 1 {
-		t.Fatalf("request was modified: %v", req)
+	if math.Abs(actual.GetResults()[0].GetCost()-projected.GetCostPerMonth()) > 1e-9 {
+		t.Fatalf("actual %v, projected %v", actual.GetResults()[0].GetCost(), projected.GetCostPerMonth())
 	}
 }
