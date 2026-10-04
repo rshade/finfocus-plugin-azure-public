@@ -101,8 +101,9 @@ description had a shell runbook with a wrapped `run_id=$(...` line, and the
 log said `Error: unexpected token ... valid tokens [)]`. Keep shell blocks out
 of PR descriptions, or end the description with a
 `BEGIN_COMMIT_OVERRIDE` / `END_COMMIT_OVERRIDE` block holding the commit
-message. Release Please reads that block from the merged PR, so it also repairs
-a merged PR: #98 got one on 2026-10-04.
+message. Release Please documents reading that block from the merged PR, so
+editing a merged PR should repair it. #98 got one on 2026-10-04; confirm the
+next release PR lists its `fix(release)` before relying on this.
 
 CI markdownlint (`.github/workflows/lint-prose.yml`) does not lint
 `CHANGELOG.md`. Release Please writes it with `*` bullets and double blank

@@ -68,7 +68,7 @@ func TestSDKConformance_AzureSample_PassesEveryLevel(t *testing.T) {
 		for _, category := range result.Categories {
 			for _, check := range category.Results {
 				if !check.Success {
-					t.Errorf("%v: %s failed: %v %s", level, check.Method, check.Error, check.Details)
+					t.Errorf("%v: %s check on %s failed: %v %s", level, category.Name, check.Method, check.Error, check.Details)
 				}
 			}
 		}
