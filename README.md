@@ -13,7 +13,10 @@ pricing data from the Azure Retail Prices API and caching it for performance.
 
 `GetProjectedCost` returns the monthly retail quote. `GetActualCost` scales
 that quote by the requested hours over 730. The default window is 730 hours,
-so the default result matches the monthly quote. Both calls read the public
+so the default result matches the monthly quote, given the same inputs.
+FinFocus sends `GetActualCost` only the resource's cloud tags plus SKU and
+region, so inputs such as disk size or instance count are not available there
+yet (finfocus-spec#620). Both calls read the public
 Retail Prices API. Neither call reads billed spend, and neither call needs
 credentials. Confidence is recorded in `Source`. A FOCUS record is attached
 when the request sets `billing_account_id`, or, when that field is empty,
