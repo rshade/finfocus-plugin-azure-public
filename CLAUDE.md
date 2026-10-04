@@ -106,6 +106,19 @@ of PR descriptions, or end the description with a
 message. Release Please reads that block from the merged PR, so it also repairs
 a merged PR: #98 got one on 2026-10-04.
 
+A release bumps the version the plugin reports. `extra-files` in
+`release-please-config.json` updates `pluginVersion` in
+`internal/pricing/calculator.go` (generic updater, through the
+`// x-release-please-version` comment), and `$.metadata.version` in
+`manifest.json` (json updater) and `manifest.yaml` (yaml updater). Those
+updaters change only the version line, so the release pull request still
+passes the byte comparison in `TestExpectedManifest_CommittedFiles_MatchExpected`
+(checked with release-please 17.6.0 updaters on 2026-10-04).
+`TestReleasePleaseConfig_ExtraFiles_BumpPluginVersion` fails if an entry or the
+comment goes missing. Before #106, v0.1.0 binaries reported 0.1.0 only because
+nothing had been released after it; GoReleaser's `main.version` sets log fields
+only.
+
 CI markdownlint (`.github/workflows/lint-prose.yml`) does not lint
 `CHANGELOG.md`. Release Please writes it with `*` bullets and double blank
 lines, so a release pull request would fail MD004 and MD012 on text no one

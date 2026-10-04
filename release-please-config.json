@@ -37,6 +37,19 @@
         }
       ],
       "package-name": "finfocus-plugin-azure-public",
+      "extra-files": [
+        "internal/pricing/calculator.go",
+        {
+          "type": "json",
+          "path": "manifest.json",
+          "jsonpath": "$.metadata.version"
+        },
+        {
+          "type": "yaml",
+          "path": "manifest.yaml",
+          "jsonpath": "$.metadata.version"
+        }
+      ],
       "include-component-in-tag": false
     }
   }
