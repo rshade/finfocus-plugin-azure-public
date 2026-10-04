@@ -40,5 +40,13 @@ ships as plugin v0.1.1.
 
 - `go.mod`, `go.sum`, `manifest.json`, `manifest.yaml`.
 - New tests in `internal/pricing`; no pricing logic changes.
-- Docs: CLAUDE.md, CONTEXT.md, README.md, TASKS.md, and ROADMAP.md name
-  v0.7.5 and drop the closed upstream follow-ups.
+- Docs: CLAUDE.md, CONTEXT.md, TASKS.md, and ROADMAP.md name v0.7.5 and drop
+  the closed upstream follow-ups. README.md names v0.7.4 only as the release
+  that added the actual-cost descriptor, so it needs no edit.
+- Also in this change: CLAUDE.md now says core v0.4.2 sends the actual-cost
+  `resource` (finfocus#1680), and records why Release Please dropped the #98
+  fix from the release notes. `.markdownlint-cli2.jsonc` skips OpenSpec delta
+  specs, which start with `## ADDED Requirements` by format.
+- The plugin's own version (`pluginVersion`) is not bumped by Release Please,
+  so v0.1.1 still reports 0.1.0 from `GetPluginInfo`. That predates this
+  change and is tracked separately.
