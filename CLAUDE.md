@@ -246,7 +246,7 @@ Behavior notes:
 - Missing `location/region` or `vmSize/sku` returns `codes.InvalidArgument`
 - Cache hits are served from `CachedClient` with no outbound API request
 - VM `EstimateCost` reads attribute `priority`. `Spot` uses the Linux Spot row and pricing category Dynamic. An empty priority or `Regular` stays the on-demand row and Standard. Any other value is InvalidArgument. When priority is empty, `pricing_model=spot` selects Spot and `pricing_model=consumption` stays on demand.
-- `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.3`). A value without the `v` prefix is rejected by the SDK
+- `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.4`). A value without the `v` prefix is rejected by the SDK
 - `GetPluginInfo` sends the explicit `PluginCapabilities()` list: projected costs, actual costs, pricing spec, estimate cost, and dry run. It also sends metadata `type=public-pricing-fallback`, and the SDK adds the legacy `supports_*` keys. The list is explicit because `Calculator` embeds `UnimplementedCostSourceServiceServer`. Without the list, interface inference in the SDK also advertised batch cost, resolve resource types, recommendations, budgets, and dismiss, and core routed calls to them. `pricing.PluginInfo()` is the one source: `GetPluginInfo` serves it and `cmd/` passes it as `ServeConfig.PluginInfo`, so the name (`azure-public`), version, and capabilities agree
 
 ### Real Pulumi virtual machines
@@ -334,16 +334,30 @@ reports a configuration error for a type this plugin prices and an unsupported t
 otherwise. `attributes` is never logged. `EstimateCost` keeps reading its own
 `attributes` field.
 
-`GetActualCostRequest` has no descriptor in v0.7.3, so `GetActualCost` and its
-FOCUS record read only the request tags. Core builds those tags from the
-resource's cloud tags (`tagsAll`, then `tags`) and adds `sku`, `region`,
-`provider`, and `resource_type` (finfocus `internal/proto/adapter.go`,
-`enrichTagsWithSKUAndRegion`). It sends no flattened inputs, dotted or
-otherwise, so every input beyond SKU and region is missing from actual cost:
-`size_gb`, `instances`, `sku.capacity`, `workerCount`, `ru_per_second`, and
-the rest. A native scale set with `sku.capacity` 3 projects three instances,
-but its actual cost prices one. finfocus-spec#620 asks for a descriptor on
-`GetActualCostRequest`.
+`finfocus-spec` v0.7.4 adds `GetActualCostRequest.resource` (field 11). When
+the host sends it, `GetActualCost` and its FOCUS record price from that
+descriptor through the same `withAttributeTags` merge, so actual cost over 730
+hours equals projected cost for the same descriptor. The request `tags` are
+then the resource's cloud tags: labels, never pricing inputs, not even for a
+key the descriptor lacks. A cloud tag named `region`, `sku`, `provider`,
+`resource_type`, or `instances` does not reach the price query. The 64 KiB
+attributes limit and the unknown-placeholder rule are the projected ones, and
+the plugin does not run `pluginsdk.ValidateActualCostRequest`, so requests
+without a descriptor are unchanged. Dry run is unchanged as well: only the
+billing account id is ignored.
+
+Without `resource`, `GetActualCost` reads the request tags as before. Core
+builds those from the resource's cloud tags (`tagsAll`, then `tags`) and adds
+`sku`, `region`, `provider`, and `resource_type` (finfocus
+`internal/proto/adapter.go`, `enrichTagsWithSKUAndRegion`). It sends no
+flattened inputs, so inputs beyond SKU and region (`size_gb`, `instances`,
+`sku.capacity`, `workerCount`, `ru_per_second`) are missing on that path. A
+native scale set with `sku.capacity` 3 projects three instances but prices
+one. Core does not send `resource` yet (finfocus-spec#620 lists that work).
+
+`TestRealPulumiPlan_ActualWithResource_MatchesProjected` checks that parity
+for every real-plan case and input form, with cloud tags that name pricing
+dimensions sent beside the descriptor.
 
 The real-plan ratchet runs every case three ways: core tags, dotted tags,
 and core tags plus `attributes`. The test builds `attributes` with the host
@@ -616,7 +630,8 @@ needed. The discovery core does read is the capability list, `plugin inspect`
 through DryRun, and the per-resource `GetPricingSpec` described in this section.
 
 `GetActualCost` is the projected monthly cost times `hours / 730`. The
-default window is 730 hours. The source string carries
+default window is 730 hours. The resource is `GetActualCostRequest.resource`
+when set, and otherwise the request tags (see Descriptor attributes). The source string carries
 `azure-retail-prices[confidence:HIGH|MEDIUM|LOW]`. A FOCUS record is built
 when a billing account id is available. `GetActualCostRequest.billing_account_id`
 wins. An empty request id uses `SetBillingAccountID`, which the process sets

@@ -6,6 +6,11 @@ billing account id is available (request `billing_account_id`, or
 `internal/pricing/focus.go` and passes
 `pluginsdk.ValidateFocusRecordWithOptions`.
 
+The record describes the same resource as the cost. When the request carries
+`resource` (`finfocus-spec` v0.7.4), the service, region, SKU, and quantities
+come from that descriptor and its `attributes`. Otherwise they come from the
+request tags.
+
 Projected and estimate responses are not FOCUS rows. They carry the FOCUS
 `pricing_category` enum only.
 
@@ -140,4 +145,4 @@ once per process. They go through the global `zerolog` logger in the SDK to `std
 | Allocation columns | No split cost allocation |
 | SubAccountId, SubAccountName | No subscription is known |
 | AvailabilityZone | Not part of the descriptor |
-| Tags | Descriptor tags are flattened Pulumi inputs, not resource tags (finfocus-spec#609) |
+| Tags | Descriptor tags are flattened Pulumi inputs, not resource tags (finfocus-spec#609). The request `tags` are cloud tags, but they are not copied into the record |
