@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/rshade/finfocus-plugin-azure-public/internal/azureclient"
 )
@@ -47,15 +48,18 @@ func realPlanMustPass() map[string]bool {
 		"azure/windowsVm",
 		"azure/winPlan",
 	}
-	// Today's core view drops sku.capacity, so only the dotted input has the worker count.
-	dottedOnly := []string{"azure-native/plan"}
-	out := make(map[string]bool, len(ids)*2+len(dottedOnly))
+	// Today's core view drops sku.capacity, so only the dotted and attributes
+	// inputs have the worker count.
+	structuredOnly := []string{"azure-native/plan"}
+	out := make(map[string]bool, len(ids)*3+len(structuredOnly)*2)
 	for _, id := range ids {
 		out[id+"/core"] = true
 		out[id+"/dotted"] = true
+		out[id+"/attributes"] = true
 	}
-	for _, id := range dottedOnly {
+	for _, id := range structuredOnly {
 		out[id+"/dotted"] = true
+		out[id+"/attributes"] = true
 	}
 	return out
 }
@@ -121,6 +125,12 @@ func TestRealPulumiPlan(t *testing.T) {
 			continue
 		}
 		verdicts = append(verdicts, judgeAndRecord(t, tc.ID, "dotted", tc.Expect, dotted))
+		structured, err := attributesRequest(view, previews, tc)
+		if err != nil {
+			t.Errorf("case %s attributes: %v", tc.ID, err)
+			continue
+		}
+		verdicts = append(verdicts, judgeAndRecord(t, tc.ID, "attributes", tc.Expect, structured))
 	}
 	for _, item := range plan.NotPriced {
 		view, ok := views[item.ID]
@@ -291,6 +301,33 @@ func dottedRequest(
 		}
 		tags[key] = value
 	}
+	return req, nil
+}
+
+// attributesRequest is today's core view plus ResourceDescriptor.attributes
+// built from the preview inputs, with the host redaction the field contract
+// requires: no "__" keys and no credential-like keys.
+func attributesRequest(
+	view coreViewEntry,
+	previews map[string]map[string]map[string]any,
+	tc realPlanCase,
+) (*finfocusv1.GetProjectedCostRequest, error) {
+	inputs := previews[tc.Provider][previewKey(tc.TypeToken, tc.ResourceName)]
+	if inputs == nil {
+		return nil, errors.New("no preview inputs")
+	}
+	redacted := make(map[string]any, len(inputs))
+	for key, value := range inputs {
+		if !skipAttributeSegment(key) {
+			redacted[key] = value
+		}
+	}
+	attrs, err := structpb.NewStruct(redacted)
+	if err != nil {
+		return nil, err
+	}
+	req := requestFromView(view)
+	req.Resource.Attributes = attrs
 	return req, nil
 }
 

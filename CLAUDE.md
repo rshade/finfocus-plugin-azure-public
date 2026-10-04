@@ -246,7 +246,7 @@ Behavior notes:
 - Missing `location/region` or `vmSize/sku` returns `codes.InvalidArgument`
 - Cache hits are served from `CachedClient` with no outbound API request
 - VM `EstimateCost` reads attribute `priority`. `Spot` uses the Linux Spot row and pricing category Dynamic. An empty priority or `Regular` stays the on-demand row and Standard. Any other value is InvalidArgument. When priority is empty, `pricing_model=spot` selects Spot and `pricing_model=consumption` stays on demand.
-- `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.2`). A value without the `v` prefix is rejected by the SDK
+- `GetPluginInfo` returns `pluginsdk.SpecVersion` (`v0.7.3`). A value without the `v` prefix is rejected by the SDK
 - `GetPluginInfo` sends the explicit `PluginCapabilities()` list: projected costs, actual costs, pricing spec, estimate cost, and dry run. It also sends metadata `type=public-pricing-fallback`, and the SDK adds the legacy `supports_*` keys. The list is explicit because `Calculator` embeds `UnimplementedCostSourceServiceServer`. Without the list, interface inference in the SDK also advertised batch cost, resolve resource types, recommendations, budgets, and dismiss, and core routed calls to them. `pricing.PluginInfo()` is the one source: `GetPluginInfo` serves it and `cmd/` passes it as `ServeConfig.PluginInfo`, so the name (`azure-public`), version, and capabilities agree
 
 ### Real Pulumi virtual machines
@@ -273,7 +273,8 @@ given that Linux rate without the note.
 
 The scale-set count is tag `instances`, then `sku.capacity`, otherwise 1.
 Monthly cost is the meter times 730 times that count. A native scale set
-whose core view dropped `sku.capacity` prices one instance. A dotted native
+whose descriptor has neither `attributes` nor a `sku.capacity` tag (core
+drops dotted keys past 50 tags) prices one instance. A dotted native
 scale set with `virtualMachineProfile.priority=Spot` uses the Spot meter.
 `plan-expected.json` records the on-demand meter for `azure-native/vmss`,
 and that fixture has no Spot row, so the dotted quote is `NotFound`.
@@ -287,6 +288,30 @@ then the property below, then the generic tags (`sku`, `vmSize`,
 the table says. The Pulumi unknown placeholder
 `04da6b54-80e4-46f7-96ec-b56ff0331ba9` is skipped everywhere, including in
 `Sku`. `Supports` and `DryRun` refuse the inputs the quote refuses below.
+
+### Descriptor attributes
+
+`finfocus-spec` v0.7.3 adds `ResourceDescriptor.attributes`, the resource's
+declared inputs as a `google.protobuf.Struct`. `GetProjectedCost` (and the
+SDK `BatchCost` fallback that calls it), `GetPricingSpec`, `Supports`, and
+`DryRun` merge it into the tags once, in `withAttributeTags`
+(`internal/pricing/attributes.go`), so every tag name in this file also
+reads from `attributes`. The merge uses core's `ConvertToProto` format
+(`internal/engine/flatten.go`): each top-level key keeps its collapsed
+value (an object collapses to its `value`, `id`, or `name`, or its only
+field; a list joins with commas), and nested scalars add dotted keys such as
+`sku.capacity` or `zones.0`. Whole numbers print without a fraction, and
+`true` and `false` print as written. Core's 6-segment, 50-tag, and length caps
+do not apply. `__` and credential-like segments, and the user tag maps
+`tags`, `tagsAll`, `labels`, and `annotations`, are not expanded, and a
+dotted leaf equal to the Pulumi unknown placeholder is skipped, so the tag of
+the same name still applies. An attribute value replaces a tag with the same
+key; tag-only keys stay. With no attributes the descriptor is used as sent.
+Attributes over `pluginsdk.MaxAttributesBytes` (64 KiB) are
+`InvalidArgument` (DryRun reports it as a configuration error, and Supports
+as unsupported). `attributes` is never logged. `EstimateCost` keeps reading
+its own `attributes` field. The real-plan ratchet runs every case three
+ways: core tags, dotted tags, and core tags plus `attributes`.
 
 | Type | SKU source |
 | --- | --- |
@@ -638,7 +663,7 @@ go test ./internal/pricing -run TestExpectedManifest_CommittedFiles -update-mani
 Pass the flag to `./internal/pricing` only.
 
 The files are the canonical form `pluginsdk.SaveManifest` writes from
-`finfocus-spec` v0.7.2: snake case keys, the installation method as `binary`,
+`finfocus-spec` v0.7.2 and later: snake case keys, the installation method as `binary`,
 keys sorted, and the same bytes for the same manifest. The test compares the
 committed bytes with `pluginsdk.MarshalManifestJSON` and
 `MarshalManifestYAML`, and runs `registry.ValidatePluginManifest` on
