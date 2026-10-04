@@ -107,7 +107,11 @@ func (c *Calculator) GetActualCost(
 		return nil, err
 	}
 
-	resource := resourceFromActual(req)
+	resource, err := resourceFromActual(req)
+	if err != nil {
+		log.Warn().Str("result_status", "error").Err(err).Msg("GetActualCost validation failed")
+		return nil, err
+	}
 	quote, err := c.quoteResource(ctx, resource, taskActual)
 	if err != nil {
 		log.Warn().Str("result_status", "error").Err(err).Msg("GetActualCost pricing failed")
@@ -591,8 +595,18 @@ func projectedResource(req *finfocusv1.GetProjectedCostRequest) (*finfocusv1.Res
 	return withAttributeTags(req.GetResource())
 }
 
-func resourceFromActual(req *finfocusv1.GetActualCostRequest) *finfocusv1.ResourceDescriptor {
-	tags := req.GetTags()
+// resourceFromActual prices from the request descriptor when the host sends
+// one (finfocus-spec v0.7.4). The request tags are then the resource's cloud
+// tags: labels, never pricing inputs. Without a descriptor, the pricing
+// dimensions come from the request tags as before.
+func resourceFromActual(req *finfocusv1.GetActualCostRequest) (*finfocusv1.ResourceDescriptor, error) {
+	if resource := req.GetResource(); resource != nil {
+		return withAttributeTags(resource)
+	}
+	return resourceFromActualTags(req.GetTags()), nil
+}
+
+func resourceFromActualTags(tags map[string]string) *finfocusv1.ResourceDescriptor {
 	provider := firstNonEmptyTag(tags, "provider")
 	if provider == "" {
 		provider = "azure"

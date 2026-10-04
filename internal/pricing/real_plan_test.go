@@ -152,6 +152,51 @@ func TestRealPulumiPlan(t *testing.T) {
 	}
 }
 
+// With the v0.7.4 descriptor on GetActualCostRequest, actual cost over 730
+// hours is the projected monthly cost for every case and input form, and both
+// RPCs fail with the same code. Cloud tags that name pricing dimensions are
+// sent beside the descriptor and must not change either result.
+func TestRealPulumiPlan_ActualWithResource_MatchesProjected(t *testing.T) {
+	plan := loadRealPlan(t)
+	views := loadCoreViews(t)
+	previews := loadPreviewInputs(t)
+	cloudTags := map[string]string{"region": "prod-eu", "sku": "gold", "instances": "9"}
+
+	for _, tc := range plan.Cases {
+		view, ok := views[tc.ID]
+		if !ok {
+			t.Errorf("case %s has no core-view entry", tc.ID)
+			continue
+		}
+		dotted, dottedErr := dottedRequest(view, previews, tc)
+		structured, structuredErr := attributesRequest(view, previews, tc)
+		if dottedErr != nil || structuredErr != nil {
+			t.Errorf("case %s inputs: %v %v", tc.ID, dottedErr, structuredErr)
+			continue
+		}
+		inputs := map[string]*finfocusv1.GetProjectedCostRequest{
+			"core": requestFromView(view), "dotted": dotted, "attributes": structured,
+		}
+		for name, req := range inputs {
+			calc := newPricingCalc(t, tc.Expect.Rows)
+			projected, projErr := calc.GetProjectedCost(context.Background(), req)
+			actual, actErr := calc.GetActualCost(context.Background(),
+				actualWithResource(req.GetResource(), cloudTags, pluginsdk.HoursPerMonth))
+			if status.Code(projErr) != status.Code(actErr) {
+				t.Errorf("%s/%s: projected error %v, actual error %v", tc.ID, name, projErr, actErr)
+				continue
+			}
+			if projErr != nil {
+				continue
+			}
+			got := actual.GetResults()[0].GetCost()
+			if math.Abs(got-projected.GetCostPerMonth()) > 1e-9 {
+				t.Errorf("%s/%s: actual %v, projected %v", tc.ID, name, got, projected.GetCostPerMonth())
+			}
+		}
+	}
+}
+
 func TestRealPlanDottedVMSize(t *testing.T) {
 	previews := loadPreviewInputs(t)
 	key := previewKey("azure-native:compute:VirtualMachine", "linuxVm")
