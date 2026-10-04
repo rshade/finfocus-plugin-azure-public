@@ -19,17 +19,25 @@ import (
 // its tags, so every tag reader sees the structured inputs. A descriptor with no
 // attributes is returned unchanged. The merged copy keeps tag-only keys, and an
 // attribute value replaces a tag with the same key, as the field contract says.
-// The request descriptor is never modified.
+// The request descriptor is never modified. Before the merge, the descriptor
+// must fit the 64 KiB attributes limit and the pluginsdk descriptor limits
+// (256 tags, 128-byte keys, 2048-byte values, field lengths); a descriptor that
+// does not is InvalidArgument on every RPC that reads one.
 //
 // attributes may carry user data; it is never logged.
 func withAttributeTags(desc *finfocusv1.ResourceDescriptor) (*finfocusv1.ResourceDescriptor, error) {
 	attrs := desc.GetAttributes()
-	if len(attrs.GetFields()) == 0 {
-		return desc, nil
-	}
 	if size := proto.Size(attrs); size > pluginsdk.MaxAttributesBytes {
 		return nil, status.Errorf(codes.InvalidArgument,
 			"resource attributes are %d bytes, over the %d byte limit", size, pluginsdk.MaxAttributesBytes)
+	}
+	if desc != nil {
+		if err := pluginsdk.ValidateResourceDescriptor(desc); err != nil {
+			return nil, status.Error(codes.InvalidArgument, status.Convert(err).Message())
+		}
+	}
+	if len(attrs.GetFields()) == 0 {
+		return desc, nil
 	}
 
 	merged, ok := proto.Clone(desc).(*finfocusv1.ResourceDescriptor)

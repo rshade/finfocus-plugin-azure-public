@@ -13,8 +13,8 @@ pricing data from the Azure Retail Prices API and caching it for performance.
 
 `GetProjectedCost` returns the monthly retail quote. `GetActualCost` scales
 that quote by the requested hours over 730. The default window is 730 hours,
-so the default result matches the monthly quote. When the request carries
-the resource descriptor (finfocus-spec v0.7.4), actual cost reads the same
+so the default result matches the monthly quote when the request carries the
+resource descriptor (finfocus-spec v0.7.4). Actual cost then reads the same
 inputs as projected cost, and the request's cloud tags are labels only.
 Without it, `GetActualCost` sees only cloud tags plus SKU and region, so inputs
 such as disk size or instance count are missing. Both calls read the public

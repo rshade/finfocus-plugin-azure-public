@@ -328,8 +328,13 @@ The merge uses core's `ConvertToProto` format (`internal/engine/flatten.go`):
   first.
 
 An attribute value replaces a tag with the same key, and tag-only keys stay.
-Attributes over `pluginsdk.MaxAttributesBytes` (64 KiB) are
-`InvalidArgument`: Supports reports the resource unsupported, and DryRun
+Before the merge, `withAttributeTags` enforces the descriptor limits on every
+RPC that reads a descriptor (including `GetActualCost` when it carries
+`resource`): attributes over `pluginsdk.MaxAttributesBytes` (64 KiB, plugin
+message "over the 65536 byte limit"), then `pluginsdk.ValidateResourceDescriptor`
+(at most 256 tags, 128-byte tag keys, 2048-byte tag values, and the provider,
+type, id, ARN, SKU, and region lengths). Core sends at most 50 tags. A descriptor
+over a limit is `InvalidArgument`: Supports reports the resource unsupported, and DryRun
 reports a configuration error for a type this plugin prices and an unsupported type
 otherwise. `attributes` is never logged. `EstimateCost` keeps reading its own
 `attributes` field.
@@ -340,11 +345,12 @@ descriptor through the same `withAttributeTags` merge, so actual cost over 730
 hours equals projected cost for the same descriptor. The request `tags` are
 then the resource's cloud tags: labels, never pricing inputs, not even for a
 key the descriptor lacks. A cloud tag named `region`, `sku`, `provider`,
-`resource_type`, or `instances` does not reach the price query. The 64 KiB
-attributes limit and the unknown-placeholder rule are the projected ones, and
-the plugin does not run `pluginsdk.ValidateActualCostRequest`, so requests
-without a descriptor are unchanged. Dry run is unchanged as well: only the
-billing account id is ignored.
+`resource_type`, or `instances` does not reach the price query. The
+descriptor limits and the unknown-placeholder rule are the projected ones. The
+plugin does not run `pluginsdk.ValidateActualCostRequest`, so requests without a
+descriptor are unchanged. A `GetActualCost` dry run still prices and returns
+`results`, not `dry_run_result`, exactly as before this change; it only ignores
+the request billing account id.
 
 Without `resource`, `GetActualCost` reads the request tags as before. Core
 builds those from the resource's cloud tags (`tagsAll`, then `tags`) and adds

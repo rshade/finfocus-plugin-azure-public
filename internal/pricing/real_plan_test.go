@@ -187,6 +187,9 @@ func TestRealPulumiPlan_ActualWithResource_MatchesProjected(t *testing.T) {
 				continue
 			}
 			if projErr != nil {
+				if realPlanMustPass()[tc.ID+"/"+name] {
+					t.Errorf("%s/%s must pass but both calls failed: %v", tc.ID, name, projErr)
+				}
 				continue
 			}
 			got := actual.GetResults()[0].GetCost()
