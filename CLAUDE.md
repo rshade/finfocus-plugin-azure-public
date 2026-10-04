@@ -335,10 +335,15 @@ otherwise. `attributes` is never logged. `EstimateCost` keeps reading its own
 `attributes` field.
 
 `GetActualCostRequest` has no descriptor in v0.7.3, so `GetActualCost` and its
-FOCUS record read only the request tags. When core drops a dotted key past its
-50-tag cap but sends it in `attributes`, projected and actual cost disagree.
-For example, a native scale set with `sku.capacity` 3 projects three instances
-but its actual cost prices one.
+FOCUS record read only the request tags. Core builds those tags from the
+resource's cloud tags (`tagsAll`, then `tags`) and adds `sku`, `region`,
+`provider`, and `resource_type` (finfocus `internal/proto/adapter.go`,
+`enrichTagsWithSKUAndRegion`). It sends no flattened inputs, dotted or
+otherwise, so every input beyond SKU and region is missing from actual cost:
+`size_gb`, `instances`, `sku.capacity`, `workerCount`, `ru_per_second`, and
+the rest. A native scale set with `sku.capacity` 3 projects three instances,
+but its actual cost prices one. finfocus-spec#620 asks for a descriptor on
+`GetActualCostRequest`.
 
 The real-plan ratchet runs every case three ways: core tags, dotted tags,
 and core tags plus `attributes`. The test builds `attributes` with the host
