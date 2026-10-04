@@ -45,7 +45,9 @@ as `npm:@fission-ai/openspec`; run it as `mise exec -- openspec ...`.
   requirement has a `Tests:` line naming the Go tests that prove it.
 - `scripts/check-spec-tests.sh` fails when a requirement names no test, or
   when a named test is missing, fails, skips (a skipped subtest counts), or
-  runs only under the `integration` tag. `make spec-check` runs it after
+  runs only under the `integration` tag. It also fails on a spec whose
+  `Purpose` is empty or still the `TBD` placeholder `openspec archive` writes
+  for a new capability. `make spec-check` runs it after
   `openspec validate --all --strict`; CI runs both in the `OpenSpec` job.
 - A behavior change goes through propose, apply, verify, and archive
   (`/opsx:propose` and the `openspec-*` skills). Archive lands in the same

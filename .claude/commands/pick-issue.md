@@ -176,13 +176,25 @@ second one. Use the skills `openspec init` generated under `.claude/skills/`:
    `specs/<capability>/spec.md`, and `tasks.md`. Name the change with a
    kebab-case slug that includes the issue number, such as
    `add-redis-pricing-42`.
-2. `openspec-apply-change` (`/opsx:apply`): work the tasks in order and tick
-   `tasks.md` as each passes.
+2. `openspec-apply-change` (`/opsx:apply`): work the tasks in order. Tick a
+   task in `tasks.md` when its `Verify:` command passes, one task at a time,
+   never in bulk before archive.
 3. `openspec-verify-change` (`/opsx:verify`): compare the code with the
-   artifacts and fix every real finding.
+   artifacts and fix every real finding. This step is required, and it does
+   not replace the Phase 3 review of the diff.
 4. `openspec-archive-change` (`/opsx:archive`): fold the delta specs into
    `openspec/specs/` and move the change to `openspec/changes/archive/`.
-   Archive lands in the same commit as the code, after verify passes.
+   Archive lands in the same commit as the code, after verify passes. An
+   archive that creates a capability writes `Purpose` as `TBD - created by
+   archiving change ...`; replace it with one or two sentences.
+   `make spec-check` fails while a `TBD` Purpose remains.
+
+**Tests-first checkpoint.** `tasks.md` starts with the tests. Before you touch
+the implementation or a dependency, run the first task group's `Verify:`
+commands and record how each test fails or fails to build; that output is the
+break check. A spike that measures the change first (for example, bumping a
+dependency to see what breaks) belongs in a scratch worktree. Discard it and
+start the change from `origin/main`, so the tests still come first.
 
 Every task in `tasks.md` carries a `Verify:` command that proves it (a
 `go test -run` pattern, `make spec-check`, or a live query with its date) and

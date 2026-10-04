@@ -3,7 +3,8 @@
 # it on a `Tests:` line of backticked `TestName` references. This fails when a
 # requirement has no such line, or when a named test does not run and pass in
 # the default (non integration) build: a missing, skipped, or integration-only
-# test is a failure, and so is a package that does not build.
+# test is a failure, and so is a package that does not build. A spec whose
+# Purpose is empty or still the archive placeholder (TBD) fails too.
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
@@ -21,7 +22,12 @@ import sys
 failures = []
 names = set()
 for spec in sorted(pathlib.Path("openspec/specs").glob("*/spec.md")):
-    blocks = re.split(r"^### Requirement: ", spec.read_text(), flags=re.M)[1:]
+    text = spec.read_text()
+    # openspec archive writes a placeholder Purpose for a new capability.
+    purpose = re.search(r"^## Purpose\s*\n(.*?)(?=^## |\Z)", text, flags=re.M | re.S)
+    if not purpose or not purpose.group(1).strip() or re.search(r"\bTBD\b", purpose.group(1)):
+        failures.append(f"{spec}: Purpose is missing or still TBD")
+    blocks = re.split(r"^### Requirement: ", text, flags=re.M)[1:]
     for block in blocks:
         title = block.splitlines()[0].strip()
         # Only the Tests: paragraph counts; a test named in prose proves nothing.
