@@ -33,8 +33,8 @@ Tests: `TestConfiguredPortUsed`, `TestEphemeralPortWhenNotConfigured`, `TestInva
 
 #### Scenario: Configured port
 
-- **WHEN** `FINFOCUS_PLUGIN_PORT=54321`
-- **THEN** stdout is `PORT=54321`
+- **WHEN** `FINFOCUS_PLUGIN_PORT` is set to a free port P
+- **THEN** stdout is `PORT=` followed by P
 
 #### Scenario: Non-numeric port
 
