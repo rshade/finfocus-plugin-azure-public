@@ -129,6 +129,18 @@ comment goes missing. Before #106, v0.1.0 binaries reported 0.1.0 only because
 nothing had been released after it; GoReleaser's `main.version` sets log fields
 only.
 
+CI Vale (`.github/workflows/lint-prose.yml`) needs the tracked vocabulary
+`.vale/styles/config/vocabularies/FinFocus/accept.txt`. Before #102 it was
+gitignored, so `vale` stopped with E100 on every CI run and the job passed
+anyway. The step now runs under `pipefail` with `vale --no-exit`: a Vale
+runtime error (exit 2) fails the job, and prose findings stay non-blocking
+review comments. Vocabulary entries set casing for `Vale.Terms`: proper names
+keep their exact casing (`Azure`, `FinFocus`, `azure-native`), and ordinary
+words that can start a sentence or heading take `(?i)` (`(?i)zerolog`,
+`(?i)stderr`). Write lowercase identifiers such as the `azure` provider or
+`rshade/finfocus#N` in code spans, or `Vale.Terms` asks for the proper name.
+Vale skips `CHANGELOG.md`, which Release Please writes.
+
 CI markdownlint (`.github/workflows/lint-prose.yml`) does not lint
 `CHANGELOG.md`. Release Please writes it with `*` bullets and double blank
 lines, so a release pull request would fail MD004 and MD012 on text no one

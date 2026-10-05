@@ -35,8 +35,12 @@ PR_MESSAGE.md
 .env*
 CodeRabbitPrompt.md
 
-# Vale linting styles (synced via `vale sync`; vocabulary files are tracked)
-.vale/styles/
+# Vale linting styles (synced via `vale sync`; vocabulary files are tracked).
+# Git cannot re-include a path whose parent directory is excluded, so each
+# level is excluded with /* and the next one re-included (#102).
+.vale/styles/*
+!.vale/styles/config/
+.vale/styles/config/*
 !.vale/styles/config/vocabularies/
 
 # Superpowers working plan and run artifacts (not part of the release)
