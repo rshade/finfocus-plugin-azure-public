@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,22 +30,29 @@ import (
 //nolint:gochecknoglobals // Test fixtures require package-level state for sync.Once pattern.
 var (
 	testBinaryOnce sync.Once
+	testBinaryDir  string
 	testBinaryPath string
 	errTestBinary  error
 )
 
-// buildTestBinary builds the test binary once and returns the path.
+// buildTestBinary builds the test binary once per test process and returns the
+// path. The binary goes in a temporary directory owned by this process, so
+// concurrent go test runs in one checkout cannot remove each other's binary.
 func buildTestBinary(t *testing.T) string {
 	t.Helper()
 	testBinaryOnce.Do(func() {
-		// Get current working directory
 		cwd, err := os.Getwd()
 		if err != nil {
 			errTestBinary = err
 			return
 		}
+		testBinaryDir, err = os.MkdirTemp("", "finfocus-plugin-azure-public-test-")
+		if err != nil {
+			errTestBinary = err
+			return
+		}
 
-		testBinaryPath = filepath.Join(cwd, "test_plugin_binary")
+		testBinaryPath = filepath.Join(testBinaryDir, "test_plugin_binary")
 		buildCmd := exec.Command("go", "build", "-o", testBinaryPath, ".")
 		buildCmd.Dir = cwd
 		if err := buildCmd.Run(); err != nil {
@@ -59,15 +67,41 @@ func buildTestBinary(t *testing.T) string {
 	return testBinaryPath
 }
 
+// pluginEnv returns the test process environment without FINFOCUS_PLUGIN_PORT,
+// plus extra. A port exported in the developer's shell or CI would otherwise
+// make every plugin started by a test bind the same port, and concurrent runs
+// would collide. Tests that need a port pass it in extra.
+func pluginEnv(extra ...string) []string {
+	env := make([]string, 0, len(os.Environ())+len(extra))
+	for _, e := range os.Environ() {
+		if !strings.HasPrefix(e, "FINFOCUS_PLUGIN_PORT=") {
+			env = append(env, e)
+		}
+	}
+	return append(env, extra...)
+}
+
+// freeLoopbackPort returns a port that was free on 127.0.0.1, the address the
+// SDK listens on. Another process can take it before the plugin binds it, but
+// the window is small, unlike a fixed port that a parallel run always shares.
+func freeLoopbackPort(t *testing.T) string {
+	t.Helper()
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("find free port: %v", err)
+	}
+	defer listener.Close()
+	return strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
+}
+
 // TestMain handles test setup and cleanup.
 func TestMain(m *testing.M) {
 	if flag.Lookup("update-golden") == nil {
 		flag.Bool("update-golden", false, "accepted so go test ./... can pass -update-golden")
 	}
 	code := m.Run()
-	// Cleanup test binary
-	if testBinaryPath != "" {
-		os.Remove(testBinaryPath)
+	if testBinaryDir != "" {
+		os.RemoveAll(testBinaryDir)
 	}
 	os.Exit(code)
 }
@@ -86,6 +120,7 @@ func TestPortOutputFormat(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
+	cmd.Env = pluginEnv()
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatalf("failed to get stdout pipe: %v", err)
@@ -146,6 +181,7 @@ func TestStdoutContainsOnlyPortLine(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
+	cmd.Env = pluginEnv()
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatalf("failed to get stdout pipe: %v", err)
@@ -229,11 +265,10 @@ func TestConfiguredPortUsed(t *testing.T) {
 
 	binaryPath := buildTestBinary(t)
 
-	// Use a high port number unlikely to be in use
-	configuredPort := "54321"
+	configuredPort := freeLoopbackPort(t)
 
 	cmd := exec.Command(binaryPath)
-	cmd.Env = append(os.Environ(), "FINFOCUS_PLUGIN_PORT="+configuredPort)
+	cmd.Env = pluginEnv("FINFOCUS_PLUGIN_PORT=" + configuredPort)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatalf("failed to get stdout pipe: %v", err)
@@ -279,15 +314,7 @@ func TestEphemeralPortWhenNotConfigured(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
-	// Explicitly clear the port env var
-	env := os.Environ()
-	filteredEnv := make([]string, 0, len(env))
-	for _, e := range env {
-		if !strings.HasPrefix(e, "FINFOCUS_PLUGIN_PORT=") {
-			filteredEnv = append(filteredEnv, e)
-		}
-	}
-	cmd.Env = filteredEnv
+	cmd.Env = pluginEnv()
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -344,7 +371,7 @@ func TestInvalidPortNonNumeric(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
-	cmd.Env = append(os.Environ(), "FINFOCUS_PLUGIN_PORT=invalid")
+	cmd.Env = pluginEnv("FINFOCUS_PLUGIN_PORT=invalid")
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
@@ -393,6 +420,7 @@ func TestGracefulShutdownOnSIGTERM(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
+	cmd.Env = pluginEnv()
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatalf("failed to get stdout pipe: %v", err)
@@ -458,6 +486,7 @@ func TestExitCodeZeroOnGracefulShutdown(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
+	cmd.Env = pluginEnv()
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatalf("failed to get stdout pipe: %v", err)
@@ -524,6 +553,7 @@ func TestLogsAppearOnStderr(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
+	cmd.Env = pluginEnv()
 	var stderrBuf bytes.Buffer
 	cmd.Stderr = &stderrBuf
 	stdout, _ := cmd.StdoutPipe()
@@ -573,6 +603,7 @@ func TestLogsAreValidJSON(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
+	cmd.Env = pluginEnv()
 	var stderrBuf bytes.Buffer
 	cmd.Stderr = &stderrBuf
 	stdout, _ := cmd.StdoutPipe()
@@ -646,6 +677,7 @@ func TestLogsContainPluginAndVersionFields(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
+	cmd.Env = pluginEnv()
 	var stderrBuf bytes.Buffer
 	cmd.Stderr = &stderrBuf
 	stdout, _ := cmd.StdoutPipe()
@@ -724,6 +756,7 @@ func TestLogsContainTimeField(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
+	cmd.Env = pluginEnv()
 	var stderrBuf bytes.Buffer
 	cmd.Stderr = &stderrBuf
 	stdout, _ := cmd.StdoutPipe()
@@ -802,7 +835,7 @@ func TestLogLevelDebugShowsDebugMessages(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
-	cmd.Env = append(os.Environ(), "FINFOCUS_LOG_LEVEL=debug")
+	cmd.Env = pluginEnv("FINFOCUS_LOG_LEVEL=debug")
 	var stderrBuf bytes.Buffer
 	cmd.Stderr = &stderrBuf
 	stdout, _ := cmd.StdoutPipe()
@@ -866,7 +899,7 @@ func TestLogLevelErrorSuppressesInfoMessages(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
-	cmd.Env = append(os.Environ(), "FINFOCUS_LOG_LEVEL=error")
+	cmd.Env = pluginEnv("FINFOCUS_LOG_LEVEL=error")
 	var stderrBuf bytes.Buffer
 	cmd.Stderr = &stderrBuf
 	stdout, _ := cmd.StdoutPipe()
@@ -934,7 +967,7 @@ func TestLogLevelDefaultIsInfo(t *testing.T) {
 
 	cmd := exec.Command(binaryPath)
 	// Explicitly clear log level env vars
-	env := os.Environ()
+	env := pluginEnv()
 	filteredEnv := make([]string, 0, len(env))
 	for _, e := range env {
 		if !strings.HasPrefix(e, "FINFOCUS_LOG_LEVEL=") && !strings.HasPrefix(e, "LOG_LEVEL=") {
@@ -1011,7 +1044,7 @@ func TestLogLevelFinfocusTakesPrecedenceOverLogLevel(t *testing.T) {
 
 	cmd := exec.Command(binaryPath)
 	// Set both env vars - FINFOCUS_LOG_LEVEL should take precedence
-	cmd.Env = append(os.Environ(), "FINFOCUS_LOG_LEVEL=debug", "LOG_LEVEL=error")
+	cmd.Env = pluginEnv("FINFOCUS_LOG_LEVEL=debug", "LOG_LEVEL=error")
 	var stderrBuf bytes.Buffer
 	cmd.Stderr = &stderrBuf
 	stdout, _ := cmd.StdoutPipe()
@@ -1074,7 +1107,7 @@ func TestLogLevelInvalidFallsBackToInfo(t *testing.T) {
 	binaryPath := buildTestBinary(t)
 
 	cmd := exec.Command(binaryPath)
-	cmd.Env = append(os.Environ(), "FINFOCUS_LOG_LEVEL=invalid_level")
+	cmd.Env = pluginEnv("FINFOCUS_LOG_LEVEL=invalid_level")
 	var stderrBuf bytes.Buffer
 	cmd.Stderr = &stderrBuf
 	stdout, _ := cmd.StdoutPipe()
@@ -1139,7 +1172,9 @@ func TestLogLevelInvalidFallsBackToInfo(t *testing.T) {
 // Edge Case Tests
 // =============================================================================
 
-// TestPortAlreadyInUse verifies the plugin reports an error when the port is occupied.
+// TestPortAlreadyInUse verifies the plugin exits non-zero with the bind error
+// when the port is in use. The test holds the port with a listener of its own,
+// so there is no first plugin instance to race.
 func TestPortAlreadyInUse(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
@@ -1147,68 +1182,45 @@ func TestPortAlreadyInUse(t *testing.T) {
 
 	binaryPath := buildTestBinary(t)
 
-	// Start first instance on a specific port
-	port := "54322"
-	cmd1 := exec.Command(binaryPath)
-	cmd1.Env = append(os.Environ(), "FINFOCUS_PLUGIN_PORT="+port)
-	stdout1, _ := cmd1.StdoutPipe()
-
-	if err := cmd1.Start(); err != nil {
-		t.Fatalf("failed to start first plugin: %v", err)
+	held, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("hold port: %v", err)
 	}
-	defer func() {
-		cmd1.Process.Signal(syscall.SIGTERM)
-		cmd1.Wait()
-	}()
+	defer held.Close()
+	port := strconv.Itoa(held.Addr().(*net.TCPAddr).Port)
 
-	// Wait for first instance to be ready
-	lineChan := make(chan string, 1)
-	go func() {
-		scanner := bufio.NewScanner(stdout1)
-		if scanner.Scan() {
-			lineChan <- scanner.Text()
-		}
-	}()
+	cmd := exec.Command(binaryPath)
+	cmd.Env = pluginEnv("FINFOCUS_PLUGIN_PORT=" + port)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
-	select {
-	case <-lineChan:
-	case <-time.After(10 * time.Second):
-		t.Fatal("timeout waiting for first instance")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("failed to start plugin: %v", err)
 	}
 
-	// Try to start second instance on the same port
-	cmd2 := exec.Command(binaryPath)
-	cmd2.Env = append(os.Environ(), "FINFOCUS_PLUGIN_PORT="+port)
-	var stderr2 bytes.Buffer
-	cmd2.Stderr = &stderr2
-
-	if err := cmd2.Start(); err != nil {
-		t.Fatalf("failed to start second plugin: %v", err)
-	}
-
-	// Wait for second instance to exit (should fail)
 	done := make(chan error, 1)
 	go func() {
-		done <- cmd2.Wait()
+		done <- cmd.Wait()
 	}()
 
 	select {
 	case err := <-done:
 		if err == nil {
-			t.Error("expected second instance to fail, but it succeeded")
-		} else {
-			t.Logf("Second instance correctly failed: %v", err)
-			// Verify error message in stderr
-			stderrContent := stderr2.String()
-			if len(stderrContent) == 0 {
-				t.Error("expected error message in stderr")
-			} else {
-				t.Logf("stderr: %s", stderrContent)
-			}
+			t.Fatal("expected the plugin to fail on a port in use, but it exited cleanly")
+		}
+		t.Logf("plugin correctly failed: %v", err)
+		// Startup logs always reach stderr first, so require the bind error
+		// itself; any earlier failure would otherwise pass this test.
+		if !strings.Contains(stderr.String(), "address already in use") {
+			t.Errorf("stderr does not report the port in use: %s", stderr.String())
+		}
+		if strings.Contains(stdout.String(), "PORT=") {
+			t.Errorf("plugin announced a port it could not bind: %q", stdout.String())
 		}
 	case <-time.After(10 * time.Second):
-		cmd2.Process.Kill()
-		t.Fatal("second instance did not exit within timeout")
+		cmd.Process.Kill()
+		t.Fatal("plugin did not exit within timeout on a port in use")
 	}
 }
 
@@ -1223,6 +1235,7 @@ func TestRapidStartupShutdown(t *testing.T) {
 
 	for i := range iterations {
 		cmd := exec.Command(binaryPath)
+		cmd.Env = pluginEnv()
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
 			t.Fatalf("iteration %d: failed to get stdout pipe: %v", i, err)
