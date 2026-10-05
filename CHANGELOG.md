@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1](https://github.com/rshade/finfocus-plugin-azure-public/compare/v0.1.0...v0.1.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* **ci:** wrap a long test line and show failing spec test output ([c1656c2](https://github.com/rshade/finfocus-plugin-azure-public/commit/c1656c2fb579ff8fbe964545061578b2ce0c65b8))
+* **deps:** adopt finfocus-spec v0.7.5 so unserved RPCs report Unimplemented ([17069a2](https://github.com/rshade/finfocus-plugin-azure-public/commit/17069a207167c0f7ec3059d0c7f3983d884a24c5))
+* **release:** bump the version GetPluginInfo reports on each release ([76b43d0](https://github.com/rshade/finfocus-plugin-azure-public/commit/76b43d0b33f24676ec0344e7b648a7b408016df9)), closes [#106](https://github.com/rshade/finfocus-plugin-azure-public/issues/106)
+* **release:** tag releases as vX.Y.Z so GoReleaser can publish them ([#98](https://github.com/rshade/finfocus-plugin-azure-public/issues/98)) ([d5843b0](https://github.com/rshade/finfocus-plugin-azure-public/commit/d5843b0a07e338056a36758410615a6b5a8b5a65))
+
+
+### Documentation
+
+* **release:** record the commit override marker trap ([2491a0c](https://github.com/rshade/finfocus-plugin-azure-public/commit/2491a0cb6d9a7bd5834d768be6e8b23a6b5580a8)), closes [#106](https://github.com/rshade/finfocus-plugin-azure-public/issues/106)
+* **roadmap:** sync with GitHub after the v0.1.0 cut ([#96](https://github.com/rshade/finfocus-plugin-azure-public/issues/96)) ([9aef655](https://github.com/rshade/finfocus-plugin-azure-public/commit/9aef655c54e4b62167a4bfb69b8bceea51135aa2))
+
 ## 0.1.0 (2026-10-04)
 
 
