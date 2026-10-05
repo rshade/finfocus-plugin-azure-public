@@ -110,6 +110,11 @@ takes everything from the first `BEGIN_COMMIT_OVERRIDE` to the next
 `END_COMMIT_OVERRIDE`, so naming the marker in prose earlier in the description
 turns that prose into the commit message. #101 failed that way
 (`unexpected token ' ' at 1:2`) until its description was fixed.
+Use the override only on a pull request merged with "Squash and merge".
+Release Please applies it to every commit associated with the pull request,
+so after "Rebase and merge" each commit becomes the same entry: #107 landed as
+four commits and release PR #97 listed its fix four times until the block was
+removed from #107's description.
 
 A release bumps the version the plugin reports. `extra-files` in
 `release-please-config.json` updates `pluginVersion` in
