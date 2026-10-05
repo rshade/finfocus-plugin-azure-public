@@ -55,6 +55,7 @@ import sys
 
 wanted = set(open(sys.argv[1]).read().split())
 outcome = {}
+output = {}
 build_output = []
 failed_packages = []
 for line in open(sys.argv[2]):
@@ -73,6 +74,8 @@ for line in open(sys.argv[2]):
         failed_packages.append(event.get("Package", "?"))
         continue
     top = test.split("/", 1)[0]
+    if top in wanted and action == "output":
+        output.setdefault(top, []).append(event.get("Output", ""))
     if top not in wanted or action not in ("pass", "fail", "skip"):
         continue
     if test != top:
@@ -92,6 +95,10 @@ if build_output:
     print("build output:\n" + "".join(build_output), file=sys.stderr)
 if failed_packages:
     print("failed packages: " + ", ".join(sorted(set(failed_packages))), file=sys.stderr)
+for name in sorted(wanted):
+    if outcome.get(name, "pass") != "pass" and output.get(name):
+        # The tail of the test's own output says why; -json hides it otherwise.
+        print(f"--- output of {name} ---\n" + "".join(output[name][-30:]), file=sys.stderr)
 if bad or failed_packages:
     print("spec tests that do not pass:\n  " + "\n  ".join(bad), file=sys.stderr)
     sys.exit(1)
