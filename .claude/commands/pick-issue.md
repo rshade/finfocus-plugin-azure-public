@@ -285,23 +285,38 @@ git commit -F "$COMMIT_MSG_FILE"
 If a pre-commit hook or commitlint fails, fix the cause and create a new
 commit; do not bypass hooks.
 
-The PR body should describe the problem, resulting behavior, linked issue,
-spec if any, and validation results (including whether the integration suite
-ran). Store the body in a temporary file outside the worktree and pass it with
-`--body-file`. The PR title must also pass commitlint.
+Write the PR message with `/pr-message`, giving it issue `N` instead of
+letting it search by branch name. Without that command, write `PR_MESSAGE.md`
+in the repository root in its format: a commitlint subject line, `## Summary`,
+`## Test plan` (say whether the integration suite ran), `## Changes`, and a
+last line `Closes #N`. Git ignores the file. Validate it:
+
+```bash
+npx --yes markdownlint-cli --disable MD041 -- PR_MESSAGE.md
+cat PR_MESSAGE.md | npx commitlint
+```
+
+The PR description must contain `Closes #N`. A squash merge makes the
+description the commit, so a closing keyword that is only in the branch
+commits is dropped and the issue stays open; #100, #102, #103, and #104
+stayed open that way. Release Please parses that description too, so keep
+shell blocks out of it (see the Release Please section of CLAUDE.md).
 
 ```bash
 BRANCH="$(git branch --show-current)"
 gh pr list --repo "$REPO" --head "$BRANCH" --state open
 git push -u origin "$BRANCH"
-gh pr create --repo "$REPO" --base main --head "$BRANCH" \
-  --title "<conventional commit subject>" --body-file "$PR_BODY_FILE"
+tail -n +3 PR_MESSAGE.md | gh pr create --repo "$REPO" --base main \
+  --head "$BRANCH" --title "$(head -n 1 PR_MESSAGE.md)" --body-file -
+gh pr view "$BRANCH" --repo "$REPO" \
+  --json closingIssuesReferences --jq '[.closingIssuesReferences[].number]'
 ```
 
-Set `PR_BODY_FILE` to the prepared file and replace the title before execution.
-Create the PR only if the check above found none. Leave the issue open for the
-closing reference to resolve on merge. Stop at the PR; merging requires the
-user's instruction.
+Create the PR only if `gh pr list` found none. The last command must list
+`N`. If it does not, fix the description with `gh pr edit --body-file` and
+check again before reporting the PR. Leave the issue open for the closing
+reference to resolve on merge. Stop at the PR; merging requires the user's
+instruction.
 
 ## Phase 5 — Release or retain the claim
 
@@ -327,6 +342,6 @@ from the original checkout and never force it.
 ## Phase 6 — Report and stop
 
 Report the issue and selection reason, route and OpenSpec change if any,
-validation and review results, branch and worktree, PR URL, and whether the
-claim is released or retained. Mention selection outside `roadmap/current`
-explicitly. Do not pick another issue.
+validation and review results, branch and worktree, PR URL, the issues the PR
+closes on merge, and whether the claim is released or retained. Mention
+selection outside `roadmap/current` explicitly. Do not pick another issue.
