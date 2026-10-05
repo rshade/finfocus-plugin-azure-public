@@ -272,6 +272,19 @@ query, err := pricing.MapDescriptorToQuery(desc)
 **Error Sentinels**:
 - `ErrUnsupportedResourceType` -> gRPC `Unimplemented`
 - `ErrMissingRequiredFields` -> gRPC `InvalidArgument`
+- A provider other than `azure` or `azure-native` is `InvalidArgument`
+  (`unsupported provider: <provider>`) from `GetProjectedCost`, `GetActualCost`,
+  and `GetPricingSpec`. It is not `Unimplemented`: FinFocus core's conformance
+  check (`internal/conformance/cost.go`) sends an AWS resource and accepts only
+  `NotFound` or `InvalidArgument`. Core falls back to the next plugin on any
+  error, so the code does not change routing (#103). The cost RPCs check the
+  provider before the mapper runs, so the mapper's `ErrUnsupportedResourceType`
+  for a foreign provider shows up only as a `Supports` or `DryRun` reason
+- An Azure type the plugin does not price is `Unimplemented`
+  (`unsupported resource type`) from those RPCs and from `EstimateCost`, whose
+  request has no provider field. `Supports` and `DryRun` answer unsupported in
+  the response instead. `TestDescriptorRPCs_UnpricedInput_ReturnDocumentedCode`
+  pins all of this
 
 **Integration**: `Calculator.Supports()` uses `MapDescriptorToQuery` to validate resources
 
