@@ -38,10 +38,14 @@ jobs:
       - name: Vale -> reviewdog
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # pipefail: a Vale runtime error (exit 2, such as a missing vocabulary)
+        # fails the job. --no-exit keeps prose findings at exit 0, so they stay
+        # non-blocking review comments (#102).
+        shell: bash
         run: |
           # openspec init generates the skill and command files under these
           # paths; they are not project prose.
-          vale --glob='!{.claude/skills/**,.claude/commands/opsx/**,.gemini/**,.opencode/**}' . --output=line 2>/dev/null | reviewdog \
+          vale --no-exit --glob='!{.claude/skills/**,.claude/commands/opsx/**,.gemini/**,.opencode/**}' . --output=line | reviewdog \
             -efm="%f:%l:%c:%m" \
             -name="vale" \
             -reporter=github-pr-review \
