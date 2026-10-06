@@ -14,7 +14,7 @@
     "license": "Apache-2.0",
     "name": "azure-public",
     "repository": "https://github.com/rshade/finfocus-plugin-azure-public",
-    "version": "0.1.1"
+    "version": "0.1.2"
   },
   "specification": {
     "capabilities": [
