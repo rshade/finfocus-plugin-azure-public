@@ -5,6 +5,12 @@
 A Live/Runtime gRPC plugin for FinFocus that estimates Azure infrastructure
 costs by querying the Azure Retail Prices API.
 
+This plugin integrates the
+[Azure Retail Prices API](https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices)
+from [Microsoft Azure](https://azure.microsoft.com/en-us) and is a plugin for
+[FinFocus](https://github.com/rshade/finfocus), the Pulumi cost CLI.
+See the [FinFocus docs page for this plugin](https://rshade.github.io/finfocus/plugins/azure-public/).
+
 ## Purpose
 
 This plugin enables FinFocus to provide accurate, on-demand pricing for Azure
