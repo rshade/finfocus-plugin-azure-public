@@ -61,7 +61,7 @@ func (c *Calculator) Name() string {
 // pluginVersion is the version GetPluginInfo reports and the manifest files
 // carry. Release Please bumps it, and metadata.version in manifest.json and
 // manifest.yaml, through extra-files in release-please-config.json (#106).
-const pluginVersion = "0.1.1" // x-release-please-version
+const pluginVersion = "0.1.2" // x-release-please-version
 
 const (
 	pluginMetadataType      = "type"

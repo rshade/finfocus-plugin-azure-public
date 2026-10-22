@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2](https://github.com/rshade/finfocus-plugin-azure-public/compare/v0.1.1...v0.1.2) (2026-10-22)
+
+
+### Bug Fixes
+
+* **ci:** track the Vale vocabulary and fail on Vale runtime errors ([#110](https://github.com/rshade/finfocus-plugin-azure-public/issues/110)) ([e1bb987](https://github.com/rshade/finfocus-plugin-azure-public/commit/e1bb98755fbc9d78d391c38c64e18fd11545ac22))
+
+
+### Documentation
+
+* link the Azure Retail Prices API and FinFocus from the README ([#116](https://github.com/rshade/finfocus-plugin-azure-public/issues/116)) ([d9d25a0](https://github.com/rshade/finfocus-plugin-azure-public/commit/d9d25a05b9e957ed85955b0cdb83119fb0001c4c))
+
 ## [0.1.1](https://github.com/rshade/finfocus-plugin-azure-public/compare/v0.1.0...v0.1.1) (2026-10-05)
 
 
